@@ -10,6 +10,7 @@ use App\Models\DataInpection\InspectionResult;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -152,27 +153,66 @@ public function saveResult(Request $request)
     }
 }
 
-public function uploadImage(Request $request)
-{
-    $request->validate([
-        'inspection_id' => 'required|exists:inspections,id',
-        'point_id' => 'required|exists:inspection_points,id',
-        'image' => 'required|image|max:2048',
-    ]);
+ public function uploadImage(Request $request)
+    {
+        // Debug 1: Periksa semua data yang masuk
+        // dd($request->all());
 
-    $path = $request->file('image')->store('public/inspection-images');
-    $publicPath = str_replace('public/', 'storage/', $path);
+        $request->validate([
+            'point_id' => 'required',
+            'image' => 'required|image|max:2048',
+        ]);
 
-    $image = InspectionImage::create([
-        'point_id' => $request->point_id,
-        'image_path' => $publicPath,
-    ]);
+        // Debug 2: Pastikan file 'image' ada dan merupakan instance UploadedFile
+        if (!$request->hasFile('image')) {
+            return response()->json(['message' => 'No image file found in request.'], 400);
+        }
+        $uploadedFile = $request->file('image');
+        // dd($uploadedFile); // Ini harus menampilkan objek UploadedFile
 
-    return response()->json([
-        'path' => $publicPath,
-        'image' => $image,
-    ]);
-}
+        // Debug 3: Coba simpan file ke direktori sementara dan periksa hasilnya
+        // Ini adalah langkah krusial. Jika ini gagal, berarti ada masalah dengan environment PHP/server.
+        try {
+            // Ubah 'public/inspection-images' menjadi 'inspection-images' saja
+            // karena 'public' adalah nama disk, bukan bagian dari path folder.
+            // Metode `store()` otomatis menggunakan disk default jika tidak disebutkan,
+            // atau menggunakan disk yang ditentukan jika Anda menggunakan `->storeAs('disk_name', 'path/filename')`.
+            // Jika Anda ingin ke disk 'public', Anda harus menyebutkannya.
+            // Cara yang lebih eksplisit dan aman:
+            $path = $uploadedFile->store('inspection-images', 'public'); // Simpan ke subfolder 'inspection-images' di disk 'public'
+            // dd($path); // Ini harus menampilkan path relatif seperti 'inspection-images/namafileunik.jpg'
+        } catch (\Exception $e) {
+            // Debug 4: Tangkap error jika penyimpanan gagal
+            log::error('File upload failed: ' . $e->getMessage());
+            return response()->json(['message' => 'Failed to store image: ' . $e->getMessage()], 500);
+        }
+
+        // Debug 5: Pastikan path yang didapat valid dan file benar-benar ada di storage
+        if (!Storage::disk('public')->exists($path)) {
+            Log::error('File not found after store: ' . $path);
+            return response()->json(['message' => 'Image stored but not found on disk.'], 500);
+        }
+
+        // $publicPath ini sudah benar untuk konversi ke URL publik
+        $publicPath = str_replace('public/', 'storage/', $path); // Ini tidak lagi dibutuhkan jika $path sudah relatif ke disk public
+        // Jika $path sekarang adalah 'inspection-images/namafile.jpg'
+        // Maka $publicPath harusnya 'storage/inspection-images/namafile.jpg'
+        // Mari kita perbaiki:
+        $publicPath = 'storage/' . $path; // Ini lebih tepat
+
+        // Debug 6: Periksa publicPath sebelum disimpan ke DB
+        // dd($publicPath);
+
+        $image = InspectionImage::create([
+            'point_id' => $request->point_id,
+            'image_path' => $publicPath,
+        ]);
+
+        return response()->json([
+            'path' => $publicPath,
+            'image' => $image,
+        ]);
+    }
 
 public function deleteImage(Request $request)
 {

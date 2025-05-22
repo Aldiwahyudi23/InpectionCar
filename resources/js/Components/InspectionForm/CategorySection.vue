@@ -4,12 +4,10 @@
       <h2 class="text-xl font-semibold text-indigo-700">{{ category.name }}</h2>
     </div>
     
-    <div class="p-6 space-y-8">
-      <div 
+    <div class="p-4 space-y-4"> <div 
         v-for="point in category.points" 
         :key="point.id" 
-        class="space-y-4 pb-6 border-b border-gray-100 last:border-0 last:pb-0"
-      >
+        class="space-y-2 pb-4 border-b border-gray-100 last:border-0 last:pb-0" >
         <div class="flex items-start justify-between">
           <label class="block text-sm font-medium text-gray-700">
             {{ point.name }}
@@ -23,7 +21,6 @@
           </span>
         </div>
         
-        <!-- Text Input -->
         <input-text
           v-if="point.input_type === 'text'"
           v-model="form.results[point.id].note"
@@ -37,7 +34,6 @@
           @save="saveResult(point.id)"
         />
         
-        <!-- Number Input -->
         <input-number
           v-if="point.input_type === 'number'"
           v-model="form.results[point.id].note"
@@ -51,7 +47,6 @@
           @save="saveResult(point.id)"
         />
         
-        <!-- Date Input -->
         <input-date
           v-if="point.input_type === 'date'"
           v-model="form.results[point.id].note"
@@ -63,7 +58,6 @@
           @save="saveResult(point.id)"
         />
         
-        <!-- Select Input -->
         <input-select
           v-if="point.input_type === 'select'"
           v-model="form.results[point.id].status"
@@ -73,7 +67,6 @@
           @save="saveResult(point.id)"
         />
         
-        <!-- Radio Input -->
         <input-radio
           v-if="point.input_type === 'radio'"
           v-model="form.results[point.id].status"
@@ -84,11 +77,12 @@
           @save="saveResult(point.id)"
         />
         
-        <!-- Image Input -->
         <input-image
           v-if="point.input_type === 'image'"
           v-model="form.results[point.id].images"
           :error="form.errors[`results.${point.id}.images`]"
+          :inspection-id="inspectionId"   
+          :point-id="point.id"           
           @update:modelValue="updateResult(point.id, $event)"
           @save="saveResult(point.id)"
           @removeImage="removeImage(point.id, $event)"
@@ -108,7 +102,8 @@ import InputImage from './InputImage.vue';
 
 const props = defineProps({
   category: Object,
-  form: Object
+  form: Object,
+  inspectionId: [String, Number],
 });
 
 const emit = defineEmits(['saveResult', 'updateResult', 'removeImage']);
@@ -152,7 +147,7 @@ const removeImage = (pointId, imageIndex) => {
 </script>
 
 <style scoped>
-/* Mobile-first styles */
+/* Mobile-first styles (tetap relevan, namun tidak langsung mempengaruhi spacing ini) */
 @media (min-width: 640px) {
   .point-card {
     padding: 1.25rem;
