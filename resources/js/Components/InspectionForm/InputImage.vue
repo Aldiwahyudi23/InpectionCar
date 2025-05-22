@@ -121,7 +121,7 @@ const props = defineProps({
     default: () => ({
       max_files: 1,
       allowed_types: ['jpg', 'png'],
-      camera_aspect_ratio: '4:3',
+      camera_aspect_ratio: '3:4',
       enable_flash: true,
       enable_camera_switch: true,
     })
@@ -152,7 +152,7 @@ const aspectRatio = computed(() => {
       return width / height;
     }
   }
-  return 4 / 3;
+  return 3 / 4;
 });
 
 const getImageSrc = (image) => {

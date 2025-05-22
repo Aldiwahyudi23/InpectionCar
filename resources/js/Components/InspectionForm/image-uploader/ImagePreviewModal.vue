@@ -14,23 +14,23 @@
           </svg>
         </button>
       </div>
-      
+
       <div class="flex-1 flex items-center justify-center overflow-hidden relative">
-        <div 
+        <div
           class="w-full h-full flex items-center justify-center"
           @touchstart="handleTouchStart"
           @touchmove="handleTouchMove"
           @touchend="handleTouchEnd"
         >
-          <img 
+          <img
             v-if="currentImage"
-            :src="currentImage.preview || `/storage/${currentImage.image_path}`"
+            :src="currentImage.preview || (currentImage.image_path ? `/storage/${currentImage.image_path}` : '')"
             class="max-w-full max-h-full object-contain"
             :style="{ transform: `rotate(${currentImage.rotation}deg)` }"
           />
         </div>
-        
-        <button 
+
+        <button
           v-if="images.length > 1"
           @click="prevImage"
           class="absolute left-4 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
@@ -39,7 +39,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <button 
+        <button
           v-if="images.length > 1"
           @click="nextImage"
           class="absolute right-4 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
@@ -49,13 +49,28 @@
           </svg>
         </button>
       </div>
-      
+
       <div class="flex justify-between p-4 bg-black bg-opacity-50">
-        <button @click="removeCurrentImage" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
-          Delete
+        <button
+          @click="removeCurrentImage"
+          class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+          :disabled="isUploading" >
+          Hapus
         </button>
-        <button @click="saveImages" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
-          Save {{ images.length }} Image(s)
+
+        <button
+          v-if="!isUploading"
+          @click="saveImages"
+          class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+        >
+          Simpan {{ images.length }}
+        </button>
+        <button
+          v-else
+          class="px-4 py-2 bg-indigo-400 text-white rounded-lg cursor-not-allowed flex items-center justify-center"
+          disabled
+        >
+          Menyimpan<span class="loading-dots ml-1"><span>.</span><span>.</span><span>.</span></span>
         </button>
       </div>
     </div>
@@ -77,6 +92,7 @@ const props = defineProps({
   },
   allowMultiple: Boolean,
   maxFiles: Number,
+  isUploading: Boolean, // PROPS INI SUDAH ADA, JADI TINGGAL DIMANFAATKAN
 });
 
 const emit = defineEmits(['close', 'saveImages', 'removePreviewImage']);
@@ -147,6 +163,7 @@ const removeCurrentImage = () => {
 };
 
 const saveImages = () => {
+  // isUploading.value = true; // Ini sekarang di handle oleh parent component (InputImage.vue)
   emit('saveImages', props.images); // Emit all images (including rotated ones) to parent
 };
 
@@ -167,10 +184,28 @@ watch(() => props.show, (newVal) => {
 <style scoped>
 /* Basic modal styles for overlay */
 .fixed.inset-0 {
-    background-color: rgba(0, 0, 0, 0.9);
+  background-color: rgba(0, 0, 0, 0.9);
 }
 
 body.modal-open {
-    overflow: hidden;
+  overflow: hidden;
+}
+
+/* Loading dots animation */
+.loading-dots span {
+  animation: blink 1.4s infinite both;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes blink {
+  0%, 80%, 100% { opacity: 0; }
+  40% { opacity: 1; }
 }
 </style>
