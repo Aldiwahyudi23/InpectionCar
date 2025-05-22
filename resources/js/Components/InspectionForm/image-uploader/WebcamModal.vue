@@ -273,7 +273,7 @@ onBeforeUnmount(() => {
   background-color: black;
   padding: 0;
   width: 100%;
-  padding-bottom: calc(100% * 4 / 3);
+  padding-bottom: calc(100% * 3 / 4);
   overflow: hidden;
   cursor: pointer;
 }
