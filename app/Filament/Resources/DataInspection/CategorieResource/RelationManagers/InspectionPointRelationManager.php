@@ -54,7 +54,7 @@ Forms\Components\Fieldset::make('Settings Configuration')
         // Common settings for all input types
         $commonSettings = [
             Forms\Components\Toggle::make('settings.is_required')
-                ->default(false)
+                ->default(true)
                 ->columnSpanFull(),
         ];
 
@@ -122,8 +122,25 @@ Forms\Components\Fieldset::make('Settings Configuration')
                         ->default(2048)
                         ->label('Max Size (KB)'),
                     Forms\Components\TagsInput::make('settings.allowed_types')
+                        ->default('jpg, png')
                         ->placeholder('jpg, png, etc.')
                         ->label('Allowed File Types'),
+                     Forms\Components\Toggle::make('settings.enable_flash')
+                        ->default(true)
+                        ->label('Flash'),
+                     Forms\Components\Toggle::make('settings.enable_camera_switch')
+                        ->default(true)
+                        ->label('Kamera Switch'),
+                    Forms\Components\Select::make('settings.camera_aspect_ratio')
+                        ->options([
+                            '4:3' => '4:3',
+                            '3:4' => '3:4',
+                            '16:9' => '16:9',
+                            '1:1' => '1:1',
+                        ])
+                        ->default('4:3')
+                        ->label('Camera Aspect Ratio'),
+                        
                 ])
                 ->columns(3);
         }

@@ -50,28 +50,40 @@
         </button>
       </div>
 
-      <div class="flex justify-between p-4 bg-black bg-opacity-50">
-        <button
-          @click="removeCurrentImage"
-          class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-          :disabled="isUploading" >
-          Hapus
-        </button>
+      <div class="flex flex-col gap-2 p-4 bg-black bg-opacity-50">
+        <div class="flex justify-between">
+          <button
+            @click="removeCurrentImage"
+            class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+            :disabled="isUploading" >
+            Hapus
+          </button>
 
-        <button
-          v-if="!isUploading"
-          @click="saveImages"
-          class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-        >
-          Simpan {{ images.length }}
-        </button>
-        <button
-          v-else
-          class="px-4 py-2 bg-indigo-400 text-white rounded-lg cursor-not-allowed flex items-center justify-center"
-          disabled
-        >
-          Menyimpan<span class="loading-dots ml-1"><span>.</span><span>.</span><span>.</span></span>
-        </button>
+          <button
+            v-if="!isUploading"
+            @click="saveImages"
+            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            Simpan {{ images.length }}
+          </button>
+          <button
+            v-else
+            class="px-4 py-2 bg-indigo-400 text-white rounded-lg cursor-not-allowed flex items-center justify-center"
+            disabled
+          >
+            Menyimpan<span class="loading-dots ml-1"><span>.</span><span>.</span><span>.</span></span>
+          </button>
+        </div>
+
+        <div v-if="allowMultiple && images.length < maxFiles" class="text-center mt-2">
+          <button
+            @click="addMorePhotos"
+            class="inline-block px-4 py-2 rounded-lg text-sm font-medium bg-indigo-700 text-white hover:bg-indigo-800 transition-colors cursor-pointer"
+            :disabled="isUploading"
+          >
+            + Tambah Foto
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -92,10 +104,11 @@ const props = defineProps({
   },
   allowMultiple: Boolean,
   maxFiles: Number,
-  isUploading: Boolean, // PROPS INI SUDAH ADA, JADI TINGGAL DIMANFAATKAN
+  isUploading: Boolean,
 });
 
-const emit = defineEmits(['close', 'saveImages', 'removePreviewImage']);
+// PENTING: Tambahkan 'triggerAddMorePhotos' ke daftar emit
+const emit = defineEmits(['close', 'saveImages', 'removePreviewImage', 'triggerAddMorePhotos']);
 
 const currentPreviewIndex = ref(props.initialIndex);
 const touchStartX = ref(0);
@@ -152,23 +165,26 @@ const removeCurrentImage = () => {
 
   emit('removePreviewImage', currentPreviewIndex.value); // Emit index to parent for removal
 
-  // Adjust index after removal
-  if (currentPreviewIndex.value >= props.images.length) {
-    currentPreviewIndex.value = Math.max(0, props.images.length - 1);
-  }
-
-  if (props.images.length === 0) {
-    cancelPreview(); // If no images left, close modal
+  // Sesuaikan indeks setelah penghapusan. Ingat, `props.images` akan diperbarui oleh komponen induk.
+  // Logika ini mengasumsikan `props.images` akan segera mencerminkan penghapusan.
+  if (currentPreviewIndex.value >= props.images.length -1 && props.images.length > 1) {
+      currentPreviewIndex.value = Math.max(0, props.images.length - 2); // Pindah ke gambar sebelumnya
+  } else if (props.images.length === 1) { // Jika setelah dihapus hanya tersisa 1 gambar (atau 0 jika ini adalah gambar terakhir)
+      cancelPreview(); // Tutup modal jika tidak ada gambar tersisa
   }
 };
 
 const saveImages = () => {
-  // isUploading.value = true; // Ini sekarang di handle oleh parent component (InputImage.vue)
-  emit('saveImages', props.images); // Emit all images (including rotated ones) to parent
+  emit('saveImages', props.images);
 };
 
 const cancelPreview = () => {
-  emit('close'); // Emit close to parent
+  emit('close');
+};
+
+// FUNGSI BARU: Untuk memicu permintaan penambahan foto di komponen induk
+const addMorePhotos = () => {
+  emit('triggerAddMorePhotos');
 };
 
 // Ensure body scroll is managed

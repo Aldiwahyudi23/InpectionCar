@@ -7,17 +7,19 @@
       class="hidden"
       @change="handleImageSelect"
       :multiple="allowMultiple"
+      :disabled="isUploading"
     />
 
     <canvas ref="processingCanvas" class="hidden"></canvas>
 
     <label
-      v-if="modelValue.length === 0"
+      v-if="allImages.length === 0"
       @click="openSourceOptions"
       class="block w-full border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200 h-28"
       :class="{
-        'border-gray-300 hover:border-indigo-400 bg-gray-50': true, // Selalu aktifkan style ini jika tidak ada gambar
+        'border-gray-300 hover:border-indigo-400 bg-gray-50': true,
       }"
+      :disabled="isUploading"
     >
       <div class="h-full flex flex-col items-center justify-center p-4 text-center">
         <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -28,47 +30,57 @@
       </div>
     </label>
 
-    <div 
-      v-else 
+    <div
+      v-else
       class="block w-full border-2 border-dashed rounded-lg transition-colors duration-200 border-indigo-300 bg-indigo-50 h-auto p-2"
       aria-label="Image gallery"
     >
-        <div class="grid grid-cols-3 gap-2">
-          <div
-            v-for="(image, idx) in modelValue"
-            :key="image.id || idx"
-            class="relative w-full overflow-hidden rounded-md border border-gray-200 cursor-pointer"
-            :style="getImageContainerStyle(image)"
-            @click="openPreviewModal(idx)"
+      <div class="grid grid-cols-3 gap-2">
+        <div
+          v-for="(image, idx) in allImages"
+          :key="image.id || image.preview" class="relative w-full overflow-hidden rounded-md border border-gray-200 cursor-pointer"
+          :style="getImageContainerStyle(image)"
+          @click="openPreviewModal(idx)"
+        >
+          <img
+            :src="getImageSrc(image)"
+            class="absolute top-0 left-0 w-full h-full object-cover"
           >
-            <img
-              :src="getImageSrc(image)"
-              class="absolute top-0 left-0 w-full h-full object-contain"
-            >
-            <button
-        @click.stop="removeImage(idx)"
-        type="button"
-        class="absolute top-1 right-1 bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs shadow-sm hover:bg-red-600 transition-colors z-10"
-        aria-label="Remove image"
-      >
-        ×
-      </button>
+          <div v-if="image.isNew || image.rotation !== 0"
+               class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center text-white text-xs font-bold">
+              <span v-if="image.isNew">BARU</span>
+              <span v-if="image.rotation !== 0" class="ml-1">ROTASI</span>
           </div>
+
+          <button
+            @click.stop="removeImage(image)" type="button"
+            class="absolute top-1 right-1 bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs shadow-sm hover:bg-red-600 transition-colors z-10"
+            aria-label="Remove image"
+            :disabled="isUploading"
+          >
+            ×
+          </button>
         </div>
 
-        <div v-if="allowMultiple && modelValue.length < settings.max_files" class="mt-2 text-center">
-          <span @click="openSourceOptions" class="inline-block px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 hover:bg-indigo-200 transition-colors cursor-pointer">
-            + Add More Images
-          </span>
+        <div
+          v-if="allowMultiple && allImages.length < settings.max_files"
+          class="flex flex-col items-center justify-center p-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-500 transition-colors"
+          @click="openSourceOptions"
+          :disabled="isUploading"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          <p class="mt-1 text-xs text-gray-600">Tambah</p>
         </div>
+      </div>
     </div>
 
     <p v-if="error" class="mt-1 text-xs text-red-600">{{ error }}</p>
 
     <ImageSourceOptionsModal
       :show="showSourceOptionsModal"
-      @close="showSourceOptionsModal = false"
-      @open-webcam="openWebcam"
+      @close="closeSourceOptions" @open-webcam="openWebcam"
       @trigger-gallery="triggerGallery"
     />
 
@@ -82,30 +94,29 @@
 
     <ImagePreviewModal
       :show="showPreviewModal"
-      :images="previewImages"
-      :initial-index="currentPreviewIndex"
+      :images="allImages" :initial-index="currentPreviewIndex"
       :allow-multiple="allowMultiple"
       :max-files="settings.max_files"
       :is-uploading="isUploading"
       @close="closePreviewModal"
       @save-images="triggerUploadAndSave"
       @remove-preview-image="handleRemovePreviewImage"
+      @trigger-add-more-photos="openSourceOptions"
     />
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
-// Sesuaikan path import modal Anda jika perlu
 import ImageSourceOptionsModal from './image-uploader/ImageSourceOptionsModal.vue';
 import WebcamModal from './image-uploader/WebcamModal.vue';
 import ImagePreviewModal from './image-uploader/ImagePreviewModal.vue';
-import axios from 'axios'; 
-// Pastikan `route` tersedia secara global (dari Ziggy) jika Anda menggunakannya.
-// Jika tidak, Anda harus membuat URL secara manual, misalnya: `/api/inspections/upload-image`
+import axios from 'axios';
+// Asumsi 'route' tersedia secara global (dari Ziggy.js untuk Laravel)
+// import { route } from 'ziggy-js'; 
 
 const props = defineProps({
-  modelValue: { type: Array, default: () => [] },
+  modelValue: { type: Array, default: () => [] }, // Gambar yang sudah ada/disimpan
   error: String,
 
   inspectionId: { // Tambahkan prop ini jika Anda menggunakannya di triggerUploadAndSave
@@ -137,7 +148,7 @@ const showSourceOptionsModal = ref(false);
 const showWebcamModal = ref(false);
 const showPreviewModal = ref(false);
 
-const previewImages = ref([]);
+const previewImages = ref([]); // Menampung gambar baru atau yang dirotasi sebelum disimpan
 const currentPreviewIndex = ref(0);
 const isUploading = ref(false);
 
@@ -155,18 +166,48 @@ const aspectRatio = computed(() => {
   return 3 / 4;
 });
 
+// Computed property untuk menggabungkan gambar yang sudah ada (modelValue) dan gambar baru (previewImages)
+// INI PENTING UNTUK MEMASTIKAN TAMPILAN GALERI DAN PREVIEW SELALU TERKINI
+const allImages = computed(() => {
+  const finalImages = [];
+  const processedIds = new Set(); // Untuk melacak ID gambar yang sudah ditambahkan
+
+  // 1. Tambahkan gambar baru/dirotasi dari previewImages.value
+  // Ini akan diprioritaskan karena mungkin ada perubahan rotasi atau itu adalah gambar yang baru di-select/capture.
+  for (const pImg of previewImages.value) {
+    if (pImg.id) { // Jika ada ID, tandai sudah diproses
+      processedIds.add(pImg.id);
+    }
+    finalImages.push(pImg);
+  }
+
+  // 2. Tambahkan gambar dari modelValue yang belum ada di finalImages (berdasarkan ID)
+  for (const mImg of props.modelValue) {
+    if (!processedIds.has(mImg.id)) {
+      finalImages.push({
+        ...mImg,
+        rotation: mImg.rotation || 0, // Pastikan rotasi default 0
+        isNew: false, // Tandai bukan gambar baru
+        preview: mImg.preview || (mImg.image_path ? `/${mImg.image_path}` : null) // Pastikan URL preview ada
+      });
+    }
+  }
+
+  return finalImages;
+});
+
+
 const getImageSrc = (image) => {
-  // Menggunakan image.preview jika ada (untuk gambar baru/preview dari blob URL)
-  // Jika tidak, gunakan image.image_path (untuk gambar dari DB)
-  // Pastikan image_path sudah relatif ke public, misal 'inspection_uploads/images/foto.jpg'
-  // Atau jika Anda menggunakan URL lengkap dari backend, gunakan image.public_url jika tersedia.
+  // Menggunakan image.preview (blob URL atau URL lengkap) jika tersedia
+  // Jika tidak, gunakan image.image_path (relatif dari public)
   return image.preview || (image.image_path ? `/${image.image_path}` : '');
 };
 
 const getImageContainerStyle = (image) => {
+  // Default ke rasio 1:1 jika dimensi tidak diketahui
   if (!image.width || !image.height || image.width === 0 || image.height === 0) {
     return {
-      paddingBottom: '100%', // Default to square if dimensions are unknown
+      paddingBottom: '100%',
       position: 'relative'
     };
   }
@@ -181,21 +222,62 @@ const getImageContainerStyle = (image) => {
 // Saya biarkan di sini dengan catatan.
 const triggerAction = () => {
   console.warn("triggerAction was called. This function is no longer directly attached to the main label click for existing images.");
-  // if (props.modelValue.length === 0) {
-  //   openSourceOptions();
-  // } else {
-  //   openPreviewModal(0);
-  // }
 };
 
 const openSourceOptions = () => {
+  // Sembunyikan preview modal terlebih dahulu untuk mencegah tumpang tindih
+  if (showPreviewModal.value) {
+    showPreviewModal.value = false;
+  }
   showSourceOptionsModal.value = true;
 };
 
 const triggerGallery = () => {
-  showSourceOptionsModal.value = false;
-  galleryInput.value.click();
+  showSourceOptionsModal.value = false; // Tutup modal pilihan sumber
+  galleryInput.value.click(); // Trigger input file
 };
+
+const openWebcam = () => {
+  showSourceOptionsModal.value = false; // Tutup modal pilihan sumber
+  showWebcamModal.value = true; // Buka modal webcam
+};
+
+// Fungsi ini dipanggil saat ImageSourceOptionsModal ditutup (X atau klik di luar)
+const closeSourceOptions = () => {
+  showSourceOptionsModal.value = false;
+  // Jika ada gambar di `allImages` (setelah penambahan atau jika sudah ada sebelumnya),
+  // kita ingin kembali ke preview modal.
+  if (allImages.value.length > 0) {
+    showPreviewModal.value = true;
+  }
+};
+
+// Fungsi ini dipanggil saat WebcamModal ditutup (X atau tombol batal)
+const closeWebcam = () => {
+  showWebcamModal.value = false;
+  // Jika ada gambar di `allImages`, tampilkan kembali preview modal
+  if (allImages.value.length > 0) {
+    showPreviewModal.value = true;
+  }
+};
+
+const closePreviewModal = () => {
+  showPreviewModal.value = false;
+  // Saat menutup preview modal, hapus semua blob URLs yang belum disimpan
+  // dan kosongkan `previewImages` karena `modelValue` sekarang menjadi sumber kebenaran
+  // untuk gambar yang sudah disimpan.
+  previewImages.value.forEach(img => {
+    if (img.preview && img.preview.startsWith('blob:')) {
+      URL.revokeObjectURL(img.preview);
+    }
+  });
+  previewImages.value = []; // Reset array gambar yang belum disimpan
+};
+
+
+// ===========================================
+// FUNGSI PENANGANAN GAMBAR
+// ===========================================
 
 const loadImageWithDimensions = (file) => {
     return new Promise((resolve) => {
@@ -205,7 +287,7 @@ const loadImageWithDimensions = (file) => {
             img.onload = () => {
                 resolve({
                     file,
-                    preview: URL.createObjectURL(file),
+                    preview: URL.createObjectURL(file), // Blob URL untuk preview
                     rotation: 0,
                     width: img.naturalWidth,
                     height: img.naturalHeight,
@@ -224,46 +306,63 @@ const loadImageWithDimensions = (file) => {
 
 const handleImageSelect = (event) => {
   const files = Array.from(event.target.files);
-  if (!files.length) return;
-
-  // Revoke previous blob URLs if not allowing multiple or replacing existing ones
-  if (!allowMultiple.value) {
-      previewImages.value.forEach(img => img.preview && img.preview.startsWith('blob:') && URL.revokeObjectURL(img.preview));
-      previewImages.value = [];
+  if (!files.length) {
+      showSourceOptionsModal.value = false; // Tutup modal pilihan sumber
+      if (allImages.value.length > 0) { // Jika ada gambar, tampilkan kembali preview
+          showPreviewModal.value = true;
+      }
+      return;
   }
 
   Promise.all(files.map(loadImageWithDimensions)).then(newImages => {
-      const currentTotalImages = props.modelValue.length + previewImages.value.length;
+      const currentTotalImages = allImages.value.length; // Hitung dari allImages
       const allowedToAdd = props.settings.max_files - currentTotalImages;
-      const imagesToAdd = allowMultiple.value ? newImages.slice(0, allowedToAdd) : newImages.slice(0, 1);
+      
+      const imagesToProcess = allowMultiple.value ? newImages.slice(0, allowedToAdd) : newImages.slice(0, 1);
 
-      previewImages.value.push(...imagesToAdd);
-      currentPreviewIndex.value = previewImages.value.length - 1;
-      showPreviewModal.value = true;
-      event.target.value = ''; // Reset input file to allow re-selection of the same file
+      if (!allowMultiple.value) {
+          // Jika hanya satu file diizinkan, hapus semua gambar lama dan yang belum disimpan
+          // Revoke Blob URLs
+          previewImages.value.forEach(img => img.preview && img.preview.startsWith('blob:') && URL.revokeObjectURL(img.preview));
+          previewImages.value = imagesToProcess;
+          // Penting: Jika single, modelValue harus di-clear saat ini jika ingin langsung diganti
+          // emit('update:modelValue', []); // Ini akan menghapus dari thumbnail utama secara instan
+      } else {
+          previewImages.value.push(...imagesToProcess);
+      }
+      
+      showSourceOptionsModal.value = false; // Tutup modal pilihan sumber
+
+      // Tampilkan kembali preview modal dan pindah ke gambar pertama yang baru ditambahkan
+      if (imagesToProcess.length > 0) {
+        currentPreviewIndex.value = allImages.value.length - imagesToProcess.length; // Index dari gambar pertama yang baru ditambahkan
+        if (currentPreviewIndex.value < 0) currentPreviewIndex.value = 0; // Fallback
+        showPreviewModal.value = true;
+      } else {
+          // Jika tidak ada gambar yang ditambahkan (misal sudah maxFiles), kembali ke preview jika sudah ada gambar
+          if (allImages.value.length > 0) {
+              showPreviewModal.value = true;
+          }
+      }
+      event.target.value = ''; // Reset input file agar bisa memilih file yang sama lagi
   }).catch(error => {
       console.error("Error processing selected images:", error);
       alert("Failed to process selected images. Please try again.");
+      showSourceOptionsModal.value = false; // Pastikan modal tertutup jika ada error
+      if (allImages.value.length > 0) { // Jika ada gambar, tampilkan kembali preview
+          showPreviewModal.value = true;
+      }
   });
 };
 
-const openWebcam = () => {
-  showSourceOptionsModal.value = false;
-  showWebcamModal.value = true;
-};
-
-const closeWebcam = () => {
-  showWebcamModal.value = false;
-};
-
 const handlePhotoCaptured = (newImageFile) => {
-  const currentTotalImages = props.modelValue.length + previewImages.value.length;
+  const currentTotalImages = allImages.value.length; // Hitung dari allImages
   if (!allowMultiple.value || currentTotalImages < props.settings.max_files) {
     const img = new Image();
     img.onload = () => {
       const newImage = {
           file: newImageFile,
-          preview: URL.createObjectURL(newImageFile),
+          preview: URL.createObjectURL(newImageFile), // Blob URL untuk preview
           rotation: 0,
           width: img.naturalWidth,
           height: img.naturalHeight,
@@ -271,13 +370,19 @@ const handlePhotoCaptured = (newImageFile) => {
       };
 
       if (!allowMultiple.value) {
+          // Jika hanya satu file diizinkan, hapus semua gambar lama dan yang belum disimpan
           previewImages.value.forEach(img => img.preview && img.preview.startsWith('blob:') && URL.revokeObjectURL(img.preview));
           previewImages.value = [newImage];
+          // emit('update:modelValue', []); // Juga clear modelValue secara instan
       } else {
           previewImages.value.push(newImage);
       }
-      currentPreviewIndex.value = previewImages.value.length - 1;
-      showWebcamModal.value = false;
+      
+      showWebcamModal.value = false;       // Tutup modal webcam
+      showSourceOptionsModal.value = false; // Tutup modal pilihan sumber (jika dibuka dari sana)
+
+      // Tampilkan kembali preview modal dan pindah ke gambar yang baru ditambahkan
+      currentPreviewIndex.value = allImages.value.length - 1; // Pindah ke gambar terakhir
       showPreviewModal.value = true;
     };
     img.onerror = () => {
@@ -289,74 +394,39 @@ const handlePhotoCaptured = (newImageFile) => {
       } else {
           previewImages.value.push(newImage);
       }
-      currentPreviewIndex.value = previewImages.value.length - 1;
+      currentPreviewIndex.value = allImages.value.length - 1;
       showWebcamModal.value = false;
+      showSourceOptionsModal.value = false;
       showPreviewModal.value = true;
     };
     img.src = URL.createObjectURL(newImageFile);
   } else {
-    alert(`Maximum ${props.settings.max_files} files allowed.`);
+    alert(`Maksimum ${props.settings.max_files} file diizinkan.`);
     showWebcamModal.value = false;
+    showSourceOptionsModal.value = false;
+    if (allImages.value.length > 0) { // Jika ada gambar, tampilkan kembali preview
+        showPreviewModal.value = true;
+    }
   }
 };
 
-const openPreviewModal = async (initialIdx = 0) => {
-  // Kumpulkan gambar yang sudah ada (dari DB) dan gambar yang baru ditambahkan (dari previewImages)
-  // Pastikan gambar dari DB juga memiliki preview URL yang bisa ditampilkan oleh modal
-  const existingImagesProcessed = await Promise.all(props.modelValue.map(async (img) => {
-      // Jika gambar dari DB sudah memiliki lebar/tinggi dan image_path, gunakan langsung
-      if (img.width && img.height && img.image_path) {
-          return { ...img, rotation: img.rotation || 0, isNew: false };
-      } else {
-          // Jika tidak, coba load gambar untuk mendapatkan dimensi dan URL preview
-          const tempImg = new Image();
-          return new Promise(resolve => {
-            tempImg.onload = () => resolve({ 
-                ...img, 
-                rotation: img.rotation || 0, 
-                preview: img.image_path ? `/${img.image_path}` : null, // Menggunakan path relatif dari public
-                width: tempImg.naturalWidth, 
-                height: tempImg.naturalHeight, 
-                isNew: false 
-            });
-            tempImg.onerror = () => resolve({ 
-                ...img, 
-                rotation: img.rotation || 0, 
-                preview: img.image_path ? `/${img.image_path}` : null, 
-                width: 0, 
-                height: 0, 
-                isNew: false 
-            });
-            tempImg.src = img.image_path ? `/${img.image_path}` : ''; // Load dari path relatif
-          });
-      }
-  }));
-
-  // Gabungkan gambar yang sudah ada dengan gambar baru yang masih di preview (belum di-upload)
-  // Filter gambar baru untuk memastikan hanya yang isNew atau yang dirotasi
-  const currentTemporaryNewImages = previewImages.value.filter(img => img.isNew || img.rotation !== 0);
-  previewImages.value = [...existingImagesProcessed, ...currentTemporaryNewImages];
-
-  currentPreviewIndex.value = initialIdx; 
+const openPreviewModal = (initialIdx = 0) => {
+  // allImages computed property akan otomatis memperbarui dirinya
+  currentPreviewIndex.value = initialIdx;
   showPreviewModal.value = true;
-};
-
-const closePreviewModal = () => {
-  showPreviewModal.value = false;
-  // Hapus blob URLs yang mungkin dibuat untuk preview gambar baru
-  previewImages.value.forEach(img => {
-      if (img.preview && img.preview.startsWith('blob:')) {
-          URL.revokeObjectURL(img.preview);
-      }
-  });
-  // Clear previewImages array setelah modal ditutup untuk mencegah duplikasi atau masalah state
-  previewImages.value = [];
 };
 
 const applyRotationToImage = (imageObject) => {
     return new Promise((resolve) => {
-        // Jika tidak ada rotasi atau canvas tidak tersedia, langsung resolve file asli
+        // Jika tidak ada rotasi atau canvas tidak tersedia, langsung resolve file asli (atau gunakan preview jika itu sudah final)
         if (imageObject.rotation === 0 || !processingCanvas.value) {
+            // Jika ini gambar yang sudah ada di DB, kita tidak perlu memproses file,
+            // cukup gunakan data yang sudah ada.
+            if (!imageObject.isNew && !imageObject.file) { // Cek apakah itu gambar dari DB
+                resolve({ file: null, width: imageObject.width, height: imageObject.height, isOriginal: true });
+                return;
+            }
+            // Jika ini gambar baru tanpa rotasi, gunakan file aslinya
             resolve({ file: imageObject.file, width: imageObject.width, height: imageObject.height });
             return;
         }
@@ -389,21 +459,23 @@ const applyRotationToImage = (imageObject) => {
 
             // Convert canvas content to Blob (File-like object)
             canvas.toBlob((blob) => {
-                const newFile = new File([blob], imageObject.file.name, { type: imageObject.file.type });
+                const newFile = new File([blob], imageObject.file ? imageObject.file.name : `rotated_image_${Date.now()}.png`, { type: imageObject.file ? imageObject.file.type : 'image/png' });
                 resolve({ file: newFile, width: newCanvasWidth, height: newCanvasHeight });
-            }, imageObject.file.type);
+            }, imageObject.file ? imageObject.file.type : 'image/png');
         };
         img.onerror = () => {
             console.error("Failed to load image for rotation processing:", imageObject.preview);
+            // Fallback: Jika gagal load, resolve dengan file asli (tanpa rotasi)
             resolve({ file: imageObject.file, width: imageObject.width, height: imageObject.height });
         };
-        img.src = imageObject.preview; // Load from blob URL for rotation
+        // Load dari preview URL untuk rotasi (bisa blob URL atau URL dari server)
+        img.src = imageObject.preview;
     });
 };
 
-const triggerUploadAndSave = async (imagesToSave) => {
+const triggerUploadAndSave = async (imagesToSaveFromPreview) => {
     isUploading.value = true;
-    const uploadedImagesData = [];
+    const finalUploadedImages = []; // Array untuk menampung data gambar yang akan menjadi modelValue baru
 
     if (!props.pointId) {
         alert('Error: Point ID is missing. Cannot upload image. (Check parent component)');
@@ -413,71 +485,90 @@ const triggerUploadAndSave = async (imagesToSave) => {
     console.log('Uploading for Inspection ID:', props.inspectionId, 'Point ID:', props.pointId);
 
     try {
-        for (const img of imagesToSave) {
-            // Hanya proses dan upload gambar baru atau yang dirotasi
-            if (img.isNew || img.rotation !== 0) {
-                const { file: processedFile, width: newWidth, height: newHeight } = await applyRotationToImage(img);
-
-                const formData = new FormData();
-                formData.append('inspection_id', props.inspectionId); 
-                formData.append('point_id', props.pointId); 
-                formData.append('image', processedFile);
-
-                const response = await axios.post(route('inspections.upload-image'), formData, { // Pastikan route ini sesuai
-                    headers: {
-                        'Content-Type': 'multipart/form-data' 
-                    }
+        for (const img of imagesToSaveFromPreview) {
+            // 1. Gambar yang sudah ada dan tidak dirotasi: tambahkan langsung ke final list
+            if (!img.isNew && img.rotation === 0 && img.id && img.image_path) {
+                finalUploadedImages.push({
+                    id: img.id,
+                    image_path: img.image_path,
+                    width: img.width,
+                    height: img.height,
+                    rotation: 0,
+                    preview: img.preview // Pertahankan URL preview yang sudah ada (dari DB)
                 });
+                continue; // Lanjut ke gambar berikutnya
+            }
 
-                const serverImage = response.data.image; 
-                // Asumsi serverImage.image_path adalah path yang disimpan di DB (relatif ke public_path)
-                const imagePath = response.data.path; // Ini adalah path relatif dari public (misal 'inspection_uploads/images/nama.jpg')
-                const publicUrl = response.data.public_url; // URL lengkap dari backend (misal 'http://localhost:8000/inspection_uploads/images/nama.jpg')
+            // 2. Gambar baru (isNew=true) atau gambar lama yang dirotasi (rotation !== 0)
+            const { file: processedFile, width: newWidth, height: newHeight, isOriginal } = await applyRotationToImage(img);
 
-
-                uploadedImagesData.push({
-                    id: serverImage.id, // ID gambar dari DB
-                    image_path: imagePath, // Path relatif yang disimpan di DB
-                    width: newWidth, 
-                    height: newHeight,
-                    rotation: 0, // Reset rotasi setelah diupload dan diproses
-                    preview: publicUrl // Gunakan URL lengkap dari backend untuk preview
+            // Jika isOriginal true, berarti gambar dari DB tidak perlu diproses ulang/upload ulang
+            if (isOriginal && !img.isNew) {
+                finalUploadedImages.push({
+                    id: img.id,
+                    image_path: img.image_path,
+                    width: img.width,
+                    height: img.height,
+                    rotation: 0, // Rotasi sudah diaplikasikan di preview modal jika ada
+                    preview: img.preview
                 });
+                continue;
+            }
 
-                // Revoke Blob URL setelah berhasil diupload
-                if (img.preview && img.preview.startsWith('blob:')) {
-                    URL.revokeObjectURL(img.preview);
+            // Proses upload
+            const formData = new FormData();
+            formData.append('inspection_id', props.inspectionId);
+            formData.append('point_id', props.pointId);
+            formData.append('image', processedFile);
+            formData.append('width', newWidth); // Kirim dimensi baru
+            formData.append('height', newHeight);
+            formData.append('rotation', 0); // Di backend akan disimpan 0 karena rotasi sudah diterapkan ke file
+
+            // Jika ini adalah gambar yang sudah ada dan dirotasi, kirim ID-nya untuk update
+            if (img.id && !img.isNew) {
+                formData.append('image_id', img.id);
+            }
+
+            const response = await axios.post(route('inspections.upload-image'), formData, { // Pastikan route ini sesuai
+                headers: {
+                    'Content-Type': 'multipart/form-data'
                 }
+            });
 
-            } else {
-                // Jika bukan gambar baru atau tidak dirotasi, tambahkan langsung ke daftar uploadedImagesData
-                // Pastikan preview URL-nya sudah benar
-                uploadedImagesData.push({
-                    ...img,
-                    preview: img.preview || `/${img.image_path}` // Pastikan preview URL valid
-                });
+            const serverImage = response.data.image;
+            const imagePath = serverImage.image_path; // Path relatif dari public
+            const publicUrl = serverImage.public_url; // URL lengkap (jika server menyediakannya)
+
+            finalUploadedImages.push({
+                id: serverImage.id, // ID gambar dari DB
+                image_path: imagePath,
+                width: serverImage.width, // Gunakan dimensi dari server
+                height: serverImage.height,
+                rotation: serverImage.rotation, // Gunakan rotasi dari server (seharusnya 0 setelah diproses)
+                preview: publicUrl // URL lengkap untuk preview
+            });
+
+            // Revoke Blob URL setelah berhasil diupload
+            if (img.preview && img.preview.startsWith('blob:')) {
+                URL.revokeObjectURL(img.preview);
             }
         }
 
-        // Update modelValue di komponen induk
-        // Pastikan Anda membatasi jumlah file sesuai settings.max_files
-        emit('update:modelValue', uploadedImagesData.slice(0, props.settings.max_files));
-        emit('save', props.pointId); // Emit event save ke InspectionCategory/Edit.vue
-        emit('uploaded', { pointId: props.pointId, images: uploadedImagesData }); // Emit event uploaded dengan data gambar yang baru
+        // Emit update:modelValue dengan daftar gambar yang sudah di-upload (dari server)
+        emit('update:modelValue', finalUploadedImages); // INI PENTING: Perbarui modelValue
+        emit('save', props.pointId); // Emit event save ke komponen induk (misal InspectionCategory/Edit.vue)
+        emit('uploaded', { pointId: props.pointId, images: finalUploadedImages }); // Emit event uploaded dengan data gambar yang baru
 
         closePreviewModal(); // Tutup modal preview
-        // alert('All images processed and saved successfully!');
 
     } catch (error) {
         console.error("Error during image processing/upload:", error);
         if (error.response && error.response.data && error.response.data.message) {
             alert(`Failed to save images: ${error.response.data.message}`);
         } else if (error.response && error.response.data && error.response.data.errors) {
-            // Tangani error validasi dari Laravel
             const errors = Object.values(error.response.data.errors).flat().join('\n');
             alert(`Failed to save images:\n${errors}`);
-        }
-        else {
+        } else {
             alert(`Failed to save images: ${error.message}`);
         }
     } finally {
@@ -485,58 +576,112 @@ const triggerUploadAndSave = async (imagesToSave) => {
     }
 };
 
+// Ubah `handleRemovePreviewImage` untuk menangani penghapusan di previewImages
 const handleRemovePreviewImage = (indexToRemove) => {
-  // Hanya menghapus dari daftar preview, bukan dari server
-  // Penghapusan dari server terjadi di `removeImage` saat tombol 'x' diklik di thumbnail utama.
-  previewImages.value.splice(indexToRemove, 1);
+  // Dapatkan gambar yang akan dihapus dari `allImages` (bukan previewImages)
+  const imageToRemove = allImages.value[indexToRemove];
+
+  if (!imageToRemove) return;
+
+  // Jika gambar berasal dari DB (punya ID dan bukan `isNew`), panggil `removeImage`
+  // `removeImage` akan menghapus dari DB dan juga meng-update `modelValue`.
+  if (imageToRemove.id && !imageToRemove.isNew) {
+    removeImage(imageToRemove); // Panggil fungsi hapus DB
+  } else {
+    // Jika gambar baru (hanya ada di previewImages), hapus dari previewImages saja
+    const originalIndexInPreviewImages = previewImages.value.findIndex(
+        img => (img.preview === imageToRemove.preview && img.isNew) || (img.id && img.id === imageToRemove.id)
+    );
+    if (originalIndexInPreviewImages !== -1) {
+        const removed = previewImages.value.splice(originalIndexInPreviewImages, 1)[0];
+        if (removed.preview && removed.preview.startsWith('blob:')) {
+            URL.revokeObjectURL(removed.preview);
+        }
+    }
+  }
+  // Sesuaikan indeks setelah penghapusan
+  if (currentPreviewIndex.value >= allImages.value.length) {
+    currentPreviewIndex.value = Math.max(0, allImages.value.length - 1);
+  }
+  // Jika tidak ada gambar tersisa setelah penghapusan, tutup modal preview
+  if (allImages.value.length === 0) {
+    closePreviewModal();
+  }
 };
 
 
-const removeImage = async (index) => {
-    const updated = [...props.modelValue];
-    const removed = updated.splice(index, 1)[0];
-
-    // Jika gambar sudah memiliki ID atau image_path (berarti sudah ada di server/DB), coba hapus dari server
-    if (removed.id || removed.image_path) {
+// Mengubah `removeImage` untuk menerima objek gambar
+const removeImage = async (imageObject) => {
+    // Jika gambar memiliki ID atau image_path, berarti sudah ada di server/DB, coba hapus dari server
+    if (imageObject.id || imageObject.image_path) {
         try {
-            // Anda perlu route delete yang menerima image_path atau image_id
-            // Contoh route: `Route::delete('/images/delete', [ImageController::class, 'destroy'])->name('inspections.delete-image');`
             await axios.delete(route('inspections.delete-image'), {
-                data: { 
-                    image_path: removed.image_path, // Kirim path untuk dihapus
-                    image_id: removed.id // Atau kirim ID jika Anda menggunakannya di backend
+                data: {
+                    image_id: imageObject.id, // Gunakan ID untuk penghapusan yang lebih akurat
+                    image_path: imageObject.image_path // Fallback atau tambahan
                 }
             });
-            alert('Image deleted from server successfully!');
+            // console.log('Image deleted from server successfully!');
         } catch (error) {
             console.error("Error deleting image from server:", error);
             if (error.response && error.response.data && error.response.data.message) {
                 alert(`Failed to delete image from server: ${error.response.data.message}`);
-            } else if (error.response && error.response.data && error.response.data.errors) {
-                const errors = Object.values(error.response.data.errors).flat().join('\n');
-                alert(`Failed to delete image:\n${errors}`);
-            }
-            else {
+            } else {
                 alert(`Failed to delete image from server: ${error.message}`);
             }
-            // Penting: Jika gagal hapus dari server, mungkin Anda tidak ingin menghapus dari frontend
-            // throw error; // Re-throw error jika ingin menghentikan penghapusan di frontend
+            // Jika gagal hapus dari server, mungkin Anda tidak ingin menghapus dari frontend
+            return; // Hentikan fungsi jika gagal hapus dari server
         }
     }
 
     // Revoke Blob URL jika ada
-    if (removed.preview && removed.preview.startsWith('blob:')) {
-        URL.revokeObjectURL(removed.preview);
+    if (imageObject.preview && imageObject.preview.startsWith('blob:')) {
+        URL.revokeObjectURL(imageObject.preview);
     }
-    
-    // Update modelValue untuk menghapus gambar dari tampilan dan state komponen induk
-    emit('update:modelValue', updated);
-    // Emit event removeImage ke komponen induk (jika InspectionCategory perlu tahu)
-    emit('removeImage', { index, pointId: props.pointId, image: removed });
 
-    // Setelah menghapus gambar, jika tidak ada gambar tersisa, pastikan modal preview ditutup
-    if (updated.length === 0) {
-      closePreviewModal();
+    // Hapus gambar dari `modelValue` (gambar yang sudah ada di DB)
+    const updatedModelValue = props.modelValue.filter(img => img.id !== imageObject.id);
+    emit('update:modelValue', updatedModelValue);
+
+    // Hapus juga dari `previewImages` (jika ada gambar baru atau yang dirotasi)
+    previewImages.value = previewImages.value.filter(img => {
+      // Jika itu gambar baru yang belum di-upload, hapus berdasarkan preview/file
+      if (img.isNew && imageObject.isNew) {
+        return img.preview !== imageObject.preview;
+      }
+      // Jika gambar lama yang mungkin dirotasi, hapus berdasarkan ID
+      return img.id !== imageObject.id;
+    });
+
+    emit('removeImage', { image: imageObject }); // Emit event removeImage ke komponen induk
+
+    // Logika penyesuaian indeks dan penutupan modal preview sekarang ditangani di `handleRemovePreviewImage`
+    // Jika fungsi ini dipanggil langsung dari thumbnail, kita perlu memastikan preview modal tetap sinkron
+    if (showPreviewModal.value && allImages.value.length === 0) {
+        closePreviewModal();
+    } else if (showPreviewModal.value) {
+      // Jika preview modal masih terbuka dan ada gambar, sesuaikan indeks
+      if (currentPreviewIndex.value >= allImages.value.length) {
+        currentPreviewIndex.value = Math.max(0, allImages.value.length - 1);
+      }
     }
 };
+
 </script>
+
+<style scoped>
+/* Anda bisa menambahkan gaya CSS di sini jika diperlukan. */
+/* Pastikan z-index untuk modal sesuai. ImageSourceOptionsModal dan WebcamModal harus > ImagePreviewModal */
+/* Contoh (jika Anda ingin mengatur di CSS): */
+
+.image-source-options-modal {
+  z-index: 60;
+}
+.webcam-modal {
+  z-index: 70;
+}
+.image-preview-modal {
+  z-index: 50;
+}
+
+</style>
