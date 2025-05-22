@@ -1,306 +1,499 @@
 <template>
-  <label
-    @click="showOptionsModal = true"
-    class="block w-full border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200 p-4"
-    :class="{
-      'border-gray-300 hover:border-indigo-400 bg-gray-50 text-gray-700': modelValue.length === 0,
-      'border-indigo-400 bg-indigo-50 text-indigo-800': modelValue.length > 0,
-      'min-h-32 flex flex-col items-center justify-center': modelValue.length === 0, // Minimal tinggi untuk area kosong
-    }"
-  >
-    <div v-if="modelValue.length === 0" class="text-center">
-      <svg class="w-10 h-10 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-      <p class="text-sm font-medium">Upload Gambar</p>
-      <p class="text-xs text-gray-500 mt-1">Klik untuk pilih Kamera atau Galeri</p>
+  <div>
+    <input
+      ref="galleryInput"
+      type="file"
+      accept="image/*"
+      class="hidden"
+      @change="handleImageSelect"
+      :multiple="allowMultiple"
+    />
+
+    <label
+      @click="openFileOptions"
+      class="block w-full border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200"
+      :class="{
+        'border-gray-300 hover:border-indigo-400 bg-gray-50': modelValue.length === 0,
+        'border-indigo-300 bg-indigo-50': modelValue.length > 0,
+        'h-28': modelValue.length === 0,
+        'h-auto': modelValue.length > 0
+      }"
+    >
+      <template v-if="modelValue.length === 0">
+        <div class="h-full flex flex-col items-center justify-center p-4 text-center">
+          <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <p class="text-sm text-gray-600 font-medium">Upload Image</p>
+          <p class="text-xs text-gray-500">Click to open options</p>
+        </div>
+      </template>
+
+      <template v-else>
+        <div class="p-2">
+          <div class="grid grid-cols-3 gap-2">
+            <div
+              v-for="(image, idx) in modelValue"
+              :key="idx"
+              class="relative aspect-square"
+            >
+              <img
+                :src="image.preview || '/storage/' + image.image_path"
+                class="w-full h-full object-cover rounded-md border border-gray-200"
+              >
+              <button
+                @click.stop="removeImage(idx)"
+                type="button"
+                class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs shadow-sm hover:bg-red-600 transition-colors"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+
+          <div v-if="allowMultiple" class="mt-2 text-center">
+            <span class="inline-block px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 hover:bg-indigo-200 transition-colors">
+              + Add More Images
+            </span>
+          </div>
+        </div>
+      </template>
+    </label>
+
+    <div v-if="showFileOptions" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 p-4">
+      <div class="bg-white w-full max-w-sm rounded-xl shadow-xl overflow-hidden">
+        <div class="p-4">
+          <h3 class="text-lg font-medium text-center text-gray-800 mb-4">Select Image Source</h3>
+          <div class="flex justify-center gap-6">
+            <button @click="openWebcam" class="flex flex-col items-center justify-center w-24 h-24 rounded-xl bg-blue-50 hover:bg-blue-100 transition-colors">
+              <div class="bg-blue-100 p-3 rounded-full mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+              </div>
+              <span class="text-sm font-medium text-gray-700">Camera (Web)</span>
+            </button>
+            
+            <button @click="triggerGallery" class="flex flex-col items-center justify-center w-24 h-24 rounded-xl bg-purple-50 hover:bg-purple-100 transition-colors">
+              <div class="bg-purple-100 p-3 rounded-full mb-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <span class="text-sm font-medium text-gray-700">Gallery (HP)</span>
+            </button>
+          </div>
+        </div>
+        <button @click="showFileOptions = false" class="w-full py-3 text-center text-gray-500 font-medium border-t border-gray-100 hover:bg-gray-50 transition-colors">Cancel</button>
+      </div>
     </div>
 
-    <div v-else class="space-y-3">
-      <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-        <div v-for="(image, idx) in modelValue" :key="image.image_path || idx" class="relative aspect-square rounded-lg overflow-hidden shadow-sm">
-          <img :src="image.preview || '/storage/' + image.image_path" class="w-full h-full object-cover" />
-          <button @click.stop="$emit('removeImage', idx)" type="button"
-            class="absolute -top-1 -right-1 bg-red-600 text-white rounded-full h-6 w-6 flex items-center justify-center text-sm font-bold z-10 opacity-90 hover:opacity-100 transition-opacity duration-200">
-            &times;
+    <div v-if="showWebcamModal" class="fixed inset-0 bg-black bg-opacity-90 flex flex-col items-center justify-center z-40 p-0">
+        <div class="webcam-content-box">
+            <div class="webcam-header">
+                <h3 class="text-lg font-medium text-white">Take Photo</h3>
+                <button @click="closeWebcam" class="p-2 rounded-full text-white hover:bg-gray-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="webcam-video-container">
+                <video ref="webcamVideo" autoplay playsinline class="webcam-video"></video>
+                <canvas ref="webcamCanvas" class="hidden"></canvas>
+            </div>
+            <div class="webcam-footer">
+                <button @click="capturePhoto" class="capture-button">
+                    </button>
+            </div>
+        </div>
+    </div>
+
+    <div v-if="previewImages.length" class="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col items-center justify-center">
+      <div class="w-full h-full flex flex-col">
+        <div class="flex justify-between items-center p-4 bg-black bg-opacity-50 text-white">
+          <button @click="cancelPreview" class="p-2 rounded-full hover:bg-white hover:bg-opacity-10 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div class="text-lg font-medium">Preview ({{ currentPreviewIndex + 1 }}/{{ previewImages.length }})</div>
+          <button @click="rotateImage" class="p-2 rounded-full hover:bg-white hover:bg-opacity-10 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
+        
+        <div class="flex-1 flex items-center justify-center overflow-hidden relative">
+          <div 
+            class="w-full h-full flex items-center justify-center"
+            @touchstart="handleTouchStart"
+            @touchmove="handleTouchMove"
+            @touchend="handleTouchEnd"
+          >
+            <img 
+              :src="currentPreviewImage.preview" 
+              class="max-w-full max-h-full object-contain"
+              :style="{ transform: `rotate(${rotationAngle}deg)` }"
+            />
+          </div>
+          
+          <button 
+            v-if="previewImages.length > 1"
+            @click="prevImage"
+            class="absolute left-4 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button 
+            v-if="previewImages.length > 1"
+            @click="nextImage"
+            class="absolute right-4 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+        
+        <div class="flex justify-between p-4 bg-black bg-opacity-50">
+          <button @click="removePreviewImage(currentPreviewIndex)" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+            Delete
+          </button>
+          <button @click="savePreviewImages" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+            Save {{ previewImages.length }} Image(s)
           </button>
         </div>
       </div>
-
-      <div v-if="modelValue.length < settings.max_files" class="text-center pt-2">
-        <span @click.stop="showOptionsModal = true"
-          class="inline-block px-4 py-2 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition-colors duration-200 cursor-pointer shadow-sm">
-          + Tambah Gambar
-        </span>
-      </div>
     </div>
-  </label>
 
-  <div v-if="showOptionsModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-xl p-6 shadow-2xl w-full max-w-sm text-center transform transition-all scale-95 opacity-0 animate-scale-in">
-      <h3 class="text-lg font-bold text-gray-800 mb-4">Pilih Sumber Gambar</h3>
-      <div class="flex justify-around gap-6">
-        <button @click="openCamera" class="flex flex-col items-center p-3 text-indigo-600 hover:text-indigo-800 transition-colors duration-200">
-          <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
-          <span class="text-sm font-medium">Kamera</span>
-        </button>
-        <button @click="openGallery" class="flex flex-col items-center p-3 text-green-600 hover:text-green-800 transition-colors duration-200">
-          <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round"
-              d="M4 4v16h16V4H4zm4 4h8v8H8V8z" />
-          </svg>
-          <span class="text-sm font-medium">Galeri</span>
-        </button>
-      </div>
-      <button @click="showOptionsModal = false" class="mt-6 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors duration-200">Batal</button>
-    </div>
+    <p v-if="error" class="mt-1 text-xs text-red-600">{{ error }}</p>
   </div>
-
-  <div v-if="showReviewModal" class="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4">
-    <div class="relative w-full max-w-2xl mx-auto bg-gray-900 rounded-lg shadow-2xl overflow-hidden animate-fade-in-up">
-      <div class="relative h-96 sm:h-[450px] flex items-center justify-center p-4">
-        <img
-          v-if="tempImages.length > 0"
-          :src="tempImages[currentReviewIndex].preview"
-          :style="{ transform: `rotate(${tempImages[currentReviewIndex].rotation}deg)` }"
-          class="max-h-full max-w-full object-contain transition-transform duration-300 ease-in-out"
-        />
-        <p v-else class="text-white text-lg font-semibold">Tidak ada gambar untuk direview.</p>
-
-        <button v-if="tempImages.length > 1" @click="prevImage"
-          class="absolute left-4 top-1/2 -translate-y-1/2 bg-gray-800 bg-opacity-60 text-white p-3 rounded-full hover:bg-opacity-80 focus:outline-none transition-colors duration-200">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-          </svg>
-        </button>
-        <button v-if="tempImages.length > 1" @click="nextImage"
-          class="absolute right-4 top-1/2 -translate-y-1/2 bg-gray-800 bg-opacity-60 text-white p-3 rounded-full hover:bg-opacity-80 focus:outline-none transition-colors duration-200">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-          </svg>
-        </button>
-
-        <div v-if="tempImages.length > 1" class="absolute bottom-4 left-0 right-0 flex justify-center space-x-2">
-          <span v-for="(_ , index) in tempImages" :key="'indicator-' + index"
-            class="block w-2.5 h-2.5 rounded-full transition-colors duration-300"
-            :class="{'bg-white shadow': index === currentReviewIndex, 'bg-gray-500': index !== currentReviewIndex}"
-          ></span>
-        </div>
-      </div>
-
-      <div class="bg-gray-800 p-4 flex justify-around items-center border-t border-gray-700">
-        <button
-          v-if="tempImages.length > 0"
-          @click="removeReviewImage"
-          class="flex flex-col items-center text-red-400 hover:text-red-300 transition-colors duration-200 text-sm font-medium py-2 px-3 rounded-md hover:bg-gray-700"
-        >
-          <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-          Hapus
-        </button>
-
-        <button v-if="modelValue.length + tempImages.length < settings.max_files" @click="showOptionsModal = true"
-          class="flex flex-col items-center text-blue-400 hover:text-blue-300 transition-colors duration-200 text-sm font-medium py-2 px-3 rounded-md hover:bg-gray-700">
-          <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-          Tambah
-        </button>
-
-        <button
-          v-if="tempImages.length > 0"
-          @click="rotateCurrentImage"
-          class="flex flex-col items-center text-gray-300 hover:text-white transition-colors duration-200 text-sm font-medium py-2 px-3 rounded-md hover:bg-gray-700"
-        >
-          <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004 12c0 2.21.896 4.202 2.396 5.604M18 20v-5h-.582m-15.356-2A8.001 8.001 0 0020 12c0-2.21-.896-4.202-2.396-5.604"></path></svg>
-          Rotasi
-        </button>
-      </div>
-
-      <div class="bg-gray-900 p-4 flex justify-end gap-3 border-t border-gray-700">
-        <button @click="cancelReview" class="bg-gray-700 text-gray-300 px-5 py-2 rounded-md text-sm font-medium hover:bg-gray-600 transition-colors duration-200 shadow-md">Batal</button>
-        <button @click="saveImages" class="bg-indigo-600 text-white px-5 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 transition-colors duration-200 shadow-md">Simpan</button>
-      </div>
-    </div>
-  </div>
-
-  <input ref="fileInput" type="file" :accept="allowedFileTypes" :capture="captureMode" @change="handleFileChange" hidden />
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
 
 const props = defineProps({
-  modelValue: Array, // Array of { image_path: string, preview: string|null }
+  modelValue: { type: Array, default: () => [] },
   error: String,
   pointId: [String, Number],
   settings: {
     type: Object,
     default: () => ({
       max_files: 1,
-      max_size: 2048, // in KB
-      allowed_types: ['jpg', 'jpeg', 'png']
+      allowed_types: ['jpg', 'png']
     })
   }
 });
 
-const emit = defineEmits(['update:modelValue', 'handleImageUpload', 'removeImage']);
+const emit = defineEmits(['update:modelValue', 'save', 'removeImage']);
 
-const showOptionsModal = ref(false);
-const showReviewModal = ref(false);
-const tempImages = ref([]); // Temporary array for images being reviewed
-const currentReviewIndex = ref(0); // Index of the currently displayed image in review modal
-const fileInput = ref(null); // Ref for the hidden file input
-const captureMode = ref(''); // 'environment' for camera, '' for gallery (default)
+const galleryInput = ref(null); // Hanya perlu galleryInput
+const webcamVideo = ref(null); // Ref untuk elemen video webcam
+const webcamCanvas = ref(null); // Ref untuk elemen canvas webcam
 
-const allowedFileTypes = computed(() => {
-  return props.settings.allowed_types.map(type => `image/${type}`).join(',');
-});
+const previewImages = ref([]);
+const showFileOptions = ref(false);
+const showWebcamModal = ref(false); // State untuk modal kamera web
+const currentPreviewIndex = ref(0);
+const rotationAngle = ref(0);
+const touchStartX = ref(0);
+const touchEndX = ref(0);
 
-const openCamera = () => {
-  showOptionsModal.value = false;
-  captureMode.value = 'environment'; // Ini akan memicu kamera belakang
-  fileInput.value.click();
+let mediaStream = null; // Untuk menyimpan stream dari kamera
+
+const allowMultiple = computed(() => Number(props.settings.max_files) > 1);
+const currentPreviewImage = computed(() => previewImages.value[currentPreviewIndex.value]);
+
+const openFileOptions = () => {
+  showFileOptions.value = true;
 };
 
-const openGallery = () => {
-  showOptionsModal.value = false;
-  captureMode.value = ''; // Mengosongkan atribut capture agar membuka file picker/galeri
-  fileInput.value.click();
+const triggerGallery = () => {
+  showFileOptions.value = false;
+  galleryInput.value.click();
 };
 
-const handleFileChange = (event) => {
-  const files = Array.from(event.target.files);
-  if (files.length === 0) return;
-
-  const newFiles = files.filter(file => {
-    const fileType = file.type.split('/').pop().toLowerCase();
-    const isAllowedType = props.settings.allowed_types.includes(fileType);
-    const isWithinSize = file.size / 1024 <= props.settings.max_size;
-
-    if (!isAllowedType) {
-      alert(`Tipe file tidak diizinkan: ${file.name}. Hanya ${props.settings.allowed_types.join(', ')} yang diizinkan.`);
-      return false;
-    }
-    if (!isWithinSize) {
-      alert(`Ukuran file terlalu besar: ${file.name}. Maksimal ${props.settings.max_size}KB.`);
-      return false;
-    }
-    return true;
-  });
-
-  if (newFiles.length === 0) {
-    event.target.value = '';
-    return;
+const openWebcam = async () => {
+  showFileOptions.value = false;
+  showWebcamModal.value = true;
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: 'environment',
+        width: { ideal: 1280 }, // Coba lebar ideal 1280px
+        height: { ideal: 720 }  // Coba tinggi ideal 720px
+        // Anda juga bisa menggunakan min, max, exact untuk kontrol lebih lanjut
+      }
+    });
+    webcamVideo.value.srcObject = mediaStream;
+  } catch (err) {
+    console.error("Error accessing camera: ", err);
+    alert('Failed to access camera. Please ensure camera permissions are granted.');
+    showWebcamModal.value = false;
   }
+};
 
-  const totalExistingImages = props.modelValue.length;
-  const totalTempImages = tempImages.value.length;
-  const combinedCurrentImages = totalExistingImages + totalTempImages;
+const closeWebcam = () => {
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(track => track.stop());
+  }
+  showWebcamModal.value = false;
+};
+
+const capturePhoto = () => {
+  if (!webcamVideo.value || !webcamCanvas.value) return;
+
+  const video = webcamVideo.value;
+  const canvas = webcamCanvas.value;
+  const context = canvas.getContext('2d');
+
+  // Set canvas dimensions to match video
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  // Draw the current video frame onto the canvas
+  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  // Get image data from canvas
+  canvas.toBlob((blob) => {
+    if (blob) {
+      const file = new File([blob], `captured_image_${Date.now()}.png`, { type: 'image/png' });
+      // Close webcam after capturing
+      closeWebcam();
+      
+      // Update previewImages with the captured photo
+      previewImages.value = [{
+        file: file,
+        preview: URL.createObjectURL(file)
+      }];
+      currentPreviewIndex.value = 0;
+      rotationAngle.value = 0;
+    } else {
+      console.error("Failed to convert canvas to blob.");
+    }
+  }, 'image/png');
+};
+
+
+const handleImageSelect = (event) => {
+  const files = Array.from(event.target.files).slice(0, props.settings.max_files);
+  if (!files.length) return;
+
+  // Limit file count based on settings
+  const currentCount = props.modelValue.length;
+  const allowedCount = props.settings.max_files - currentCount;
+  const selectedFiles = files.slice(0, allowedCount);
+
+  previewImages.value = selectedFiles.map(file => ({
+    file,
+    preview: URL.createObjectURL(file)
+  }));
+
+  currentPreviewIndex.value = 0;
+  rotationAngle.value = 0;
+  event.target.value = ''; // reset input
+};
+
+const savePreviewImages = () => {
+  const newImages = [...props.modelValue, ...previewImages.value];
+  emit('update:modelValue', newImages.slice(0, props.settings.max_files));
+  emit('save', props.pointId);
+  previewImages.value = [];
+};
+
+const cancelPreview = () => {
+  previewImages.value.forEach(img => URL.revokeObjectURL(img.preview));
+  previewImages.value = [];
+};
+
+const removeImage = (index) => {
+  const updated = [...props.modelValue];
+  const removed = updated.splice(index, 1)[0];
+  if (removed.preview) URL.revokeObjectURL(removed.preview);
+  emit('update:modelValue', updated);
+  emit('removeImage', { index, pointId: props.pointId });
+};
+
+const removePreviewImage = (index) => {
+  const removed = previewImages.value.splice(index, 1)[0];
+  if (removed.preview) URL.revokeObjectURL(removed.preview);
   
-  const filesToAdd = newFiles.slice(0, props.settings.max_files - combinedCurrentImages);
-
-  if (filesToAdd.length === 0 && newFiles.length > 0) {
-    alert(`Anda telah mencapai batas maksimum ${props.settings.max_files} gambar.`);
+  if (previewImages.value.length === 0) {
+    cancelPreview();
+  } else if (currentPreviewIndex.value >= previewImages.value.length) {
+    currentPreviewIndex.value = previewImages.value.length - 1;
   }
-
-  tempImages.value = [
-    ...tempImages.value,
-    ...filesToAdd.map(file => ({
-      file,
-      preview: URL.createObjectURL(file),
-      rotation: 0
-    }))
-  ];
-
-  if (tempImages.value.length > 0) {
-    currentReviewIndex.value = tempImages.value.length - 1;
-    showReviewModal.value = true;
-  }
-  event.target.value = '';
 };
 
-const prevImage = () => {
-  if (tempImages.value.length === 0) return;
-  currentReviewIndex.value = (currentReviewIndex.value - 1 + tempImages.value.length) % tempImages.value.length;
+const rotateImage = () => {
+  rotationAngle.value = (rotationAngle.value + 90) % 360;
 };
 
 const nextImage = () => {
-  if (tempImages.value.length === 0) return;
-  currentReviewIndex.value = (currentReviewIndex.value + 1) % tempImages.value.length;
-};
-
-const rotateCurrentImage = () => {
-  if (tempImages.value.length === 0) return;
-  const currentImage = tempImages.value[currentReviewIndex.value];
-  currentImage.rotation = (currentImage.rotation + 90) % 360;
-};
-
-const removeReviewImage = () => {
-  if (tempImages.value.length === 0) return;
-  const removedImage = tempImages.value.splice(currentReviewIndex.value, 1)[0];
-  URL.revokeObjectURL(removedImage.preview);
-
-  if (tempImages.value.length === 0) {
-    showReviewModal.value = false;
-    currentReviewIndex.value = 0;
-  } else if (currentReviewIndex.value >= tempImages.value.length) {
-    currentReviewIndex.value = tempImages.value.length - 1;
+  if (currentPreviewIndex.value < previewImages.value.length - 1) {
+    currentPreviewIndex.value++;
+    rotationAngle.value = 0;
   }
 };
 
-const cancelReview = () => {
-  tempImages.value.forEach(img => URL.revokeObjectURL(img.preview));
-  tempImages.value = [];
-  currentReviewIndex.value = 0;
-  showReviewModal.value = false;
+const prevImage = () => {
+  if (currentPreviewIndex.value > 0) {
+    currentPreviewIndex.value--;
+    rotationAngle.value = 0;
+  }
 };
 
-const saveImages = () => {
-  tempImages.value.forEach(img => {
-    emit('handleImageUpload', { 
-        file: img.file, 
-        pointId: props.pointId,
-        rotation: img.rotation
-    });
-  });
-
-  tempImages.value.forEach(img => URL.revokeObjectURL(img.preview));
-  tempImages.value = [];
-  currentReviewIndex.value = 0;
-  showReviewModal.value = false;
+const handleTouchStart = (e) => {
+  touchStartX.value = e.touches[0].clientX;
 };
+
+const handleTouchMove = (e) => {
+  touchEndX.value = e.touches[0].clientX;
+};
+
+const handleTouchEnd = () => {
+  if (touchStartX.value - touchEndX.value > 50) {
+    // Swipe left
+    nextImage();
+  } else if (touchEndX.value - touchStartX.value > 50) {
+    // Swipe right
+    prevImage();
+  }
+};
+
 </script>
 
 <style scoped>
-/* Animasi untuk Modal Pilihan Kamera/Galeri */
-@keyframes scaleIn {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-.animate-scale-in {
-  animation: scaleIn 0.2s ease-out forwards;
+/* Smooth transitions for modal */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.3s ease;
 }
 
-/* Animasi untuk Modal Review Gambar */
-@keyframes fadeInUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
 }
-.animate-fade-in-up {
-  animation: fadeInUp 0.3s ease-out forwards;
+
+/* Image transition for preview */
+.image-slide-enter-active,
+.image-slide-leave-active {
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
+
+.image-slide-enter-from {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.image-slide-leave-to {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+/* Rotation transition */
+.rotate-transition {
+  transition: transform 0.3s ease;
+}
+
+/* Prevent scrolling when modal is open */
+body.modal-open {
+  overflow: hidden;
+}
+
+/* --- Webcam Modal Styling --- */
+
+/* Parent container for webcam modal to fill screen and center content */
+.webcam-modal-container {
+  /* This is already handled by fixed inset-0 bg-black bg-opacity-90 flex flex-col items-center justify-center z-40 p-0 */
+  /* Remove padding if you want true full screen. p-4 added for small screens */
+}
+
+/* The inner content box of the webcam modal */
+.webcam-content-box {
+  background-color: black; /* Dark background like camera apps */
+  width: 100%;
+  height: 100%; /* Fill available height */
+  max-width: none; /* Override max-w-lg from Tailwind for true full screen */
+  border-radius: 0; /* No rounded corners for full screen */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Ensure no scrollbars */
+}
+
+/* Header for webcam modal */
+.webcam-header {
+  background-color: rgba(0, 0, 0, 0.7); /* Slightly transparent dark header */
+  color: white;
+  padding: 1rem; /* Adjust as needed */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative; /* For z-index over video */
+  z-index: 10;
+}
+
+/* Video container */
+.webcam-video-container {
+  flex-grow: 1; /* Make video container take all available space */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative; /* For placing video inside */
+  background-color: black; /* Ensure black background if video doesn't fill */
+  padding: 0; /* Remove padding for video */
+}
+
+/* Actual video element */
+.webcam-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Important: This will make the video fill the container, cropping if aspect ratios differ */
+  /* object-fit: contain; Uncomment this if you prefer to see the full video frame, even with black bars */
+  transform: scaleX(-1); /* Mirror effect for selfie camera, remove if only environment camera */
+}
+
+/* Footer for webcam controls */
+.webcam-footer {
+  background-color: rgba(0, 0, 0, 0.7); /* Slightly transparent dark footer */
+  padding: 1rem; /* Adjust as needed */
+  display: flex;
+  justify-content: center; /* Center the capture button */
+  align-items: center;
+  position: relative; /* For z-index over video */
+  z-index: 10;
+}
+
+/* Capture button styling */
+.capture-button {
+  background-color: white; /* White circle for the capture button */
+  border: 4px solid rgba(255, 255, 255, 0.5); /* Outer ring */
+  width: 70px; /* Large circle */
+  height: 70px;
+  border-radius: 50%; /* Make it a circle */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.capture-button:hover {
+  background-color: #f0f0f0;
+  border-color: rgba(255, 255, 255, 0.7);
+  transform: scale(1.05);
+}
+
+/* Optionally add a subtle inner circle or icon for the button if desired */
+.capture-button svg {
+  color: black; /* Or any other color for the icon */
+}
+
 </style>
