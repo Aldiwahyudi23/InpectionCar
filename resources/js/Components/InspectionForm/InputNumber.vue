@@ -32,7 +32,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'save']);
 
 const updateValue = (e) => {
-  const value = e.target.valueAsNumber || e.target.value;
+  const value = e.target.value; // Kirim sebagai string
   emit('update:modelValue', value);
   emit('save', props.pointId);
 };

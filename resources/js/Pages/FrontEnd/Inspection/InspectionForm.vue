@@ -1,9 +1,9 @@
 <template>
   <div class="container mx-auto px-4 py-8">
     <div class="bg-white rounded-xl shadow-md overflow-hidden p-6 mb-8">
-      <h1 class="text-3xl font-bold text-gray-800 mb-2">Vehicle Inspection</h1>
+      <h1 class="text-3xl font-bold text-gray-800 mb-2">Pemeriksaan Kendaraan</h1>
       <h2 class="text-xl font-semibold text-indigo-600">
-        {{ inspection.car?.brand_id || 'Unknown Vehicle' }}
+        {{ inspection.car?.brand_id || 'Kendaraan Tidak Dikenal' }}
       </h2>
     </div>
 
@@ -18,6 +18,7 @@
             'bg-indigo-600 text-white': activeCategory === category.id,
             'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== category.id
           }"
+          :data-category-id="category.id"
         >
           {{ category.name }}
           <span 
@@ -27,13 +28,25 @@
             ✓
           </span>
         </button>
+
+        <button
+          @click="changeCategory('summary')"
+          class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200"
+          :class="{
+            'bg-indigo-600 text-white': activeCategory === 'summary',
+            'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== 'summary'
+          }"
+          data-category-id="summary"
+        >
+          Kesimpulan
+        </button>
       </div>
     </div>
 
     <div class="relative overflow-hidden">
       <transition name="category-slide" mode="out-in">
         <category-section
-          v-if="activeCategoryData"
+          v-if="activeCategoryData && activeCategory !== 'summary'"
           :key="activeCategoryData.id"
           :category="activeCategoryData"
           :form="form"
@@ -42,44 +55,61 @@
           @removeImage="removeImage"
           @handleImageUpload="handleImageUpload"
         />
+
+        <div 
+          v-else-if="activeCategory === 'summary'" 
+          key="summary-section"
+          class="bg-white rounded-xl shadow-md p-6"
+        >
+          <h3 class="text-2xl font-semibold text-gray-800 mb-4">Kesimpulan Inspeksi</h3>
+          
+          <div class="mb-4">
+            <label for="overall_note" class="block text-sm font-medium text-gray-700 mb-1">Catatan Keseluruhan Inspeksi:</label>
+            <textarea
+              id="overall_note"
+              v-model="form.overall_note"
+              @input="debounceSaveOverallNote"
+              rows="5"
+              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              placeholder="Tambahkan catatan penting atau ringkasan inspeksi di sini..."
+            ></textarea>
+          </div>
+
+          <div class="mt-6">
+            <h4 class="text-lg font-semibold text-gray-700 mb-3">Status Kategori:</h4>
+            <ul class="list-disc pl-5">
+              <li 
+                v-for="category in categories" 
+                :key="category.id" 
+                :class="{'text-green-600': isCategoryComplete(category), 'text-red-600': !isCategoryComplete(category)}"
+              >
+                {{ category.name }} 
+                <span v-if="isCategoryComplete(category)">(Selesai ✓)</span>
+                <span v-else>(Belum Selesai ✗)</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="flex justify-end gap-4 mt-8">
+            <button
+              type="button"
+              @click="submitAll"
+              :disabled="form.processing"
+              class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg v-if="form.processing" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>{{ form.processing ? 'Mengirim...' : 'Final Kirim Inspeksi' }}</span>
+            </button>
+          </div>
+        </div>
       </transition>
       
-      <button
-        v-if="activeIndex > 0"
-        @click="navigate(-1)"
-        class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full shadow-md p-2 text-indigo-600 hover:bg-indigo-50"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
-      
-      <button
-        v-if="activeIndex < categories.length - 1"
-        @click="navigate(1)"
-        class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white rounded-full shadow-md p-2 text-indigo-600 hover:bg-indigo-50"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-    </div>
+      </div>
     
-    <div class="flex justify-end gap-4 mt-8">
-      <button
-        type="button"
-        @click="submitAll"
-        :disabled="form.processing"
-        class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <svg v-if="form.processing" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <span>{{ form.processing ? 'Submitting...' : 'Final Submit Inspection' }}</span>
-      </button>
     </div>
-  </div>
 </template>
 
 <script setup>
@@ -95,16 +125,20 @@ const props = defineProps({
   existingImages: Object,
 });
 
-const activeCategory = ref(props.categories[0]?.id || null);
-const activeIndex = ref(0);
-const categoriesWrapper = ref(null); // Keep this for swipe gestures if still desired
+// Ubah inisialisasi activeCategory untuk bisa menerima 'summary'
+const activeCategory = ref(props.categories[0]?.id || 'summary'); // Default ke kategori pertama atau 'summary'
+const activeIndex = ref(0); // Ini masih digunakan untuk swipe, tapi tidak lagi untuk translateX
+const categoriesWrapper = ref(null); 
 
-// Computed property to get the data for the active category
+// Properti terhitung untuk mendapatkan data kategori aktif
 const activeCategoryData = computed(() => {
-  return props.categories.find(c => c.id === activeCategory.value);
+  // Hanya mencari di `props.categories` jika activeCategory bukan 'summary'
+  return activeCategory.value !== 'summary' 
+    ? props.categories.find(c => c.id === activeCategory.value)
+    : null; // Jika 'summary', tidak ada data kategori spesifik
 });
 
-// Initialize form
+// Inisialisasi form
 const initializeForm = () => {
   const results = {};
   
@@ -119,7 +153,7 @@ const initializeForm = () => {
         note: existing?.note || '',
         images: props.existingImages?.[point.id]?.map(img => ({
           image_path: img.image_path,
-          preview: null // Preview will be generated when a new image is selected
+          preview: null // Preview akan dibuat saat gambar baru dipilih
         })) || []
       };
     });
@@ -127,11 +161,31 @@ const initializeForm = () => {
   
   return {
     inspection_id: props.inspection.id,
-    results
+    results,
+    // Tambahkan field baru untuk catatan keseluruhan
+    overall_note: props.inspection.overall_note || '' 
   };
 };
 
 const form = useForm(initializeForm());
+
+// Debounce untuk menyimpan catatan keseluruhan
+const debounceSaveOverallNote = debounce(() => {
+  router.post(route('inspections.save-overall-note'), {
+    inspection_id: props.inspection.id,
+    overall_note: form.overall_note,
+  }, {
+    preserveScroll: true,
+    preserveState: true,
+    only: ['inspection'], // Hanya refresh prop inspection jika perlu
+    onSuccess: () => {
+      // console.log('Catatan keseluruhan berhasil disimpan.');
+    },
+    onError: (errors) => {
+      console.error('Error menyimpan catatan keseluruhan:', errors);
+    }
+  });
+}, 800); // Sesuaikan debounce time
 
 // Check if category is complete
 const isCategoryComplete = (category) => {
@@ -150,7 +204,6 @@ const isCategoryComplete = (category) => {
       case 'image':
         return result.images?.length > 0;
       default:
-        // For other input types, you might consider them complete if a status or note exists
         return !!result.status || !!result.note;
     }
   });
@@ -158,29 +211,36 @@ const isCategoryComplete = (category) => {
 
 // Change active category
 const changeCategory = (categoryId) => {
-  const index = props.categories.findIndex(c => c.id === categoryId);
-  if (index >= 0) {
-    activeIndex.value = index;
-    activeCategory.value = categoryId;
+  // Jika categoryId adalah 'summary', set activeIndex ke posisi terakhir
+  if (categoryId === 'summary') {
+    activeIndex.value = props.categories.length; // Index terakhir + 1 untuk kesimpulan
+  } else {
+    const index = props.categories.findIndex(c => c.id === categoryId);
+    if (index >= 0) {
+      activeIndex.value = index;
+    }
   }
+  activeCategory.value = categoryId;
 };
 
-// Navigate between categories
+// Navigate between categories (Tidak lagi digunakan untuk panah, tapi tetap untuk swipe)
 const navigate = (direction) => {
-  const newIndex = activeIndex.value + direction;
-  if (newIndex >= 0 && newIndex < props.categories.length) {
+  let newIndex = activeIndex.value + direction;
+  
+  // Batasi index agar tidak keluar dari batas kategori + kesimpulan
+  const maxIndex = props.categories.length; // categories.length adalah index untuk 'summary'
+  
+  if (newIndex >= 0 && newIndex <= maxIndex) {
     activeIndex.value = newIndex;
-    activeCategory.value = props.categories[newIndex].id;
+    if (newIndex === maxIndex) {
+      activeCategory.value = 'summary';
+    } else {
+      activeCategory.value = props.categories[newIndex].id;
+    }
   }
 };
 
 // Handle swipe gestures
-// NOTE: Swipe gestures might be tricky with `v-if` because the element you're swiping on
-// will unmount and remount. The current implementation relies on `categoriesWrapper`
-// which would be gone after a category switch. If you want swipe, you'd need to attach
-// the listeners to a persistent container that *holds* the conditionally rendered content.
-// For simplicity and direct answer to the "stacking" problem, I'm keeping the original
-// swipe setup but be aware it might not work as expected with v-if unless refactored.
 const setupSwipe = () => {
   let touchStartX = 0;
   let touchEndX = 0;
@@ -204,8 +264,6 @@ const setupSwipe = () => {
     }
   };
   
-  // Attach listeners to the main container or a persistent wrapper if swipe is desired
-  // This will work if the entire section where CategorySection is rendered is the touch target
   const mainContentArea = document.querySelector('.relative.overflow-hidden'); 
   if (mainContentArea) {
     mainContentArea.addEventListener('touchstart', handleTouchStart, false);
@@ -231,26 +289,19 @@ const saveResult = debounce(async (pointId) => {
     }, {
       preserveScroll: true,
       preserveState: true,
-      only: ['existingResults'], // Only refresh existingResults prop
-      onSuccess: () => {
-        // You might want to re-initialize form data if existingResults are updated
-        // or ensure form.results is reactive to prop changes.
-        // For simplicity, we assume form.results directly updates based on user input.
-      },
+      only: ['existingResults'], 
+      onSuccess: () => {},
     });
   } catch (error) {
-    console.error('Error saving result:', error);
+    console.error('Error menyimpan hasil:', error);
   }
-}, 500); // Debounce by 500ms
+}, 500); 
 
 // Update result data (this should trigger `saveResult` via a watch or direct call)
 const updateResult = ({ pointId, type, value }) => {
-  if (type === 'note') {
-    form.results[pointId].note = value;
-  } else if (type === 'status') {
-    form.results[pointId].status = value;
+  if (form.results[pointId].hasOwnProperty(type)) { // Check if property exists
+    form.results[pointId][type] = value;
   }
-  // Call saveResult after updating the form data
   saveResult(pointId);
 };
 
@@ -267,11 +318,9 @@ const handleImageUpload = async (event, pointId) => {
     formData.append('point_id', pointId);
     formData.append('image', file);
 
-    // Assuming your backend returns the path of the uploaded image
     await router.post(route('inspections.upload-image'), formData, {
       preserveScroll: true,
       onSuccess: (page) => {
-        // Ensure that page.props.imagePath exists and is correct
         const uploadedImagePath = page.props.flash?.imagePath || page.props.imagePath;
         if (uploadedImagePath) {
           form.results[pointId].images.push({
@@ -279,19 +328,19 @@ const handleImageUpload = async (event, pointId) => {
             preview: preview
           });
         } else {
-          console.error("Image path not returned from upload, cannot update UI.");
+          console.error("Path gambar tidak dikembalikan dari unggahan, tidak dapat memperbarui UI.");
         }
       },
       onError: (errors) => {
-        console.error('Error uploading image:', errors);
-        alert('Failed to upload image. Please try again.');
+        console.error('Error mengunggah gambar:', errors);
+        alert('Gagal mengunggah gambar. Silakan coba lagi.');
       }
     });
   } catch (error) {
-    console.error('Error uploading image:', error);
-    alert('An unexpected error occurred during image upload.');
+    console.error('Error mengunggah gambar:', error);
+    alert('Terjadi kesalahan tak terduga saat mengunggah gambar.');
   } finally {
-    event.target.value = ''; // Clear the input field
+    event.target.value = ''; 
   }
 };
 
@@ -315,28 +364,28 @@ const removeImage = async (pointId, imageIndex) => {
         }
       },
       onError: (errors) => {
-        console.error('Error deleting image:', errors);
-        alert('Failed to delete image. Please try again.');
+        console.error('Error menghapus gambar:', errors);
+        alert('Gagal menghapus gambar. Silakan coba lagi.');
       }
     });
   } catch (error) {
-    console.error('Error deleting image:', error);
-    alert('An unexpected error occurred during image deletion.');
+    console.error('Error menghapus gambar:', error);
+    alert('Terjadi kesalahan tak terduga saat menghapus gambar.');
   }
 };
 
 // Final submit all
 const submitAll = () => {
+  // Pastikan overall_note juga dikirim saat submit
   form.post(route('inspections.final-submit'), {
     preserveScroll: true,
     onSuccess: () => {
-      usePage().props.flash.success = 'Inspection submitted successfully!';
-      // Optionally redirect or show a success message
+      usePage().props.flash.success = 'Inspeksi berhasil dikirim!';
+      // Redirect atau tindakan lain setelah sukses
     },
     onError: (errors) => {
-      console.error('Submission errors:', errors);
-      usePage().props.flash.error = 'There were errors in your submission. Please check all fields.';
-      // You might want to scroll to the first error or highlight problematic categories
+      console.error('Kesalahan pengiriman:', errors);
+      usePage().props.flash.error = 'Ada kesalahan dalam pengiriman Anda. Harap periksa semua bidang.';
     }
   });
 };
@@ -345,11 +394,10 @@ onMounted(() => {
   setupSwipe();
 });
 
-// Watch for changes in activeCategory to potentially scroll the horizontal nav
+// Watcher untuk perubahan activeCategory untuk menggulir navigasi horizontal
 watch(activeCategory, (newVal) => {
   const categoryButton = document.querySelector(`.flex-shrink-0[data-category-id="${newVal}"]`);
   if (categoryButton) {
-    // Scroll the button into view if it's not fully visible
     categoryButton.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   }
 });
@@ -365,12 +413,12 @@ watch(activeCategory, (newVal) => {
   scrollbar-width: none;
 }
 
-/* Transitions for conditional rendering (v-if) */
+/* Transisi untuk conditional rendering (v-if) */
 .category-slide-enter-active,
 .category-slide-leave-active {
   transition: all 0.3s ease-out;
-  position: absolute; /* Needed for slide transition with v-if */
-  width: 100%; /* Ensure it takes full width when absolute */
+  position: absolute; 
+  width: 100%; 
   top: 0;
   left: 0;
 }
