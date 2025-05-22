@@ -9,6 +9,8 @@
       :multiple="allowMultiple"
     />
 
+    <canvas ref="processingCanvas" class="hidden"></canvas>
+
     <label
       @click="openFileOptions"
       class="block w-full border-2 border-dashed rounded-lg cursor-pointer transition-colors duration-200"
@@ -72,7 +74,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <span class="text-sm font-medium text-gray-700">Camera (Web)</span>
+              <span class="text-sm font-medium text-gray-700">Camera</span>
             </button>
             
             <button @click="triggerGallery" class="flex flex-col items-center justify-center w-24 h-24 rounded-xl bg-purple-50 hover:bg-purple-100 transition-colors">
@@ -81,7 +83,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <span class="text-sm font-medium text-gray-700">Gallery (HP)</span>
+              <span class="text-sm font-medium text-gray-700">Gallery</span>
             </button>
           </div>
         </div>
@@ -97,11 +99,30 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
-                 <h3 class="text-lg font-medium text-white">Take Photo</h3>
-                 <div></div> </div>
-            <div class="webcam-video-container">
+                <div class="flex gap-4">
+                    <button @click="toggleFlash" :disabled="!isFlashSupported" class="p-2 rounded-full text-white" :class="{'bg-gray-700': isFlashOn, 'hover:bg-gray-700': isFlashSupported, 'opacity-50 cursor-not-allowed': !isFlashSupported}">
+                        <svg v-if="!isFlashSupported" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.101m-.757 4.898l-4 4L9.828 9.828m4.899-.757l4-4L14.172 14.172" />
+                        </svg>
+                        <svg v-else-if="isFlashOn" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6" />
+                        </svg>
+                    </button>
+                    <button @click="switchCamera" :disabled="!hasMultipleCameras" class="p-2 rounded-full text-white hover:bg-gray-700" :class="{'opacity-50 cursor-not-allowed': !hasMultipleCameras}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16M6 4h.01M6 20h.01M10 4h.01M10 20h.01M14 4h.01M14 20h.01M18 4h.01M18 20h.01" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="webcam-video-container" @click="triggerFocus">
                 <video ref="webcamVideo" autoplay playsinline class="webcam-video"></video>
                 <canvas ref="webcamCanvas" class="hidden"></canvas>
+                 <div v-if="showScreenFlash" class="screen-flash-overlay"></div>
             </div>
             <div class="webcam-footer">
                 <button @click="capturePhoto" class="capture-button">
@@ -177,7 +198,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue'; // Import watch
 
 const props = defineProps({
   modelValue: { type: Array, default: () => [] },
@@ -188,8 +209,10 @@ const props = defineProps({
     default: () => ({
       max_files: 1,
       allowed_types: ['jpg', 'png'],
-      // Tambahkan default aspect ratio
-      camera_aspect_ratio: '4:3' // Atau '16:9', '1:1'
+      camera_aspect_ratio: '4:3',
+      // New settings for camera features
+      enable_flash: true,
+      enable_camera_switch: true,
     })
   }
 });
@@ -199,6 +222,7 @@ const emit = defineEmits(['update:modelValue', 'save', 'removeImage']);
 const galleryInput = ref(null);
 const webcamVideo = ref(null);
 const webcamCanvas = ref(null);
+const processingCanvas = ref(null); // Ref for the new hidden canvas
 
 const previewImages = ref([]);
 const showFileOptions = ref(false);
@@ -209,11 +233,27 @@ const touchStartX = ref(0);
 const touchEndX = ref(0);
 
 let mediaStream = null;
+let videoTrack = null; // To hold the active video track for constraints
+
+// Camera specific states
+const currentFacingMode = ref('environment'); // 'environment' (back) or 'user' (front)
+const hasMultipleCameras = ref(false);
+const isFlashSupported = ref(false); // Does the current camera support torch?
+const isFlashOn = ref(false);
+const showScreenFlash = ref(false); // For front camera flash simulation
 
 const allowMultiple = computed(() => Number(props.settings.max_files) > 1);
-const currentPreviewImage = computed(() => previewImages.value[currentPreviewIndex.value]);
+const currentPreviewImage = computed(() => {
+  const img = previewImages.value[currentPreviewIndex.value];
+  if (img) {
+    return {
+      ...img,
+      rotation: rotationAngle.value // Use rotationAngle that is active for current image
+    };
+  }
+  return null;
+});
 
-// Computed property for aspect ratio
 const aspectRatio = computed(() => {
   const parts = props.settings.camera_aspect_ratio.split(':');
   if (parts.length === 2) {
@@ -223,7 +263,7 @@ const aspectRatio = computed(() => {
       return width / height;
     }
   }
-  return 4 / 3; // Default to 4:3 if invalid
+  return 4 / 3;
 });
 
 const openFileOptions = () => {
@@ -235,29 +275,35 @@ const triggerGallery = () => {
   galleryInput.value.click();
 };
 
-const openWebcam = async () => {
-  showFileOptions.value = false;
-  showWebcamModal.value = true;
+const initializeWebcam = async () => {
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(track => track.stop());
+  }
+
   try {
     const videoConstraints = {
-      facingMode: 'environment', // Prioritaskan kamera belakang
-      width: { ideal: 1280 }, // Coba resolusi ideal 1280x720 (atau sesuai rasio)
+      facingMode: currentFacingMode.value,
+      width: { ideal: 1280 },
       height: { ideal: 960 },
-      aspectRatio: { exact: aspectRatio.value } // Gunakan aspect ratio yang dihitung
+      aspectRatio: { exact: aspectRatio.value }
     };
 
-    mediaStream = await navigator.mediaDevices.getUserMedia({
-      video: videoConstraints
-    });
+    // Try to get advanced focus mode if supported
+    if (currentFacingMode.value === 'environment') { // Autofocus usually more relevant for back camera
+        videoConstraints.advanced = [{ focusMode: "continuous" }];
+    }
 
+    mediaStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
+    videoTrack = mediaStream.getVideoTracks()[0];
     webcamVideo.value.srcObject = mediaStream;
 
-    // Tambahkan event listener saat video dimuat metadata
-    webcamVideo.value.onloadedmetadata = () => {
-        // Atur ukuran video agar sesuai dengan kontainer dan mempertahankan rasio
-        webcamVideo.value.style.width = '100%';
-        webcamVideo.value.style.height = 'auto'; // Agar tinggi menyesuaikan lebar
-        webcamVideo.value.style.objectFit = 'cover'; // Memastikan video mengisi ruang
+    webcamVideo.value.onloadedmetadata = async () => {
+      webcamVideo.value.style.width = '100%';
+      webcamVideo.value.style.height = 'auto';
+      webcamVideo.value.style.objectFit = 'cover';
+
+      // Check camera capabilities for flash and switch
+      await checkCameraCapabilities();
     };
 
   } catch (err) {
@@ -267,21 +313,112 @@ const openWebcam = async () => {
   }
 };
 
+const openWebcam = async () => {
+  showFileOptions.value = false;
+  showWebcamModal.value = true;
+  await initializeWebcam();
+};
+
 const closeWebcam = () => {
   if (mediaStream) {
     mediaStream.getTracks().forEach(track => track.stop());
   }
   showWebcamModal.value = false;
+  isFlashOn.value = false; // Reset flash state
 };
 
-const capturePhoto = () => {
+const checkCameraCapabilities = async () => {
+  if (!videoTrack) return;
+
+  // Check for multiple cameras
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  const videoDevices = devices.filter(device => device.kind === 'videoinput');
+  hasMultipleCameras.value = videoDevices.length > 1;
+
+  // Check for torch/flash
+  const capabilities = videoTrack.getCapabilities();
+  isFlashSupported.value = capabilities.torch || (capabilities.fillLightMode && capabilities.fillLightMode.includes('torch'));
+};
+
+const toggleFlash = async () => {
+  if (!videoTrack || !props.settings.enable_flash) return;
+
+  if (currentFacingMode.value === 'user') {
+      // Simulate screen flash for front camera
+      isFlashOn.value = !isFlashOn.value; // Toggle icon state
+      // Actual screen flash effect happens during capture
+      return;
+  }
+
+  // For environment camera (back camera)
+  try {
+      if (videoTrack.getCapabilities().torch) {
+          await videoTrack.applyConstraints({
+              advanced: [{ torch: !isFlashOn.value }]
+          });
+          isFlashOn.value = !isFlashOn.value;
+      } else {
+          // Fallback if torch is not directly supported but some other flash mode is
+          console.warn("Torch API not directly supported, checking fillLightMode.");
+          const capabilities = videoTrack.getCapabilities();
+          if (capabilities.fillLightMode && capabilities.fillLightMode.includes('torch')) {
+              await videoTrack.applyConstraints({
+                  fillLightMode: isFlashOn.value ? 'none' : 'torch'
+              });
+              isFlashOn.value = !isFlashOn.value;
+          } else {
+              alert("Flash/Torch is not supported on this camera.");
+              isFlashSupported.value = false; // Disable button
+          }
+      }
+  } catch (err) {
+      console.error("Error toggling flash: ", err);
+      alert("Could not toggle flash. Feature might not be supported.");
+      isFlashSupported.value = false; // Disable button
+  }
+};
+
+const switchCamera = async () => {
+  if (!hasMultipleCameras.value || !props.settings.enable_camera_switch) return;
+
+  currentFacingMode.value = currentFacingMode.value === 'environment' ? 'user' : 'environment';
+  await initializeWebcam(); // Re-initialize stream with new facingMode
+  isFlashOn.value = false; // Reset flash state when switching camera
+};
+
+const triggerFocus = async () => {
+    if (!videoTrack) return;
+    const capabilities = videoTrack.getCapabilities();
+    if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+        console.log("Triggering continuous autofocus (if supported).");
+        // Re-apply constraints to nudge autofocus
+        try {
+            await videoTrack.applyConstraints({
+                advanced: [{ focusMode: "continuous" }]
+            });
+        } catch (e) {
+            console.warn("Failed to apply continuous focus constraint:", e);
+        }
+    } else {
+        console.log("Autofocus not explicitly controllable or not supported.");
+    }
+};
+
+const capturePhoto = async () => {
   if (!webcamVideo.value || !webcamCanvas.value) return;
+
+  // --- Screen Flash for Front Camera Simulation ---
+  if (currentFacingMode.value === 'user' && isFlashOn.value) {
+      showScreenFlash.value = true;
+      await new Promise(resolve => setTimeout(resolve, 100)); // Flash for 100ms
+      showScreenFlash.value = false;
+  }
+  // --- End Screen Flash ---
 
   const video = webcamVideo.value;
   const canvas = webcamCanvas.value;
   const context = canvas.getContext('2d');
 
-  // Calculate dimensions to maintain 4:3 aspect ratio
   const videoWidth = video.videoWidth;
   const videoHeight = video.videoHeight;
   
@@ -290,11 +427,10 @@ const capturePhoto = () => {
   let offsetX = 0;
   let offsetY = 0;
 
-  // Adjust to fit 4:3 ratio based on the larger dimension
-  if (videoWidth / videoHeight > aspectRatio.value) { // video is wider than 4:3
+  if (videoWidth / videoHeight > aspectRatio.value) {
     drawWidth = videoHeight * aspectRatio.value;
     offsetX = (videoWidth - drawWidth) / 2;
-  } else if (videoWidth / videoHeight < aspectRatio.value) { // video is taller than 4:3
+  } else if (videoWidth / videoHeight < aspectRatio.value) {
     drawHeight = videoWidth / aspectRatio.value;
     offsetY = (videoHeight - drawHeight) / 2;
   }
@@ -304,37 +440,34 @@ const capturePhoto = () => {
 
   context.drawImage(
     video,
-    offsetX, offsetY, // Source X, Y
-    drawWidth, drawHeight, // Source Width, Height (portion of video to capture)
-    0, 0, // Destination X, Y
-    canvas.width, canvas.height // Destination Width, Height (canvas size)
+    offsetX, offsetY,
+    drawWidth, drawHeight,
+    0, 0,
+    canvas.width, canvas.height
   );
 
-  // Get image data from canvas
   canvas.toBlob((blob) => {
     if (blob) {
       const file = new File([blob], `captured_image_${Date.now()}.png`, { type: 'image/png' });
       
       const newImage = {
         file: file,
-        preview: URL.createObjectURL(file)
+        preview: URL.createObjectURL(file),
+        rotation: 0
       };
 
-      // Handle multiple captures if allowed
       if (allowMultiple.value && props.modelValue.length < props.settings.max_files) {
-          previewImages.value.push(newImage); // Add to current preview batch
+          previewImages.value.push(newImage);
       } else {
-          // If not multiple or max files reached, replace existing preview
           if (previewImages.value.length > 0) {
               URL.revokeObjectURL(previewImages.value[0].preview);
           }
           previewImages.value = [newImage];
       }
 
-      currentPreviewIndex.value = previewImages.value.length - 1; // Show the new image
+      currentPreviewIndex.value = previewImages.value.length - 1;
       rotationAngle.value = 0;
       
-      // Keep webcam open for multiple captures, close if single capture
       if (!allowMultiple.value || previewImages.value.length >= props.settings.max_files) {
         closeWebcam();
       }
@@ -345,7 +478,6 @@ const capturePhoto = () => {
   }, 'image/png');
 };
 
-
 const handleImageSelect = (event) => {
   const files = Array.from(event.target.files);
   if (!files.length) return;
@@ -354,7 +486,6 @@ const handleImageSelect = (event) => {
   const allowedCount = props.settings.max_files - currentCount;
   const selectedFiles = files.slice(0, allowedCount);
 
-  // Clear existing previews if not allowing multiple or max files reached
   if (!allowMultiple.value || (allowedCount === 0 && selectedFiles.length > 0)) {
      previewImages.value.forEach(img => URL.revokeObjectURL(img.preview));
      previewImages.value = [];
@@ -362,21 +493,70 @@ const handleImageSelect = (event) => {
 
   const newPreviews = selectedFiles.map(file => ({
     file,
-    preview: URL.createObjectURL(file)
+    preview: URL.createObjectURL(file),
+    rotation: 0
   }));
   
   previewImages.value.push(...newPreviews);
 
   currentPreviewIndex.value = 0;
   rotationAngle.value = 0;
-  event.target.value = ''; // reset input
+  event.target.value = '';
 };
 
-const savePreviewImages = () => {
-  const newImages = [...props.modelValue, ...previewImages.value];
-  emit('update:modelValue', newImages.slice(0, props.settings.max_files));
-  emit('save', props.pointId);
-  previewImages.value = [];
+const applyRotationToImage = (imageObject) => {
+    return new Promise((resolve) => {
+        if (imageObject.rotation === 0 || !processingCanvas.value) {
+            resolve(imageObject.file);
+            return;
+        }
+
+        const img = new Image();
+        img.onload = () => {
+            const canvas = processingCanvas.value;
+            const context = canvas.getContext('2d');
+
+            const width = img.width;
+            const height = img.height;
+
+            if (imageObject.rotation === 90 || imageObject.rotation === 270) {
+                canvas.width = height;
+                canvas.height = width;
+            } else {
+                canvas.width = width;
+                canvas.height = height;
+            }
+
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.translate(canvas.width / 2, canvas.height / 2);
+            context.rotate(imageObject.rotation * Math.PI / 180);
+            context.drawImage(img, -width / 2, -height / 2, width, height);
+            context.setTransform(1, 0, 0, 1, 0, 0);
+
+            canvas.toBlob((blob) => {
+                const newFile = new File([blob], imageObject.file.name, { type: imageObject.file.type });
+                resolve(newFile);
+            }, imageObject.file.type);
+        };
+        img.src = imageObject.preview;
+    });
+};
+
+const savePreviewImages = async () => {
+    const processedImages = [];
+    for (const img of previewImages.value) {
+        const rotatedFile = await applyRotationToImage(img);
+        processedImages.push({
+            file: rotatedFile,
+            preview: URL.createObjectURL(rotatedFile)
+        });
+        if (img.preview) URL.revokeObjectURL(img.preview);
+    }
+
+    const newImages = [...props.modelValue, ...processedImages];
+    emit('update:modelValue', newImages.slice(0, props.settings.max_files));
+    emit('save', props.pointId);
+    previewImages.value = [];
 };
 
 const cancelPreview = () => {
@@ -404,20 +584,22 @@ const removePreviewImage = (index) => {
 };
 
 const rotateImage = () => {
-  rotationAngle.value = (rotationAngle.value + 90) % 360;
+    const currentImage = previewImages.value[currentPreviewIndex.value];
+    if (currentImage) {
+        currentImage.rotation = (currentImage.rotation + 90) % 360;
+        rotationAngle.value = currentImage.rotation;
+    }
 };
 
 const nextImage = () => {
   if (currentPreviewIndex.value < previewImages.value.length - 1) {
     currentPreviewIndex.value++;
-    rotationAngle.value = 0;
   }
 };
 
 const prevImage = () => {
   if (currentPreviewIndex.value > 0) {
     currentPreviewIndex.value--;
-    rotationAngle.value = 0;
   }
 };
 
@@ -431,22 +613,23 @@ const handleTouchMove = (e) => {
 
 const handleTouchEnd = () => {
   if (touchStartX.value - touchEndX.value > 50) {
-    // Swipe left
     nextImage();
   } else if (touchEndX.value - touchStartX.value > 50) {
-    // Swipe right
     prevImage();
   }
 };
 
-// Pastikan untuk menghentikan stream ketika komponen di-unmount
 onMounted(() => {
-  // Pastikan tidak ada stream yang tersisa dari instance sebelumnya jika di-hot-reload
   if (mediaStream) {
     mediaStream.getTracks().forEach(track => track.stop());
   }
 });
 
+watch(currentPreviewIndex, (newIndex) => {
+  if (previewImages.value[newIndex]) {
+    rotationAngle.value = previewImages.value[newIndex].rotation;
+  }
+});
 </script>
 
 <style scoped>
@@ -491,26 +674,25 @@ body.modal-open {
 
 /* Parent container for webcam modal to fill screen and center content */
 .webcam-modal-container {
-  /* This is already handled by fixed inset-0 from Tailwind. */
-  /* Ensure no padding if you want true full screen */
   padding: 0;
+  background-color: rgba(0, 0, 0, 0.9); /* Sedikit transparansi untuk efek modal */
 }
 
 /* The inner content box of the webcam modal */
 .webcam-content-box {
-  background-color: black; /* Dark background like camera apps */
+  background-color: black;
   width: 100%;
-  height: 100%; /* Fill available height */
-  max-width: none; /* Override max-w-lg from Tailwind for true full screen */
-  border-radius: 0; /* No rounded corners for full screen */
+  height: 100%;
+  max-width: none;
+  border-radius: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden; /* Ensure no scrollbars */
+  overflow: hidden;
 }
 
 /* Header for webcam modal */
 .webcam-header {
-  background-color: rgba(0, 0, 0, 0.7); /* Slightly transparent dark header */
+  background-color: rgba(0, 0, 0, 0.7);
   color: white;
   padding: 1rem;
   display: flex;
@@ -518,59 +700,54 @@ body.modal-open {
   align-items: center;
   position: relative;
   z-index: 10;
-  /* Tambahan untuk menyesuaikan tinggi agar tombol tidak tertutup */
-  min-height: 4rem; /* Atur tinggi minimum agar tidak terlalu kecil di HP */
+  min-height: 4rem;
 }
 
 /* Video container */
 .webcam-video-container {
-  flex-grow: 1; /* Make video container take all available space */
+  flex-grow: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   background-color: black;
   padding: 0;
-  /* Atur aspek rasio untuk kontainer video */
   width: 100%;
   padding-bottom: calc(100% * 3 / 4); /* For 4:3 aspect ratio (height is 3/4 of width) */
-  /* Remove flex-grow and use absolute positioning for video if you want strict aspect ratio container */
-  /* For simpler approach, we let flex-grow determine height and object-fit handle video */
-  overflow: hidden; /* Ensure video doesn't overflow its calculated aspect ratio container */
+  overflow: hidden;
+  cursor: pointer; /* Indicate it's clickable for focus */
 }
 
 /* Actual video element */
 .webcam-video {
-  position: absolute; /* Position absolutely inside its parent */
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Important: This will make the video fill the container, cropping if aspect ratios differ */
-  /* object-fit: contain; Uncomment this if you prefer to see the full video frame, even with black bars */
+  object-fit: cover;
   /* transform: scaleX(-1); /* Mirror effect for selfie camera, remove if only environment camera */
 }
 
 /* Footer for webcam controls */
 .webcam-footer {
-  background-color: rgba(0, 0, 0, 0.7); /* Slightly transparent dark footer */
+  background-color: rgba(0, 0, 0, 0.7);
   padding: 1rem;
   display: flex;
-  justify-content: center; /* Center the capture button */
+  justify-content: center;
   align-items: center;
   position: relative;
   z-index: 10;
-  /* Tambahan untuk menyesuaikan tinggi agar tombol tidak tertutup */
-  min-height: 6rem; /* Atur tinggi minimum agar ada ruang untuk tombol */
+  min-height: 6rem;
 }
 
 /* Capture button styling */
 .capture-button {
-  background-color: white; /* White circle for the capture button */
-  border: 4px solid rgba(255, 255, 255, 0.5); /* Outer ring */
-  width: 70px; /* Large circle */
+  background-color: white;
+  border: 4px solid rgba(255, 255, 255, 0.5);
+  width: 70px;
   height: 70px;
-  border-radius: 50%; /* Make it a circle */
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -585,4 +762,16 @@ body.modal-open {
   transform: scale(1.05);
 }
 
+/* Screen Flash Overlay */
+.screen-flash-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    opacity: 1;
+    z-index: 20; /* Above video but below header/footer */
+    transition: opacity 0.05s ease-out; /* Very quick fade */
+}
 </style>
