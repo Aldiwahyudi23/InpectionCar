@@ -89,16 +89,16 @@
       </div>
     </div>
 
-    <div v-if="showWebcamModal" class="fixed inset-0 bg-black bg-opacity-90 flex flex-col items-center justify-center z-40 p-0">
+    <div v-if="showWebcamModal" class="fixed inset-0 z-40 p-0 webcam-modal-container">
         <div class="webcam-content-box">
             <div class="webcam-header">
-                <h3 class="text-lg font-medium text-white">Take Photo</h3>
                 <button @click="closeWebcam" class="p-2 rounded-full text-white hover:bg-gray-700 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
-            </div>
+                 <h3 class="text-lg font-medium text-white">Take Photo</h3>
+                 <div></div> </div>
             <div class="webcam-video-container">
                 <video ref="webcamVideo" autoplay playsinline class="webcam-video"></video>
                 <canvas ref="webcamCanvas" class="hidden"></canvas>
@@ -109,6 +109,7 @@
             </div>
         </div>
     </div>
+
 
     <div v-if="previewImages.length" class="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col items-center justify-center">
       <div class="w-full h-full flex flex-col">
@@ -176,7 +177,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 
 const props = defineProps({
   modelValue: { type: Array, default: () => [] },
@@ -186,29 +187,44 @@ const props = defineProps({
     type: Object,
     default: () => ({
       max_files: 1,
-      allowed_types: ['jpg', 'png']
+      allowed_types: ['jpg', 'png'],
+      // Tambahkan default aspect ratio
+      camera_aspect_ratio: '4:3' // Atau '16:9', '1:1'
     })
   }
 });
 
 const emit = defineEmits(['update:modelValue', 'save', 'removeImage']);
 
-const galleryInput = ref(null); // Hanya perlu galleryInput
-const webcamVideo = ref(null); // Ref untuk elemen video webcam
-const webcamCanvas = ref(null); // Ref untuk elemen canvas webcam
+const galleryInput = ref(null);
+const webcamVideo = ref(null);
+const webcamCanvas = ref(null);
 
 const previewImages = ref([]);
 const showFileOptions = ref(false);
-const showWebcamModal = ref(false); // State untuk modal kamera web
+const showWebcamModal = ref(false);
 const currentPreviewIndex = ref(0);
 const rotationAngle = ref(0);
 const touchStartX = ref(0);
 const touchEndX = ref(0);
 
-let mediaStream = null; // Untuk menyimpan stream dari kamera
+let mediaStream = null;
 
 const allowMultiple = computed(() => Number(props.settings.max_files) > 1);
 const currentPreviewImage = computed(() => previewImages.value[currentPreviewIndex.value]);
+
+// Computed property for aspect ratio
+const aspectRatio = computed(() => {
+  const parts = props.settings.camera_aspect_ratio.split(':');
+  if (parts.length === 2) {
+    const width = parseFloat(parts[0]);
+    const height = parseFloat(parts[1]);
+    if (!isNaN(width) && !isNaN(height) && height !== 0) {
+      return width / height;
+    }
+  }
+  return 4 / 3; // Default to 4:3 if invalid
+});
 
 const openFileOptions = () => {
   showFileOptions.value = true;
@@ -223,18 +239,30 @@ const openWebcam = async () => {
   showFileOptions.value = false;
   showWebcamModal.value = true;
   try {
+    const videoConstraints = {
+      facingMode: 'environment', // Prioritaskan kamera belakang
+      width: { ideal: 1280 }, // Coba resolusi ideal 1280x720 (atau sesuai rasio)
+      height: { ideal: 960 },
+      aspectRatio: { exact: aspectRatio.value } // Gunakan aspect ratio yang dihitung
+    };
+
     mediaStream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: 'environment',
-        width: { ideal: 1280 }, // Coba lebar ideal 1280px
-        height: { ideal: 720 }  // Coba tinggi ideal 720px
-        // Anda juga bisa menggunakan min, max, exact untuk kontrol lebih lanjut
-      }
+      video: videoConstraints
     });
+
     webcamVideo.value.srcObject = mediaStream;
+
+    // Tambahkan event listener saat video dimuat metadata
+    webcamVideo.value.onloadedmetadata = () => {
+        // Atur ukuran video agar sesuai dengan kontainer dan mempertahankan rasio
+        webcamVideo.value.style.width = '100%';
+        webcamVideo.value.style.height = 'auto'; // Agar tinggi menyesuaikan lebar
+        webcamVideo.value.style.objectFit = 'cover'; // Memastikan video mengisi ruang
+    };
+
   } catch (err) {
     console.error("Error accessing camera: ", err);
-    alert('Failed to access camera. Please ensure camera permissions are granted.');
+    alert('Failed to access camera. Please ensure camera permissions are granted and try again.');
     showWebcamModal.value = false;
   }
 };
@@ -253,27 +281,64 @@ const capturePhoto = () => {
   const canvas = webcamCanvas.value;
   const context = canvas.getContext('2d');
 
-  // Set canvas dimensions to match video
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  // Calculate dimensions to maintain 4:3 aspect ratio
+  const videoWidth = video.videoWidth;
+  const videoHeight = video.videoHeight;
+  
+  let drawWidth = videoWidth;
+  let drawHeight = videoHeight;
+  let offsetX = 0;
+  let offsetY = 0;
 
-  // Draw the current video frame onto the canvas
-  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+  // Adjust to fit 4:3 ratio based on the larger dimension
+  if (videoWidth / videoHeight > aspectRatio.value) { // video is wider than 4:3
+    drawWidth = videoHeight * aspectRatio.value;
+    offsetX = (videoWidth - drawWidth) / 2;
+  } else if (videoWidth / videoHeight < aspectRatio.value) { // video is taller than 4:3
+    drawHeight = videoWidth / aspectRatio.value;
+    offsetY = (videoHeight - drawHeight) / 2;
+  }
+  
+  canvas.width = drawWidth;
+  canvas.height = drawHeight;
+
+  context.drawImage(
+    video,
+    offsetX, offsetY, // Source X, Y
+    drawWidth, drawHeight, // Source Width, Height (portion of video to capture)
+    0, 0, // Destination X, Y
+    canvas.width, canvas.height // Destination Width, Height (canvas size)
+  );
 
   // Get image data from canvas
   canvas.toBlob((blob) => {
     if (blob) {
       const file = new File([blob], `captured_image_${Date.now()}.png`, { type: 'image/png' });
-      // Close webcam after capturing
-      closeWebcam();
       
-      // Update previewImages with the captured photo
-      previewImages.value = [{
+      const newImage = {
         file: file,
         preview: URL.createObjectURL(file)
-      }];
-      currentPreviewIndex.value = 0;
+      };
+
+      // Handle multiple captures if allowed
+      if (allowMultiple.value && props.modelValue.length < props.settings.max_files) {
+          previewImages.value.push(newImage); // Add to current preview batch
+      } else {
+          // If not multiple or max files reached, replace existing preview
+          if (previewImages.value.length > 0) {
+              URL.revokeObjectURL(previewImages.value[0].preview);
+          }
+          previewImages.value = [newImage];
+      }
+
+      currentPreviewIndex.value = previewImages.value.length - 1; // Show the new image
       rotationAngle.value = 0;
+      
+      // Keep webcam open for multiple captures, close if single capture
+      if (!allowMultiple.value || previewImages.value.length >= props.settings.max_files) {
+        closeWebcam();
+      }
+
     } else {
       console.error("Failed to convert canvas to blob.");
     }
@@ -282,18 +347,25 @@ const capturePhoto = () => {
 
 
 const handleImageSelect = (event) => {
-  const files = Array.from(event.target.files).slice(0, props.settings.max_files);
+  const files = Array.from(event.target.files);
   if (!files.length) return;
 
-  // Limit file count based on settings
   const currentCount = props.modelValue.length;
   const allowedCount = props.settings.max_files - currentCount;
   const selectedFiles = files.slice(0, allowedCount);
 
-  previewImages.value = selectedFiles.map(file => ({
+  // Clear existing previews if not allowing multiple or max files reached
+  if (!allowMultiple.value || (allowedCount === 0 && selectedFiles.length > 0)) {
+     previewImages.value.forEach(img => URL.revokeObjectURL(img.preview));
+     previewImages.value = [];
+  }
+
+  const newPreviews = selectedFiles.map(file => ({
     file,
     preview: URL.createObjectURL(file)
   }));
+  
+  previewImages.value.push(...newPreviews);
 
   currentPreviewIndex.value = 0;
   rotationAngle.value = 0;
@@ -367,6 +439,14 @@ const handleTouchEnd = () => {
   }
 };
 
+// Pastikan untuk menghentikan stream ketika komponen di-unmount
+onMounted(() => {
+  // Pastikan tidak ada stream yang tersisa dari instance sebelumnya jika di-hot-reload
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(track => track.stop());
+  }
+});
+
 </script>
 
 <style scoped>
@@ -411,8 +491,9 @@ body.modal-open {
 
 /* Parent container for webcam modal to fill screen and center content */
 .webcam-modal-container {
-  /* This is already handled by fixed inset-0 bg-black bg-opacity-90 flex flex-col items-center justify-center z-40 p-0 */
-  /* Remove padding if you want true full screen. p-4 added for small screens */
+  /* This is already handled by fixed inset-0 from Tailwind. */
+  /* Ensure no padding if you want true full screen */
+  padding: 0;
 }
 
 /* The inner content box of the webcam modal */
@@ -431,12 +512,14 @@ body.modal-open {
 .webcam-header {
   background-color: rgba(0, 0, 0, 0.7); /* Slightly transparent dark header */
   color: white;
-  padding: 1rem; /* Adjust as needed */
+  padding: 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  position: relative; /* For z-index over video */
+  position: relative;
   z-index: 10;
+  /* Tambahan untuk menyesuaikan tinggi agar tombol tidak tertutup */
+  min-height: 4rem; /* Atur tinggi minimum agar tidak terlalu kecil di HP */
 }
 
 /* Video container */
@@ -445,29 +528,40 @@ body.modal-open {
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative; /* For placing video inside */
-  background-color: black; /* Ensure black background if video doesn't fill */
-  padding: 0; /* Remove padding for video */
+  position: relative;
+  background-color: black;
+  padding: 0;
+  /* Atur aspek rasio untuk kontainer video */
+  width: 100%;
+  padding-bottom: calc(100% * 3 / 4); /* For 4:3 aspect ratio (height is 3/4 of width) */
+  /* Remove flex-grow and use absolute positioning for video if you want strict aspect ratio container */
+  /* For simpler approach, we let flex-grow determine height and object-fit handle video */
+  overflow: hidden; /* Ensure video doesn't overflow its calculated aspect ratio container */
 }
 
 /* Actual video element */
 .webcam-video {
+  position: absolute; /* Position absolutely inside its parent */
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover; /* Important: This will make the video fill the container, cropping if aspect ratios differ */
   /* object-fit: contain; Uncomment this if you prefer to see the full video frame, even with black bars */
-  transform: scaleX(-1); /* Mirror effect for selfie camera, remove if only environment camera */
+  /* transform: scaleX(-1); /* Mirror effect for selfie camera, remove if only environment camera */
 }
 
 /* Footer for webcam controls */
 .webcam-footer {
   background-color: rgba(0, 0, 0, 0.7); /* Slightly transparent dark footer */
-  padding: 1rem; /* Adjust as needed */
+  padding: 1rem;
   display: flex;
   justify-content: center; /* Center the capture button */
   align-items: center;
-  position: relative; /* For z-index over video */
+  position: relative;
   z-index: 10;
+  /* Tambahan untuk menyesuaikan tinggi agar tombol tidak tertutup */
+  min-height: 6rem; /* Atur tinggi minimum agar ada ruang untuk tombol */
 }
 
 /* Capture button styling */
@@ -489,11 +583,6 @@ body.modal-open {
   background-color: #f0f0f0;
   border-color: rgba(255, 255, 255, 0.7);
   transform: scale(1.05);
-}
-
-/* Optionally add a subtle inner circle or icon for the button if desired */
-.capture-button svg {
-  color: black; /* Or any other color for the icon */
 }
 
 </style>
