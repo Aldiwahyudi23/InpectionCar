@@ -145,9 +145,6 @@ const props = defineProps({
   }
 });
 
-// Emit 'update:modelValue' when the list of images changes (e.g., after saving or removing)
-// Emit 'handleImageUpload' when a new file is ready to be uploaded to the server
-// Emit 'removeImage' when an image is to be removed from the server (handled by parent)
 const emit = defineEmits(['update:modelValue', 'handleImageUpload', 'removeImage']);
 
 const showOptionsModal = ref(false);
@@ -155,34 +152,32 @@ const showReviewModal = ref(false);
 const tempImages = ref([]); // Temporary array for images being reviewed
 const currentReviewIndex = ref(0); // Index of the currently displayed image in review modal
 const fileInput = ref(null); // Ref for the hidden file input
-const captureMode = ref(''); // 'environment' for camera, '' for gallery
+const captureMode = ref(''); // 'environment' for camera, '' for gallery (default)
 
-// Computed property for allowed file types for the input accept attribute
 const allowedFileTypes = computed(() => {
   return props.settings.allowed_types.map(type => `image/${type}`).join(',');
 });
 
 const openCamera = () => {
   showOptionsModal.value = false;
-  captureMode.value = 'environment'; // 'environment' for rear camera, 'user' for front
+  captureMode.value = 'environment'; // Ini akan memicu kamera belakang
   fileInput.value.click();
 };
 
 const openGallery = () => {
   showOptionsModal.value = false;
-  captureMode.value = ''; // No capture attribute for gallery
+  captureMode.value = ''; // Mengosongkan atribut capture agar membuka file picker/galeri
   fileInput.value.click();
 };
 
-// Handle file change from the hidden input
 const handleFileChange = (event) => {
   const files = Array.from(event.target.files);
   if (files.length === 0) return;
 
   const newFiles = files.filter(file => {
-    const fileType = file.type.split('/').pop().toLowerCase(); // Mendapatkan ekstensi file
+    const fileType = file.type.split('/').pop().toLowerCase();
     const isAllowedType = props.settings.allowed_types.includes(fileType);
-    const isWithinSize = file.size / 1024 <= props.settings.max_size; // size in KB
+    const isWithinSize = file.size / 1024 <= props.settings.max_size;
 
     if (!isAllowedType) {
       alert(`Tipe file tidak diizinkan: ${file.name}. Hanya ${props.settings.allowed_types.join(', ')} yang diizinkan.`);
@@ -200,8 +195,6 @@ const handleFileChange = (event) => {
     return;
   }
 
-  // Combine new files with existing temp images, respecting max_files limit
-  // First, check how many slots are available considering already saved images
   const totalExistingImages = props.modelValue.length;
   const totalTempImages = tempImages.value.length;
   const combinedCurrentImages = totalExistingImages + totalTempImages;
@@ -217,15 +210,15 @@ const handleFileChange = (event) => {
     ...filesToAdd.map(file => ({
       file,
       preview: URL.createObjectURL(file),
-      rotation: 0 // Initialize rotation for each new image
+      rotation: 0
     }))
   ];
 
   if (tempImages.value.length > 0) {
-    currentReviewIndex.value = tempImages.value.length - 1; // Show the last added image
+    currentReviewIndex.value = tempImages.value.length - 1;
     showReviewModal.value = true;
   }
-  event.target.value = ''; // Clear the input value to allow re-selection
+  event.target.value = '';
 };
 
 const prevImage = () => {
@@ -247,11 +240,10 @@ const rotateCurrentImage = () => {
 const removeReviewImage = () => {
   if (tempImages.value.length === 0) return;
   const removedImage = tempImages.value.splice(currentReviewIndex.value, 1)[0];
-  URL.revokeObjectURL(removedImage.preview); // Clean up the URL object
+  URL.revokeObjectURL(removedImage.preview);
 
-  // Adjust index if the removed image was the last one
   if (tempImages.value.length === 0) {
-    showReviewModal.value = false; // If no images left, close the modal
+    showReviewModal.value = false;
     currentReviewIndex.value = 0;
   } else if (currentReviewIndex.value >= tempImages.value.length) {
     currentReviewIndex.value = tempImages.value.length - 1;
@@ -266,16 +258,14 @@ const cancelReview = () => {
 };
 
 const saveImages = () => {
-  // Emit each new image to the parent component for upload
   tempImages.value.forEach(img => {
     emit('handleImageUpload', { 
         file: img.file, 
         pointId: props.pointId,
-        rotation: img.rotation // Kirim informasi rotasi ke parent
+        rotation: img.rotation
     });
   });
 
-  // Clear temp images and close modal
   tempImages.value.forEach(img => URL.revokeObjectURL(img.preview));
   tempImages.value = [];
   currentReviewIndex.value = 0;

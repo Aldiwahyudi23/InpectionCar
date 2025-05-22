@@ -1,13 +1,7 @@
 <template>
-  <div class="container mx-auto px-4 py-8">
-    <div class="bg-white rounded-xl shadow-md overflow-hidden p-6 mb-8">
-      <h1 class="text-3xl font-bold text-gray-800 mb-2">Pemeriksaan Kendaraan</h1>
-      <h2 class="text-xl font-semibold text-indigo-600">
-        {{ inspection.car?.brand_id || 'Kendaraan Tidak Dikenal' }}
-      </h2>
-    </div>
+  <div class="container mx-auto px-4 py-2">
 
-    <div class="sticky top-0 z-10 bg-white shadow-sm mb-6">
+    <div class="sticky top-0 z-10 bg-white shadow-sm mb-2">
       <div class="flex overflow-x-auto scrollbar-hide py-3 px-4 space-x-2">
         <button
           v-for="category in categories"
