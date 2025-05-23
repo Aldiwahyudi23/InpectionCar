@@ -25,6 +25,12 @@ const switchToTeam = (team) => {
 const logout = () => {
     router.post(route('logout'));
 };
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/service-worker.js')
+    .then(() => console.log('SW Registered'))
+    .catch(err => console.error('SW Failed', err))
+}
 </script>
 
 <template>

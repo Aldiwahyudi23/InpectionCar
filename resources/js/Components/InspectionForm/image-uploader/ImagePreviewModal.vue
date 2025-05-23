@@ -7,7 +7,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        <div class="text-lg font-medium">Preview ({{ currentPreviewIndex + 1 }}/{{ images.length }})</div>
+        <div class="text-lg font-medium">Preview ({{ currentPreviewIndex + 1 }}/{{ editableImages.length }})</div>
         <button @click="rotateImage" class="p-2 rounded-full hover:bg-white hover:bg-opacity-10 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -24,14 +24,14 @@
         >
           <img
             v-if="currentImage"
-            :src="currentImage.preview || (currentImage.image_path ? `/storage/${currentImage.image_path}` : '')"
+            :src="getImageSrc(currentImage)"
             class="max-w-full max-h-full object-contain"
             :style="{ transform: `rotate(${currentImage.rotation}deg)` }"
           />
         </div>
 
         <button
-          v-if="images.length > 1"
+          v-if="editableImages.length > 1"
           @click="prevImage"
           class="absolute left-4 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
         >
@@ -40,7 +40,7 @@
           </svg>
         </button>
         <button
-          v-if="images.length > 1"
+          v-if="editableImages.length > 1"
           @click="nextImage"
           class="absolute right-4 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
         >
@@ -53,9 +53,9 @@
       <div class="flex flex-col gap-2 p-4 bg-black bg-opacity-50">
         <div class="flex justify-between">
           <button
-            @click="removeCurrentImage"
-            class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-            :disabled="isUploading" >
+            @click="removeCurrentImage" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+            :disabled="isUploading"
+          >
             Hapus
           </button>
 
@@ -64,7 +64,7 @@
             @click="saveImages"
             class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
           >
-            Simpan {{ images.length }}
+            Simpan {{ editableImages.length }}
           </button>
           <button
             v-else
@@ -75,7 +75,7 @@
           </button>
         </div>
 
-        <div v-if="allowMultiple && images.length < maxFiles" class="text-center mt-2">
+        <div v-if="allowMultiple && editableImages.length < maxFiles" class="text-center mt-2">
           <button
             @click="addMorePhotos"
             class="inline-block px-4 py-2 rounded-lg text-sm font-medium bg-indigo-700 text-white hover:bg-indigo-800 transition-colors cursor-pointer"
@@ -94,7 +94,7 @@ import { ref, computed, watch, defineProps, defineEmits } from 'vue';
 
 const props = defineProps({
   show: Boolean,
-  images: {
+  images: { // Ini adalah allImages dari InputImage.vue
     type: Array,
     default: () => []
   },
@@ -107,24 +107,43 @@ const props = defineProps({
   isUploading: Boolean,
 });
 
-// PENTING: Tambahkan 'triggerAddMorePhotos' ke daftar emit
 const emit = defineEmits(['close', 'saveImages', 'removePreviewImage', 'triggerAddMorePhotos']);
 
-const currentPreviewIndex = ref(props.initialIndex);
+const currentPreviewIndex = ref(0);
+const editableImages = ref([]); // Salinan lokal gambar yang bisa dimodifikasi
 const touchStartX = ref(0);
 const touchEndX = ref(0);
 
 const currentImage = computed(() => {
-  if (props.images.length > 0) {
-    return props.images[currentPreviewIndex.value];
+  if (editableImages.value.length > 0) {
+    return editableImages.value[currentPreviewIndex.value];
   }
   return null;
 });
 
-// Update currentPreviewIndex if initialIndex changes
-watch(() => props.initialIndex, (newIndex) => {
-  currentPreviewIndex.value = newIndex;
-}, { immediate: true });
+// Watcher untuk `props.images` dan `props.initialIndex`
+watch(() => props.images, (newImages) => {
+  editableImages.value = newImages.map(img => ({ ...img }));
+  
+  if (props.show && newImages.length > 0) {
+    if (props.initialIndex === -1 || props.initialIndex >= newImages.length) {
+        currentPreviewIndex.value = newImages.length - 1;
+    } else {
+        currentPreviewIndex.value = props.initialIndex;
+    }
+  } else {
+      currentPreviewIndex.value = 0;
+  }
+
+  if (newImages.length === 0 && props.show) {
+    cancelPreview();
+  }
+
+}, { deep: true, immediate: true });
+
+const getImageSrc = (image) => {
+  return image.preview || (image.image_path ? `/${image.image_path}` : '');
+};
 
 const rotateImage = () => {
   if (currentImage.value) {
@@ -133,14 +152,18 @@ const rotateImage = () => {
 };
 
 const nextImage = () => {
-  if (currentPreviewIndex.value < props.images.length - 1) {
+  if (currentPreviewIndex.value < editableImages.value.length - 1) {
     currentPreviewIndex.value++;
+  } else {
+    currentPreviewIndex.value = 0;
   }
 };
 
 const prevImage = () => {
   if (currentPreviewIndex.value > 0) {
     currentPreviewIndex.value--;
+  } else {
+    currentPreviewIndex.value = editableImages.value.length - 1;
   }
 };
 
@@ -153,36 +176,36 @@ const handleTouchMove = (e) => {
 };
 
 const handleTouchEnd = () => {
-  if (touchStartX.value - touchEndX.value > 50) {
+  const minSwipeDistance = 50;
+  if (touchStartX.value - touchEndX.value > minSwipeDistance) {
     nextImage();
-  } else if (touchEndX.value - touchStartX.value > 50) {
+  } else if (touchEndX.value - touchStartX.value > minSwipeDistance) {
     prevImage();
   }
+  touchStartX.value = 0;
+  touchEndX.value = 0;
 };
 
 const removeCurrentImage = () => {
-  if (props.images.length === 0) return;
+  if (!currentImage.value) return;
 
-  emit('removePreviewImage', currentPreviewIndex.value); // Emit index to parent for removal
-
-  // Sesuaikan indeks setelah penghapusan. Ingat, `props.images` akan diperbarui oleh komponen induk.
-  // Logika ini mengasumsikan `props.images` akan segera mencerminkan penghapusan.
-  if (currentPreviewIndex.value >= props.images.length -1 && props.images.length > 1) {
-      currentPreviewIndex.value = Math.max(0, props.images.length - 2); // Pindah ke gambar sebelumnya
-  } else if (props.images.length === 1) { // Jika setelah dihapus hanya tersisa 1 gambar (atau 0 jika ini adalah gambar terakhir)
-      cancelPreview(); // Tutup modal jika tidak ada gambar tersisa
-  }
+  // Emit event ke parent dengan objek gambar yang akan dihapus
+  emit('removePreviewImage', currentImage.value); 
+  
+  // Catatan: Setelah ini, `InputImage` akan memproses penghapusan
+  // dan kemudian memperbarui `props.images` dari modal ini.
+  // Watcher di atas akan menangani update `editableImages` dan `currentPreviewIndex`
+  // berdasarkan perubahan `props.images`.
 };
 
 const saveImages = () => {
-  emit('saveImages', props.images);
+  emit('saveImages', editableImages.value);
 };
 
 const cancelPreview = () => {
   emit('close');
 };
 
-// FUNGSI BARU: Untuk memicu permintaan penambahan foto di komponen induk
 const addMorePhotos = () => {
   emit('triggerAddMorePhotos');
 };
@@ -200,7 +223,7 @@ watch(() => props.show, (newVal) => {
 <style scoped>
 /* Basic modal styles for overlay */
 .fixed.inset-0 {
-  background-color: rgba(0, 0, 0, 0.9);
+  /* background-color: rgba(0, 0, 0, 0.9); Ini sudah ada di template */
 }
 
 body.modal-open {

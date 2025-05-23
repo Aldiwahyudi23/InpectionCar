@@ -163,7 +163,7 @@ const aspectRatio = computed(() => {
       return width / height;
     }
   }
-  return 3 / 4;
+  return 4 / 3; // Default ke 4:3 jika format tidak valid
 });
 
 // Computed property untuk menggabungkan gambar yang sudah ada (modelValue) dan gambar baru (previewImages)
