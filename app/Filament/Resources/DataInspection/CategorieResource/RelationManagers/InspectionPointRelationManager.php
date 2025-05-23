@@ -160,11 +160,7 @@ Forms\Components\Fieldset::make('Settings Configuration')
                         Forms\Components\Toggle::make('settings.show_textarea')
                             ->label('Show Textarea for this value')
                             ->default(false),
-                        Forms\Components\Toggle::make('settings.show_image_upload')
-                            ->label('Show Image Upload for this value')
-                            ->default(false),
-
-                        // Optional: bisa juga tambahkan pengaturan textarea/image di level ini
+                              // Optional: bisa juga tambahkan pengaturan textarea/image di level ini
                        Forms\Components\TextInput::make('settings.textarea_min_length')
                             ->numeric()
                             ->label('Min Length')
@@ -177,20 +173,45 @@ Forms\Components\Fieldset::make('Settings Configuration')
                             ->label('Placeholder')
                             ->visible(fn (callable $get) => $get('settings.show_textarea')),
 
-                         Forms\Components\TextInput::make('settings.image_max_files')
+                            
+                        Forms\Components\Toggle::make('settings.show_image_upload')
+                            ->label('Show Image Upload for this value')
+                            ->default(false),
+
+                      
+                         Forms\Components\TextInput::make('settings.max_files')
                             ->numeric()
                             ->default(1)
                             ->label('Max Files')
                             ->visible(fn (callable $get) => $get('settings.show_image_upload')),
-                        Forms\Components\TextInput::make('settings.image_max_size')
+                        Forms\Components\TextInput::make('settings.max_size')
                             ->numeric()
                             ->default(2048)
                             ->label('Max Size (KB)')
                             ->visible(fn (callable $get) => $get('settings.show_image_upload')),
-                        Forms\Components\TagsInput::make('settings.image_allowed_types')
+                        Forms\Components\TagsInput::make('settings.allowed_types')
                             ->placeholder('jpg, png, etc.')
-                            ->label('Allowed Types')
+                            ->label('Allowed File Types')
                             ->visible(fn (callable $get) => $get('settings.show_image_upload')),
+                        
+                        Forms\Components\Toggle::make('settings.enable_flash')
+                            ->default(true)
+                            ->label('Flash')
+                             ->visible(fn (callable $get) => $get('settings.show_image_upload')),
+                        Forms\Components\Toggle::make('settings.enable_camera_switch')
+                            ->default(true)
+                            ->label('Kamera Switch')
+                             ->visible(fn (callable $get) => $get('settings.show_image_upload')),
+                        Forms\Components\Select::make('settings.camera_aspect_ratio')
+                            ->options([
+                                '4:3' => '4:3',
+                                '3:4' => '3:4',
+                                '16:9' => '16:9',
+                                '1:1' => '1:1',
+                            ])
+                            ->default('4:3')
+                            ->label('Camera Aspect Ratio')
+                             ->visible(fn (callable $get) => $get('settings.show_image_upload')),
                     ])
                     ->defaultItems(2)
                     ->columnSpanFull()

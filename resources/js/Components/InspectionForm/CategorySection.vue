@@ -71,6 +71,8 @@
           v-if="point.input_type === 'radio'"
           v-model="form.results[point.id].status"
           :required="point.settings?.is_required"
+           :point-id="point.id"  
+          :settings="point.settings"  
           :options="point.settings?.radios || defaultRadioOptions"
           :error="form.errors[`results.${point.id}.status`]"
           @update:modelValue="updateResult(point.id, $event)"

@@ -123,7 +123,7 @@ public function saveResult(Request $request)
     $validated = $request->validate([
         'inspection_id' => 'required|exists:inspections,id',
         'point_id' => 'required|exists:inspection_points,id',
-        'status' => 'nullable|string|in:good,bad,na',
+        'status' => 'nullable|string',
         'note' => 'nullable|string|max:1000',
     ]);
 
