@@ -249,10 +249,10 @@ const setupSwipe = () => {
   };
   
   const handleSwipe = () => {
-    if (touchEndX < touchStartX - 50) {
+    if (touchEndX < touchStartX - 100) {
       // Swipe left - go next
       navigate(1);
-    } else if (touchEndX > touchStartX + 50) {
+    } else if (touchEndX > touchStartX + 100) {
       // Swipe right - go previous
       navigate(-1);
     }
