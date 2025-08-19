@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Inspection;
 
 use App\Http\Controllers\Controller;
-use App\Models\DataInpection\Categorie;
-use App\Models\DataInpection\Inspection;
-use App\Models\DataInpection\InspectionImage;
-use App\Models\DataInpection\InspectionResult;
+use App\Models\DataInspection\AppMenu;
+use App\Models\DataInspection\Categorie;
+use App\Models\DataInspection\Inspection;
+use App\Models\DataInspection\InspectionImage;
+use App\Models\DataInspection\InspectionResult;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
@@ -47,34 +49,45 @@ class InspectionController extends Controller
 
 public function create(Inspection $inspection)
 {
-    // Eager load categories with their active points
-    $categories = Categorie::with(['points' => function($query) {
-        $query->where('is_active', true)
-              ->orderBy('order');
-    }])
-    ->where('is_active', true)
-    ->orderBy('order')
-    ->get();
+    // Jika status masih draft, ubah ke in-progress
+    if ($inspection->status === 'draft') {
+        $inspection->update([
+            'status' => 'in_progress',
+        ]);
+    }
 
-    // Load existing results if any (for edit case)
+    // Ambil AppMenu sesuai category_id inspection dengan filter status menu
+    $appMenu = AppMenu::with(['points' => function($query) {
+            $query->where('is_active', true)
+                  ->where('input_type', '!=', 'damage') // Filter out damage type
+                  ->orderBy('order');
+        }])
+        ->where('is_active', true)
+        ->where('input_type', 'menu') // Hanya tampilkan yang statusnya 'menu'
+        ->where('category_id', $inspection->category_id) // filter sesuai inspection
+        ->orderBy('order')
+        ->get();
+
+    // Load existing results (jika ada)
     $existingResults = InspectionResult::where('inspection_id', $inspection->id)
         ->get()
         ->keyBy('point_id');
 
-        // dd($existingResults);
-    // Load existing images if any
+    // Load existing images (jika ada)
     $existingImages = InspectionImage::whereIn('point_id', 
-        $categories->flatMap->points->pluck('id')
+        $appMenu->flatMap->points->pluck('id')
     )->get()
     ->groupBy('point_id');
 
     return Inertia::render('FrontEnd/Inspection/InspectionForm', [
-        'inspection' => $inspection->load(['car', 'user']),
-        'categories' => $categories,
+        'inspection' => $inspection->fresh()->load(['car', 'user']), // pakai fresh biar status terbaru ikut
+        'appMenu' => $appMenu, // Ganti categories menjadi appMenu
         'existingResults' => $existingResults->values()->all(),
         'existingImages' => $existingImages,
     ]);
 }
+
+
 
     /**
      * Store a newly created resource in storage.
@@ -330,10 +343,52 @@ public function uploadImage(Request $request)
         }
     }
 
-public function finalSubmit(Request $request)
+    public function finalSubmit(Request $request, Inspection $inspection)
 {
-    // Logic untuk final submit jika diperlukan
-    return redirect()->back()->with('success', 'Inspection submitted successfully');
+    
+    // Update status inspeksi
+    $inspection->update([
+        'status' => 'pending_review',
+        'submitted_at' => now()
+    ]);
+    
+    // Redirect ke halaman review
+    return redirect()->route('inspections.review', ['inspection' => $inspection->id])
+        ->with('success', 'Inspeksi berhasil dikirim untuk review');
+}
+
+public function review(Inspection $inspection)
+{
+    // Cek status harus pending_review atau approved
+    if (!in_array($inspection->status, ['pending_review', 'approved'])) {
+        abort(403, 'Inspeksi belum siap untuk direview');
+    }
+    
+    return view('inspections.review', compact('inspection'));
+}
+
+public function approve(Request $request, Inspection $inspection)
+{
+    // Validasi hanya yang statusnya pending_review bisa di-approve
+    if ($inspection->status !== 'pending_review') {
+        abort(403, 'Status inspeksi tidak valid');
+    }
+    
+    $inspection->update([
+        'status' => 'approved',
+        'approved_at' => now(),
+        'approved_by' => Auth::user()->id
+    ]);
+    
+    // Generate PDF
+    $pdf = Pdf::loadView('inspections.pdf', ['inspection' => $inspection]);
+    
+    return $pdf->download("inspeksi-{$inspection->id}.pdf");
+    
+    // Atau jika ingin menyimpan PDF
+    // $pdfPath = "inspections/{$inspection->id}.pdf";
+    // Storage::put($pdfPath, $pdf->output());
+    // $inspection->update(['pdf_path' => $pdfPath]);
 }
 
 }

@@ -26,6 +26,7 @@ Route::middleware([
 });
 
 Route::get('/job', [JobController::class, 'index'])->name('job.index');
+ Route::get('/job/history', [JobController::class, 'history'])->name('inspections.history');
 
   Route::get('/inspections/{inspection}/create', [InspectionController::class, 'create'])
         ->name('inspections.create');
@@ -39,3 +40,8 @@ Route::post('/inspections/save-result', [InspectionController::class, 'saveResul
 Route::post('/inspections/upload-image', [InspectionController::class, 'uploadImage'])->name('inspections.upload-image');
 Route::delete('/inspections/delete-image', [InspectionController::class, 'deleteImage'])->name('inspections.delete-image');
 Route::post('/inspections/final-submit', [InspectionController::class, 'finalSubmit'])->name('inspections.final-submit');
+Route::get('/inspections/{inspection}/review', [InspectionController::class, 'review'])
+    ->name('inspections.review');
+    
+Route::post('/inspections/{inspection}/approve', [InspectionController::class, 'approve'])
+    ->name('inspections.approve');

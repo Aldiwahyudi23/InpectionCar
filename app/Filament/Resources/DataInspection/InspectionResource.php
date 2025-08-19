@@ -6,7 +6,7 @@ use App\Filament\Resources\DataInspection\InspectionResource\Pages;
 use App\Filament\Resources\DataInspection\InspectionResource\RelationManagers;
 use App\InspectionStatus;
 use App\Models\DataCar\CarDetail;
-use App\Models\DataInpection\Inspection;
+use App\Models\DataInspection\Inspection;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -35,6 +35,12 @@ class InspectionResource extends Resource
                     ->searchable()
                     ->preload()
                     ->required(),
+
+                Forms\Components\Select::make('category_id')
+                    ->relationship('category', 'name')
+                    ->required()
+                    ->searchable()
+                    ->preload(),
                     
                 Forms\Components\Select::make('car_id')
                     ->label('Mobil')
@@ -50,15 +56,11 @@ class InspectionResource extends Resource
                     ->label('Tanggal Inspeksi')
                     ->required()
                     ->default(now()),
+                
+                Forms\Components\Hidden::make('status')
+                    ->default('draft'),
                     
-                Forms\Components\Select::make('status')
-                    ->options(InspectionStatus::class)
-                    ->native(false)
-                    ->required(),
-                      Forms\Components\Textarea::make('notes')
-                    ->label('Catatan')
-                    ->columnSpanFull()
-                    ->nullable()
+
             ]);
     }
 
@@ -66,10 +68,19 @@ class InspectionResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')
-                    ->label('Inspektor')
+                 Tables\Columns\TextColumn::make('inspection_date')
+                    ->label('Tanggal')
+                    ->dateTime()
+                    ->sortable(),
+                    
+                 Tables\Columns\TextColumn::make('user.name')
+                    ->label('Inspector')
                     ->sortable()
                     ->searchable(),
+                    
+                Tables\Columns\TextColumn::make('category.name')
+                    ->label('Category')
+                    ->sortable(),
                     
                 Tables\Columns\TextColumn::make('carDisplay')
                     ->label('Mobil')
@@ -83,43 +94,61 @@ class InspectionResource extends Resource
                               ->orWhereHas('model', fn($q) => $q->where('name', 'like', "%{$search}%"));
                         });
                     }),
-                     Tables\Columns\TextColumn::make('inspection_date')
-                    ->label('Tanggal')
-                    ->dateTime()
-                    ->sortable(),
                     
-                Tables\Columns\TextColumn::make('status')
+                    
+               Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
                         'draft' => 'gray',
-                        'in_progress' => 'warning',
-                        'completed' => 'success',
-                        'cancelled' => 'danger',
+                        'in_progress' => 'info',
+                        'pending_review' => 'warning',
+                        'approved' => 'success',
+                        'rejected' => 'danger',
+                        'revision_required' => 'orange',
+                        'completed' => 'green',
+                        'cancelled' => 'dark',
                         default => 'gray',
-                    })
-                    ->formatStateUsing(fn (string $state): string => InspectionStatus::from($state)->label()),
+                    }),
+                    
+                Tables\Columns\IconColumn::make('file')
+                    ->label('File')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-paper-clip')
+                    ->falseIcon('heroicon-o-minus'),
+                    
+                Tables\Columns\TextColumn::make('notes')
+                    ->label('Notes')
+                    ->limit(30)
+                    ->tooltip(fn ($record) => $record->notes),
                     
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat')
                     ->dateTime()
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true)
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                Tables\Columns\TextColumn::make('updated_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                Tables\Filters\TrashedFilter::make(),
-                 // Tambahkan filter jika diperlukan
-                Tables\Filters\SelectFilter::make('user_id')
-                    ->label('User')
-                    ->relationship('user', 'name')
-                    ->searchable(),
+                 Tables\Filters\TrashedFilter::make(),
                 Tables\Filters\SelectFilter::make('status')
-                    ->label('Status')
                     ->options([
-                        'selesai' => 'Selesai',
                         'draft' => 'Draft',
-                        'pending' => 'Pending',
-                        'dibatalkan' => 'Dibatalkan'
+                        'in_progress' => 'In Progress',
+                        'pending_review' => 'Pending Review',
+                        'approved' => 'Approved',
+                        'rejected' => 'Rejected',
+                        'revision_required' => 'Revision Required',
+                        'completed' => 'Completed',
+                        'cancelled' => 'Cancelled',
                     ]),
+                Tables\Filters\SelectFilter::make('category')
+                    ->relationship('category', 'name'),
+                Tables\Filters\SelectFilter::make('user')
+                    ->relationship('user', 'name'),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

@@ -4,19 +4,19 @@
     <div class="sticky top-0 z-10 bg-white shadow-sm mb-2">
       <div class="flex overflow-x-auto scrollbar-hide py-3 px-4 space-x-2">
         <button
-          v-for="category in categories"
-          :key="category.id"
-          @click="changeCategory(category.id)"
+          v-for="menu in appMenu"
+          :key="menu.id"
+          @click="changeCategory(menu.id)"
           class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200"
           :class="{
-            'bg-indigo-600 text-white': activeCategory === category.id,
-            'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== category.id
+            'bg-indigo-600 text-white': activeCategory === menu.id,
+            'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== menu.id
           }"
-          :data-category-id="category.id"
+          :data-category-id="menu.id"
         >
-          {{ category.name }}
+          {{ menu.name }}
           <span 
-            v-if="isCategoryComplete(category)"
+            v-if="isMenuComplete(menu)"
             class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs rounded-full bg-green-500 text-white"
           >
             ✓
@@ -40,14 +40,14 @@
     <div class="relative overflow-hidden">
       <transition name="category-slide" mode="out-in">
         <category-section
-          v-if="activeCategoryData && activeCategory !== 'summary'"
-          :key="activeCategoryData.id"
-          :category="activeCategoryData"
+          v-if="activeMenuData && activeCategory !== 'summary'"
+          :key="activeMenuData.id"
+          :category="activeMenuData"
           :form="form"
           @saveResult="saveResult"
           @updateResult="updateResult"
           @removeImage="removeImage"
-          @handleImageUpload="handleImageUpload"
+          @handleImageUpload="(file, pointId) => handleImageUpload(file, pointId, activeMenuData.name)"
         />
 
         <div 
@@ -70,15 +70,15 @@
           </div>
 
           <div class="mt-6">
-            <h4 class="text-lg font-semibold text-gray-700 mb-3">Status Kategori:</h4>
+            <h4 class="text-lg font-semibold text-gray-700 mb-3">Status Menu:</h4>
             <ul class="list-disc pl-5">
               <li 
-                v-for="category in categories" 
-                :key="category.id" 
-                :class="{'text-green-600': isCategoryComplete(category), 'text-red-600': !isCategoryComplete(category)}"
+                v-for="menu in appMenu" 
+                :key="menu.id" 
+                :class="{'text-green-600': isMenuComplete(menu), 'text-red-600': !isMenuComplete(menu)}"
               >
-                {{ category.name }} 
-                <span v-if="isCategoryComplete(category)">(Selesai ✓)</span>
+                {{ menu.name }} 
+                <span v-if="isMenuComplete(menu)">(Selesai ✓)</span>
                 <span v-else>(Belum Selesai ✗)</span>
               </li>
             </ul>
@@ -88,7 +88,7 @@
             <button
               type="button"
               @click="submitAll"
-              :disabled="form.processing"
+              :disabled="!allMenusComplete || form.processing"
               class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg v-if="form.processing" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -114,49 +114,50 @@ import CategorySection from '@/Components/InspectionForm/CategorySection.vue';
 
 const props = defineProps({
   inspection: Object,
-  categories: Array,
+  appMenu: Array, // Ganti categories menjadi appMenu
   existingResults: Array,
   existingImages: Object,
 });
 
 // Ubah inisialisasi activeCategory untuk bisa menerima 'summary'
-const activeCategory = ref(props.categories[0]?.id || 'summary'); // Default ke kategori pertama atau 'summary'
-const activeIndex = ref(0); // Ini masih digunakan untuk swipe, tapi tidak lagi untuk translateX
+const activeCategory = ref(props.appMenu[0]?.id || 'summary'); // Default ke menu pertama atau 'summary'
+const activeIndex = ref(0);
 const categoriesWrapper = ref(null); 
 
-// Properti terhitung untuk mendapatkan data kategori aktif
-const activeCategoryData = computed(() => {
-  // Hanya mencari di `props.categories` jika activeCategory bukan 'summary'
+// Properti terhitung untuk mendapatkan data menu aktif
+const activeMenuData = computed(() => {
   return activeCategory.value !== 'summary' 
-    ? props.categories.find(c => c.id === activeCategory.value)
-    : null; // Jika 'summary', tidak ada data kategori spesifik
+    ? props.appMenu.find(m => m.id === activeCategory.value)
+    : null;
 });
 
 // Inisialisasi form
 const initializeForm = () => {
   const results = {};
   
-  props.categories.forEach(category => {
-    (category.points || []).forEach(point => {
-      const existing = Array.isArray(props.existingResults)
-        ? props.existingResults.find(r => r.point_id === point.id)
-        : null;
-      
-      results[point.id] = {
-        status: existing?.status || '',
-        note: existing?.note || '',
-        images: props.existingImages?.[point.id]?.map(img => ({
-          image_path: img.image_path,
-          preview: null // Preview akan dibuat saat gambar baru dipilih
-        })) || []
-      };
+  props.appMenu.forEach(menu => {
+    (menu.points || []).forEach(point => {
+      // Pastikan hanya point dengan input_type selain damage yang diproses
+      if (point.input_type !== 'damage') {
+        const existing = Array.isArray(props.existingResults)
+          ? props.existingResults.find(r => r.point_id === point.id)
+          : null;
+        
+        results[point.id] = {
+          status: existing?.status || '',
+          note: existing?.note || '',
+          images: props.existingImages?.[point.id]?.map(img => ({
+            image_path: img.image_path,
+            preview: null
+          })) || []
+        };
+      }
     });
   });
   
   return {
     inspection_id: props.inspection.id,
     results,
-    // Tambahkan field baru untuk catatan keseluruhan
     overall_note: props.inspection.overall_note || '' 
   };
 };
@@ -171,7 +172,7 @@ const debounceSaveOverallNote = debounce(() => {
   }, {
     preserveScroll: true,
     preserveState: true,
-    only: ['inspection'], // Hanya refresh prop inspection jika perlu
+    only: ['inspection'],
     onSuccess: () => {
       // console.log('Catatan keseluruhan berhasil disimpan.');
     },
@@ -179,11 +180,14 @@ const debounceSaveOverallNote = debounce(() => {
       console.error('Error menyimpan catatan keseluruhan:', errors);
     }
   });
-}, 800); // Sesuaikan debounce time
+}, 800);
 
-// Check if category is complete
-const isCategoryComplete = (category) => {
-  return category.points.every(point => {
+// Check if menu is complete
+const isMenuComplete = (menu) => {
+  return menu.points.every(point => {
+    // Skip point dengan input_type damage
+    if (point.input_type === 'damage') return true;
+    
     const result = form.results[point.id];
     if (!result) return false;
     
@@ -191,6 +195,7 @@ const isCategoryComplete = (category) => {
       case 'text':
       case 'number':
       case 'date':
+      case 'account':
         return !!result.note;
       case 'select':
       case 'radio':
@@ -204,32 +209,30 @@ const isCategoryComplete = (category) => {
 };
 
 // Change active category
-const changeCategory = (categoryId) => {
-  // Jika categoryId adalah 'summary', set activeIndex ke posisi terakhir
-  if (categoryId === 'summary') {
-    activeIndex.value = props.categories.length; // Index terakhir + 1 untuk kesimpulan
+const changeCategory = (menuId) => {
+  if (menuId === 'summary') {
+    activeIndex.value = props.appMenu.length;
   } else {
-    const index = props.categories.findIndex(c => c.id === categoryId);
+    const index = props.appMenu.findIndex(m => m.id === menuId);
     if (index >= 0) {
       activeIndex.value = index;
     }
   }
-  activeCategory.value = categoryId;
+  activeCategory.value = menuId;
 };
 
-// Navigate between categories (Tidak lagi digunakan untuk panah, tapi tetap untuk swipe)
+// Navigate between menus
 const navigate = (direction) => {
   let newIndex = activeIndex.value + direction;
   
-  // Batasi index agar tidak keluar dari batas kategori + kesimpulan
-  const maxIndex = props.categories.length; // categories.length adalah index untuk 'summary'
+  const maxIndex = props.appMenu.length;
   
   if (newIndex >= 0 && newIndex <= maxIndex) {
     activeIndex.value = newIndex;
     if (newIndex === maxIndex) {
       activeCategory.value = 'summary';
     } else {
-      activeCategory.value = props.categories[newIndex].id;
+      activeCategory.value = props.appMenu[newIndex].id;
     }
   }
 };
@@ -250,10 +253,8 @@ const setupSwipe = () => {
   
   const handleSwipe = () => {
     if (touchEndX < touchStartX - 100) {
-      // Swipe left - go next
       navigate(1);
     } else if (touchEndX > touchStartX + 100) {
-      // Swipe right - go previous
       navigate(-1);
     }
   };
@@ -272,7 +273,7 @@ const setupSwipe = () => {
   };
 };
 
-// Save single result (debounced to avoid too many requests)
+// Save single result
 const saveResult = debounce(async (pointId) => {
   try {
     await router.post(route('inspections.save-result'), {
@@ -291,9 +292,9 @@ const saveResult = debounce(async (pointId) => {
   }
 }, 500); 
 
-// Update result data (this should trigger `saveResult` via a watch or direct call)
+// Update result data
 const updateResult = ({ pointId, type, value }) => {
-  if (form.results[pointId].hasOwnProperty(type)) { // Check if property exists
+  if (form.results[pointId].hasOwnProperty(type)) {
     form.results[pointId][type] = value;
   }
   saveResult(pointId);
@@ -322,7 +323,7 @@ const handleImageUpload = async (event, pointId) => {
             preview: preview
           });
         } else {
-          console.error("Path gambar tidak dikembalikan dari unggahan, tidak dapat memperbarui UI.");
+          console.error("Path gambar tidak dikembalikan dari unggahan");
         }
       },
       onError: (errors) => {
@@ -370,16 +371,15 @@ const removeImage = async (pointId, imageIndex) => {
 
 // Final submit all
 const submitAll = () => {
-  // Pastikan overall_note juga dikirim saat submit
-  form.post(route('inspections.final-submit'), {
+  form.post(route('inspections.final-submit', { 
+    inspection: props.inspection.id 
+  }), {
     preserveScroll: true,
     onSuccess: () => {
-      usePage().props.flash.success = 'Inspeksi berhasil dikirim!';
-      // Redirect atau tindakan lain setelah sukses
+      // Redirect akan ditangani oleh controller
     },
     onError: (errors) => {
       console.error('Kesalahan pengiriman:', errors);
-      usePage().props.flash.error = 'Ada kesalahan dalam pengiriman Anda. Harap periksa semua bidang.';
     }
   });
 };
@@ -390,10 +390,14 @@ onMounted(() => {
 
 // Watcher untuk perubahan activeCategory untuk menggulir navigasi horizontal
 watch(activeCategory, (newVal) => {
-  const categoryButton = document.querySelector(`.flex-shrink-0[data-category-id="${newVal}"]`);
-  if (categoryButton) {
-    categoryButton.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  const menuButton = document.querySelector(`.flex-shrink-0[data-category-id="${newVal}"]`);
+  if (menuButton) {
+    menuButton.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   }
+});
+
+const allMenusComplete = computed(() => {
+  return props.appMenu.every(menu => isMenuComplete(menu));
 });
 </script>
 

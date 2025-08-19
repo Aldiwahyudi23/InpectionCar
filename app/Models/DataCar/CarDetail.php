@@ -2,6 +2,7 @@
 
 namespace App\Models\DataCar;
 
+use App\Models\DataInspection\Inspection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -37,6 +38,11 @@ class CarDetail extends Model
      public function type()
     {
         return $this->belongsTo(CarType::class, 'car_type_id');
+    }
+
+    public function inspection()
+    {
+        return $this->hasMany(Inspection::class, 'car_id');
     }
 
 }

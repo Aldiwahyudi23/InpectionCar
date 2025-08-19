@@ -5,3 +5,20 @@
 [x-cloak] {
     display: none;
 }
+
+
+/* Drag handle cursor */
+.fi-ta-reorder-cell {
+    cursor: move;
+    cursor: grab;
+}
+
+.fi-ta-reorder-cell:active {
+    cursor: grabbing;
+}
+
+/* Highlight row when dragging */
+.fi-ta-reorder-row--dragging {
+    background-color: rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}

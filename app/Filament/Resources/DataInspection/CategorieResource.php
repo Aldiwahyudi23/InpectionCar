@@ -2,11 +2,10 @@
 
 namespace App\Filament\Resources\DataInspection;
 
-use App\Filament\Resources\DataInspection\CategorieResource\InspectionPoinResource\RelationManagers\RelanshipRelationManager;
+
 use App\Filament\Resources\DataInspection\CategorieResource\Pages;
-use App\Filament\Resources\DataInspection\CategorieResource\RelationManagers;
-use App\Filament\Resources\DataInspection\CategorieResource\RelationManagers\InspectionPointRelationManager;
-use App\Models\DataInpection\Categorie;
+use App\Filament\Resources\DataInspection\CategoriesResource\RelationManagers\AppMenuRelationManager;
+use App\Models\DataInspection\Categorie;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -18,9 +17,9 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class CategorieResource extends Resource
 {
     protected static ?string $model = Categorie::class;
- protected static ?string $navigationIcon = 'heroicon-o-tag'; // Ikon yang sesuai
+     protected static ?string $navigationIcon = 'heroicon-o-tag'; // Ikon yang sesuai
 
-    protected static ?string $navigationGroup = 'Inspeksi'; // Grup navigasi
+    protected static ?string $navigationGroup = 'Master Data'; // optional
 
     protected static ?string $modelLabel = 'Kategori Inspeksi';
     protected static ?string $pluralModelLabel = 'Kategori Inspeksi';
@@ -28,17 +27,21 @@ class CategorieResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
+                          ->schema([
                 Forms\Components\TextInput::make('name')
                     ->label('Nama Kategori')
-                    ->required(),
-                Forms\Components\TextInput::make('order')
-                    ->label('Urutan')
-                    ->numeric()
-                    ->required(),
+                    ->required()
+                    ->maxLength(255),
+
+                Forms\Components\Hidden::make('order')
+                    ->required()
+                    ->default(0),
+                    
                 Forms\Components\Toggle::make('is_active')
-                    ->label('Aktif')
-                    ->default(true),
+                    ->label('Status Aktif')
+                    ->default(true)
+                    ->inline(false) // Label di atas toggle
+                    
             ]);
     }
 
@@ -46,19 +49,25 @@ class CategorieResource extends Resource
     {
         return $table
             ->columns([
-                 Tables\Columns\TextColumn::make('name')
+                Tables\Columns\TextColumn::make('row_number')
+                    ->label('No')
+                    ->formatStateUsing(fn ($record) => $record->row_number),
+                    
+                Tables\Columns\TextColumn::make('name')
                     ->label('Nama Kategori')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('order')
-                    ->label('Urutan')
-                    ->sortable(),
+                    
                 Tables\Columns\IconColumn::make('is_active')
                     ->label('Aktif')
                     ->boolean(),
             ])
+            ->defaultSort('order')
+            ->reorderable('order')
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
             ])
+
+
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
@@ -75,7 +84,7 @@ class CategorieResource extends Resource
     public static function getRelations(): array
     {
         return [
-            InspectionPointRelationManager::class,
+            AppMenuRelationManager::class,
         ];
     }
 

@@ -92,7 +92,7 @@
       @photo-captured="handlePhotoCaptured"
     />
 
-    <ImagePreviewModal
+    <PreviewModal
       :show="showPreviewModal"
       :images="allImages" :initial-index="currentPreviewIndex"
       :allow-multiple="allowMultiple"
@@ -108,9 +108,9 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import ImageSourceOptionsModal from './image-uploader/ImageSourceOptionsModal.vue';
-import WebcamModal from './image-uploader/WebcamModal.vue';
-import ImagePreviewModal from './image-uploader/ImagePreviewModal.vue';
+import ImageSourceOptionsModal from './Modal-uploader/ImageSourceOptionsModal.vue';
+import WebcamModal from './Modal-uploader/WebcamModal.vue';
+import PreviewModal from './Modal-uploader/PreviewModal.vue';
 import axios from 'axios';
 // Asumsi 'route' tersedia secara global (dari Ziggy.js untuk Laravel)
 // import { route } from 'ziggy-js'; 

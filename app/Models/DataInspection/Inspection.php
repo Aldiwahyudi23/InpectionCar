@@ -1,0 +1,78 @@
+<?php
+
+namespace App\Models\DataInspection;
+
+use App\Models\DataCar\CarDetail;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\EloquentSortable\SortableTrait;
+
+class Inspection extends Model
+{
+     use HasFactory;
+    use SoftDeletes;
+
+    protected $table = 'inspections';
+
+    protected $fillable = [
+        'user_id',
+        'plate_number',
+        'car_id',
+        'category_id',
+        'inspection_date',
+        'status',
+        'notes',
+        'file',
+    ];
+
+    protected $casts = [
+        'inspection_date' => 'datetime',
+    ];
+
+    public function categories()
+    {
+        return $this->belongsToMany(Categorie::class);
+    }
+
+    public function results()
+    {
+        return $this->hasMany(InspectionResult::class);
+    }
+
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function canBeEdited()
+    {
+        return $this->status === 'draft';
+    }
+
+    /**
+     * Get the user that created the inspection.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the car associated with the inspection.
+     */
+    public function car()
+    {
+        return $this->belongsTo(CarDetail::class);
+    }
+
+     public function category()
+    {
+        return $this->belongsTo(Categorie::class, 'category_id');
+    }
+     public function appMenu()
+    {
+        return $this->belongsTo(Categorie::class, 'app_menu_id');
+    }
+}

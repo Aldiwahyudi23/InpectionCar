@@ -46,6 +46,19 @@
           @update:modelValue="updateResult(point.id, $event)"
           @save="saveResult(point.id)"
         />
+
+      <input-account
+        v-if="point.input_type === 'account'"
+        v-model="form.results[point.id].note"
+        :required="point.settings?.is_required"
+        :placeholder="point.settings?.placeholder || 'Masukkan nilai'"
+        :error="form.errors[`results.${point.id}.note`]"
+        :point-id="point.id"
+        :settings="point.settings"
+        @update:modelValue="updateResult(point.id, $event)"
+        @save="saveResult(point.id)"
+      />
+       
         
         <input-date
           v-if="point.input_type === 'date'"
@@ -102,6 +115,7 @@ import InputDate from './InputDate.vue';
 import InputSelect from './InputSelect.vue';
 import InputRadio from './InputRadio.vue';
 import InputImage from './InputImage.vue';
+import InputAccount from './InputAccount.vue';
 
 const props = defineProps({
   category: Object,
@@ -125,6 +139,7 @@ const isPointComplete = (point) => {
     case 'text':
     case 'number':
     case 'date':
+    case 'account':
       return !!result.note;
     case 'select':
     case 'radio':
