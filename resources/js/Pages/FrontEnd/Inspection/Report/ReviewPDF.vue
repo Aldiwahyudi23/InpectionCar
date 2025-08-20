@@ -47,8 +47,8 @@ const getStatusClass = (status) => {
             </div>
 
             <div class="header-content">
-                <template v-if="coverImage && coverImage.full_url">
-                    <img :src="coverImage.full_url" alt="Foto Utama">
+                <template v-if="coverImage && coverImage.img_fath">
+                    <img :src="coverImage.img_fath" alt="Foto Utama">
                 </template>
                 <template v-else>
                     <div class="image-placeholder">
@@ -106,7 +106,7 @@ const getStatusClass = (status) => {
                 <div class="images">
                     <template v-for="point in points" :key="point.id">
                         <template v-if="point.images && point.images.length">
-                            <img v-for="img in point.images" :key="img.id" :src="img.full_url" alt="Foto Kendaraan" />
+                            <img v-for="img in point.images" :key="img.id" :src="img.img_fath" alt="Foto Kendaraan" />
                         </template>
                         <template v-else>
                             <div class="image-placeholder-small">

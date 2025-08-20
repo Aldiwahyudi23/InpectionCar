@@ -1,8 +1,20 @@
 <template>
   <div class="container mx-auto px-4 py-2">
-
     <div class="sticky top-0 z-10 bg-white shadow-sm mb-2">
       <div class="flex overflow-x-auto scrollbar-hide py-3 px-4 space-x-2">
+        <!-- Menu Detail Kendaraan -->
+        <button
+          @click="changeCategory('vehicle')"
+          class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200"
+          :class="{
+            'bg-indigo-600 text-white': activeCategory === 'vehicle',
+            'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== 'vehicle'
+          }"
+        >
+          Detail Kendaraan
+        </button>
+
+        <!-- Menu Inspeksi -->
         <button
           v-for="menu in appMenu"
           :key="menu.id"
@@ -12,7 +24,6 @@
             'bg-indigo-600 text-white': activeCategory === menu.id,
             'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== menu.id
           }"
-          :data-category-id="menu.id"
         >
           {{ menu.name }}
           <span 
@@ -23,14 +34,14 @@
           </span>
         </button>
 
+        <!-- Menu Kesimpulan -->
         <button
-          @click="changeCategory('summary')"
+          @click="changeCategory('conclusion')"
           class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200"
           :class="{
-            'bg-indigo-600 text-white': activeCategory === 'summary',
-            'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== 'summary'
+            'bg-indigo-600 text-white': activeCategory === 'conclusion',
+            'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== 'conclusion'
           }"
-          data-category-id="summary"
         >
           Kesimpulan
         </button>
@@ -39,86 +50,77 @@
 
     <div class="relative overflow-hidden">
       <transition name="category-slide" mode="out-in">
+        <!-- Detail Kendaraan -->
+        <VehicleDetails
+        v-if="activeCategory === 'vehicle'"
+          :inspection="inspection"
+          :car="car"
+          :brands="brands"
+          :car-models="carModels"
+          :car-types="carTypes"
+          @update-vehicle="updateVehicleDetails"
+        />
+
+        <!-- Menu Inspeksi Biasa -->
         <category-section
-          v-if="activeMenuData && activeCategory !== 'summary'"
+          v-else-if="activeMenuData && activeCategory !== 'conclusion'"
           :key="activeMenuData.id"
           :category="activeMenuData"
+          :inspection-id="inspection.id"
           :form="form"
           @saveResult="saveResult"
           @updateResult="updateResult"
           @removeImage="removeImage"
-          @handleImageUpload="(file, pointId) => handleImageUpload(file, pointId, activeMenuData.name)"
         />
 
-        <div 
-          v-else-if="activeCategory === 'summary'" 
-          key="summary-section"
-          class="bg-white rounded-xl shadow-md p-6"
-        >
-          <h3 class="text-2xl font-semibold text-gray-800 mb-4">Kesimpulan Inspeksi</h3>
-          
-          <div class="mb-4">
-            <label for="overall_note" class="block text-sm font-medium text-gray-700 mb-1">Catatan Keseluruhan Inspeksi:</label>
-            <textarea
-              id="overall_note"
-              v-model="form.overall_note"
-              @input="debounceSaveOverallNote"
-              rows="5"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-              placeholder="Tambahkan catatan penting atau ringkasan inspeksi di sini..."
-            ></textarea>
-          </div>
-
-          <div class="mt-6">
-            <h4 class="text-lg font-semibold text-gray-700 mb-3">Status Menu:</h4>
-            <ul class="list-disc pl-5">
-              <li 
-                v-for="menu in appMenu" 
-                :key="menu.id" 
-                :class="{'text-green-600': isMenuComplete(menu), 'text-red-600': !isMenuComplete(menu)}"
-              >
-                {{ menu.name }} 
-                <span v-if="isMenuComplete(menu)">(Selesai ✓)</span>
-                <span v-else>(Belum Selesai ✗)</span>
-              </li>
-            </ul>
-          </div>
-
-         <div class="flex justify-end gap-4 mt-8">
-          <button
-            type="button"
-            @click="submitAll"
-            :disabled="!allMenusComplete || form.processing"
-            class="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <svg v-if="form.processing" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>{{ form.processing ? 'Mengirim...' : 'Final Kirim Inspeksi' }}</span>
-          </button>
-        </div>
-        </div>
+        <!-- Kesimpulan -->
+        <conclusion-section
+          v-else-if="activeCategory === 'conclusion'"
+          :form="form"
+          @updateConclusion="updateConclusion"
+        />
       </transition>
-      
-      </div>
-    
     </div>
+
+    <!-- Tombol Simpan Final (hanya tampil di kesimpulan) -->
+    <div v-if="activeCategory === 'conclusion'" class="flex justify-end gap-4 mt-8 p-6 bg-white rounded-xl shadow-md">
+      <button
+        type="button"
+        @click="submitAll"
+        :disabled="!allMenusComplete || form.processing"
+        class="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <svg v-if="form.processing" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>{{ form.processing ? 'Mengirim...' : 'Final Kirim Inspeksi' }}</span>
+      </button>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useForm, usePage, router } from '@inertiajs/vue3';
 import { debounce } from 'lodash';
+import VehicleDetails from '@/Components/InspectionForm/VehicleDetails.vue';
 import CategorySection from '@/Components/InspectionForm/CategorySection.vue';
+import ConclusionSection from '@/Components/InspectionForm/ConclusionSection.vue';
 
 const props = defineProps({
   inspection: Object,
   appMenu: Array, // Ganti categories menjadi appMenu
   existingResults: Array,
   existingImages: Object,
+   car: Object, // Tambahkan prop car
   components: Array, // Terima props baru
 });
+
+// Akses inspection dari page props
+const page = usePage();
+const inspection = page.props.inspection;
+const car = page.props.car; // Akses data mobil
 
 // Ubah inisialisasi activeCategory untuk bisa menerima 'summary'
 const activeCategory = ref(props.appMenu[0]?.id || 'summary'); // Default ke menu pertama atau 'summary'
@@ -306,74 +308,39 @@ const updateResult = ({ pointId, type, value }) => {
   saveResult(pointId);
 };
 
-// Handle image upload
-const handleImageUpload = async (event, pointId) => {
-  const file = event.target.files[0];
-  if (!file) return;
 
-  const preview = URL.createObjectURL(file);
-  
-  try {
-    const formData = new FormData();
-    formData.append('inspection_id', props.inspection.id);
-    formData.append('point_id', pointId);
-    formData.append('image', file);
-
-    await router.post(route('inspections.upload-image'), formData, {
-      preserveScroll: true,
-      onSuccess: (page) => {
-        const uploadedImagePath = page.props.flash?.imagePath || page.props.imagePath;
-        if (uploadedImagePath) {
-          form.results[pointId].images.push({
-            image_path: uploadedImagePath,
-            preview: preview
-          });
-        } else {
-          console.error("Path gambar tidak dikembalikan dari unggahan");
-        }
-      },
-      onError: (errors) => {
-        console.error('Error mengunggah gambar:', errors);
-        alert('Gagal mengunggah gambar. Silakan coba lagi.');
-      }
-    });
-  } catch (error) {
-    console.error('Error mengunggah gambar:', error);
-    alert('Terjadi kesalahan tak terduga saat mengunggah gambar.');
-  } finally {
-    event.target.value = ''; 
-  }
+// Fungsi untuk update data kendaraan
+const updateVehicleDetails = (vehicleData) => {
+  // Kirim update ke server
+  router.post(route('inspections.update-vehicle'), {
+    inspection_id: inspection.id,
+    ...vehicleData
+  }, {
+    preserveScroll: true,
+    onSuccess: () => {
+      console.log('Data kendaraan berhasil diupdate');
+    }
+  });
 };
 
-// Remove image
-const removeImage = async (pointId, imageIndex) => {
-  const image = form.results[pointId].images[imageIndex];
-  if (!image) return;
-
-  try {
-    await router.delete(route('inspections.delete-image'), {
-      data: { 
-        image_path: image.image_path,
-        point_id: pointId,
-        inspection_id: props.inspection.id
-      },
-      preserveScroll: true,
-      onSuccess: () => {
-        form.results[pointId].images.splice(imageIndex, 1);
-        if (image.preview) {
-          URL.revokeObjectURL(image.preview);
-        }
-      },
-      onError: (errors) => {
-        console.error('Error menghapus gambar:', errors);
-        alert('Gagal menghapus gambar. Silakan coba lagi.');
-      }
-    });
-  } catch (error) {
-    console.error('Error menghapus gambar:', error);
-    alert('Terjadi kesalahan tak terduga saat menghapus gambar.');
-  }
+// Fungsi untuk update kesimpulan
+const updateConclusion = (conclusionData) => {
+  Object.assign(form.conclusion, conclusionData);
+  saveConclusion();
 };
+
+// Simpan kesimpulan
+const saveConclusion = debounce(() => {
+  router.post(route('inspections.save-conclusion'), {
+    inspection_id: inspection.id,
+    ...form.conclusion
+  }, {
+    preserveScroll: true,
+    onSuccess: () => {
+      console.log('Kesimpulan berhasil disimpan');
+    }
+  });
+}, 500);
 
 // Final submit all
 const submitAll = () => {

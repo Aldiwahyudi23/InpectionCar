@@ -11,6 +11,7 @@ class InspectionImage extends Model
 
     protected $fillable = [
         'point_id',
+        'inspection_id',
         'image_path',
         'caption'
     ];
@@ -18,7 +19,7 @@ class InspectionImage extends Model
     /**
      * Get the inspection point that owns the image.
      */
-public function inspection()
+    public function inspection()
     {
         return $this->belongsTo(Inspection::class);
     }

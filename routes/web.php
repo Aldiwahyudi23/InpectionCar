@@ -37,6 +37,10 @@ Route::get('/job', [JobController::class, 'index'])->name('job.index');
 
 // routes/web.php
 Route::post('/inspections/save-result', [InspectionController::class, 'saveResult'])->name('inspections.save-result');
+// Di web.php
+Route::post('/inspections/update-vehicle-details', [InspectionController::class, 'updateVehicleDetails']);
+Route::post('/inspections/update-vehicle', [InspectionController::class, 'updateVehicle']);
+Route::post('/inspections/save-conclusion', [InspectionController::class, 'saveConclusion']);
 Route::post('/inspections/upload-image', [InspectionController::class, 'uploadImage'])->name('inspections.upload-image');
 Route::delete('/inspections/delete-image', [InspectionController::class, 'deleteImage'])->name('inspections.delete-image');
 // Final submit

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Inspection;
 
 use App\Http\Controllers\Controller;
+use App\Models\DataCar\CarDetail;
 use App\Models\DataInspection\AppMenu;
 use App\Models\DataInspection\Categorie;
 use App\Models\DataInspection\Component;
@@ -166,102 +167,119 @@ public function store(Request $request)
     }
 
 // InspectionController.php
-public function saveResult(Request $request)
+    public function saveResult(Request $request)
+    {
+        $validated = $request->validate([
+            'inspection_id' => 'required|exists:inspections,id',
+            'point_id' => 'required|exists:inspection_points,id',
+            'status' => 'nullable|string',
+            'note' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            $result = InspectionResult::updateOrCreate(
+                [
+                    'inspection_id' => $validated['inspection_id'],
+                    'point_id' => $validated['point_id'],
+                ],
+                [
+                    'status' => $validated['status'],
+                    'note' => $validated['note'],
+                ]
+            );
+
+            // return response()->json([
+            //     'success' => true,
+            //     'result' => $result,
+            // ]);
+            // Untuk success
+            return redirect()->back()->with('success', 'Data saved successfully');
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save result: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // Di InspectionController
+    public function updateVehicle(Request $request)
+    {
+        $validated = $request->validate([
+            'inspection_id' => 'required|exists:inspections,id',
+            'plate_number' => 'required|string|max:20'
+        ]);
+
+        $inspection = Inspection::find($validated['inspection_id']);
+        $inspection->plate_number = $validated['plate_number'];
+        $inspection->save();
+
+        return response()->json(['message' => 'Data kendaraan berhasil diupdate']);
+    }
+
+    public function saveConclusion(Request $request)
+    {
+        $validated = $request->validate([
+            'inspection_id' => 'required|exists:inspections,id',
+            'flooded' => 'required|in:yes,no',
+            'collision' => 'required|in:yes,no',
+            'collision_severity' => 'nullable|required_if:collision,yes|in:light,heavy',
+            'conclusion_note' => 'nullable|string'
+        ]);
+
+        $inspection = Inspection::find($validated['inspection_id']);
+        $inspection->conclusion = $validated;
+        $inspection->save();
+
+        return response()->json(['message' => 'Kesimpulan berhasil disimpan']);
+    }
+// Di InspectionController.php
+public function updateVehicleDetails(Request $request)
 {
     $validated = $request->validate([
         'inspection_id' => 'required|exists:inspections,id',
-        'point_id' => 'required|exists:inspection_points,id',
-        'status' => 'nullable|string',
-        'note' => 'nullable|string|max:1000',
+        'plate_number' => 'required|string|max:20',
+        'brand_id' => 'required|exists:brands,id',
+        'car_model_id' => 'required|exists:car_models,id',
+        'car_type_id' => 'required|exists:car_types,id',
+        'year' => 'required|integer|min:1990|max:' . date('Y'),
+        'cc' => 'nullable|integer|min:500|max:10000',
+        'transmission' => 'required|in:AT,MT,CVT',
+        'fuel_type' => 'required|string|max:50',
+        'production_period' => 'nullable|string|max:100'
     ]);
 
-    try {
-        $result = InspectionResult::updateOrCreate(
-            [
-                'inspection_id' => $validated['inspection_id'],
-                'point_id' => $validated['point_id'],
-            ],
-            [
-                'status' => $validated['status'],
-                'note' => $validated['note'],
-            ]
-        );
+    // Update inspection plate number
+    $inspection = Inspection::find($validated['inspection_id']);
+    $inspection->plate_number = $validated['plate_number'];
+    $inspection->save();
 
-        // return response()->json([
-        //     'success' => true,
-        //     'result' => $result,
-        // ]);
-        // Untuk success
-        return redirect()->back()->with('success', 'Data saved successfully');
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to save result: ' . $e->getMessage(),
-        ], 500);
+    // Update atau create car details
+    $carDetail = CarDetail::updateOrCreate(
+        ['id' => $inspection->car_id],
+        [
+            'brand_id' => $validated['brand_id'],
+            'car_model_id' => $validated['car_model_id'],
+            'car_type_id' => $validated['car_type_id'],
+            'year' => $validated['year'],
+            'cc' => $validated['cc'],
+            'transmission' => $validated['transmission'],
+            'fuel_type' => $validated['fuel_type'],
+            'production_period' => $validated['production_period']
+        ]
+    );
+
+    // Jika car detail baru dibuat, update inspection dengan car_id
+    if (!$inspection->car_id) {
+        $inspection->car_id = $carDetail->id;
+        $inspection->save();
     }
+
+    return response()->json([
+        'message' => 'Data kendaraan berhasil diupdate',
+        'car' => $carDetail
+    ]);
 }
-
-//  public function uploadImage(Request $request)
-//     {
-//         // Debug 1: Periksa semua data yang masuk
-//         // dd($request->all());
-
-//         $request->validate([
-//             'point_id' => 'required',
-//             'image' => 'required|image|max:2048',
-//         ]);
-
-//         // Debug 2: Pastikan file 'image' ada dan merupakan instance UploadedFile
-//         if (!$request->hasFile('image')) {
-//             return response()->json(['message' => 'No image file found in request.'], 400);
-//         }
-//         $uploadedFile = $request->file('image');
-//         // dd($uploadedFile); // Ini harus menampilkan objek UploadedFile
-
-//         // Debug 3: Coba simpan file ke direktori sementara dan periksa hasilnya
-//         // Ini adalah langkah krusial. Jika ini gagal, berarti ada masalah dengan environment PHP/server.
-//         try {
-//             // Ubah 'public/inspection-images' menjadi 'inspection-images' saja
-//             // karena 'public' adalah nama disk, bukan bagian dari path folder.
-//             // Metode `store()` otomatis menggunakan disk default jika tidak disebutkan,
-//             // atau menggunakan disk yang ditentukan jika Anda menggunakan `->storeAs('disk_name', 'path/filename')`.
-//             // Jika Anda ingin ke disk 'public', Anda harus menyebutkannya.
-//             // Cara yang lebih eksplisit dan aman:
-//             $path = $uploadedFile->store('inspection-images', 'public'); // Simpan ke subfolder 'inspection-images' di disk 'public'
-//             // dd($path); // Ini harus menampilkan path relatif seperti 'inspection-images/namafileunik.jpg'
-//         } catch (\Exception $e) {
-//             // Debug 4: Tangkap error jika penyimpanan gagal
-//             log::error('File upload failed: ' . $e->getMessage());
-//             return response()->json(['message' => 'Failed to store image: ' . $e->getMessage()], 500);
-//         }
-
-//         // Debug 5: Pastikan path yang didapat valid dan file benar-benar ada di storage
-//         if (!Storage::disk('public')->exists($path)) {
-//             Log::error('File not found after store: ' . $path);
-//             return response()->json(['message' => 'Image stored but not found on disk.'], 500);
-//         }
-
-//         // $publicPath ini sudah benar untuk konversi ke URL publik
-//         $publicPath = str_replace('public/', 'storage/', $path); // Ini tidak lagi dibutuhkan jika $path sudah relatif ke disk public
-//         // Jika $path sekarang adalah 'inspection-images/namafile.jpg'
-//         // Maka $publicPath harusnya 'storage/inspection-images/namafile.jpg'
-//         // Mari kita perbaiki:
-//         $publicPath = 'storage/' . $path; // Ini lebih tepat
-
-//         // Debug 6: Periksa publicPath sebelum disimpan ke DB
-//         // dd($publicPath);
-
-//         $image = InspectionImage::create([
-//             'point_id' => $request->point_id,
-//             'image_path' => $publicPath,
-//         ]);
-
-//         return response()->json([
-//             'path' => $publicPath,
-//             'image' => $image,
-//         ]);
-//     }
-
 
 public function uploadImage(Request $request)
     {
@@ -304,6 +322,7 @@ public function uploadImage(Request $request)
         // dd(['path_for_db' => $publicPathForDb, 'public_url' => $publicUrl]);
 
         $image = InspectionImage::create([
+            'inspection_id' => $request->inspection_id,
             'point_id' => $request->point_id,
             'image_path' => $publicPathForDb, // Simpan path relatif ini ke database
         ]);
@@ -315,20 +334,6 @@ public function uploadImage(Request $request)
         ]);
     }
 
-// public function deleteImage(Request $request)
-// {
-//     $request->validate([
-//         'image_path' => 'required|string',
-//     ]);
-
-//     // Delete file from storage
-//     Storage::delete(str_replace('storage/', 'public/', $request->image_path));
-
-//     // Delete from database
-//     InspectionImage::where('image_path', $request->image_path)->delete();
-
-//     return response()->json(['success' => true]);
-// }
 
  public function deleteImage(Request $request)
     {
@@ -393,7 +398,6 @@ public function finalSubmit(Request $request, $id)
         ->with('success', 'Inspeksi berhasil dikirim untuk review');
 }
 
-// app/Http/Controllers/InspectionController.php
 
 public function review($id)
 {
@@ -426,22 +430,33 @@ public function reviewPdf($id)
         'category',
     ])->findOrFail($id);
 
-    $inspection_points = InspectionPoint::with([
-        'component',
-        'appMenu',
-        'results' => function ($query) use ($inspection) {
-            $query->where('inspection_id', $inspection->id);
-        },
-        'images' => function ($query) {
-            $query->orderBy('created_at', 'asc');
-        },
-    ])->whereHas('appMenu', function ($query) use ($inspection) {
-        $query->where('category_id', $inspection->category_id);
-    })->get();
+    // Ambil semua points berdasarkan category
+    $inspection_points = InspectionPoint::with(['component', 'appMenu'])
+        ->whereHas('appMenu', function ($query) use ($inspection) {
+            $query->where('category_id', $inspection->category_id);
+        })->get();
 
-    $coverImage = InspectionImage::whereHas('point', function ($q) {
-        $q->where('name', 'Depan Kanan');
-    })->first();
+    // Load results dan images untuk setiap point
+    foreach ($inspection_points as $point) {
+        $point->results = InspectionResult::where('inspection_id', $inspection->id)
+            ->where('point_id', $point->id)
+            ->get();
+            
+        $point->images = InspectionImage::where('inspection_id', $inspection->id)
+            ->where('point_id', $point->id)
+            ->orderBy('created_at', 'asc')
+            ->get();
+    }
+
+    $coverImage = InspectionImage::where('inspection_id', $inspection->id)
+        ->whereHas('point', function ($q) {
+            $q->where('name', 'Depan Kanan');
+        })->first();
+
+    // Jika tidak ada cover image, coba ambil gambar pertama
+    if (!$coverImage) {
+        $coverImage = InspectionImage::where('inspection_id', $inspection->id)->first();
+    }
 
     return Inertia::render('FrontEnd/Inspection/Report/ReviewPDF', [
         'inspection' => $inspection,
@@ -451,10 +466,9 @@ public function reviewPdf($id)
 
     // return view('inspection.inspection_report', compact('inspection', 'inspection_points', 'coverImage')); 
 }
-
 public function downloadPdf($id)
 {
-    $inspection = Inspection::with([
+     $inspection = Inspection::with([
         'car',
         'car.brand',
         'car.model',
@@ -462,22 +476,33 @@ public function downloadPdf($id)
         'category',
     ])->findOrFail($id);
 
-    $inspection_points = InspectionPoint::with([
-        'component',
-        'appMenu',
-        'results' => function ($query) use ($inspection) {
-            $query->where('inspection_id', $inspection->id);
-        },
-        'images' => function ($query) {
-            $query->orderBy('created_at', 'asc');
-        },
-    ])->whereHas('appMenu', function ($query) use ($inspection) {
-        $query->where('category_id', $inspection->category_id);
-    })->get();
+    // Ambil semua points berdasarkan category
+    $inspection_points = InspectionPoint::with(['component', 'appMenu'])
+        ->whereHas('appMenu', function ($query) use ($inspection) {
+            $query->where('category_id', $inspection->category_id);
+        })->get();
 
-    $coverImage = InspectionImage::whereHas('point', function ($q) {
-        $q->where('name', 'Depan Kanan');
-    })->first();
+    // Load results dan images untuk setiap point
+    foreach ($inspection_points as $point) {
+        $point->results = InspectionResult::where('inspection_id', $inspection->id)
+            ->where('point_id', $point->id)
+            ->get();
+            
+        $point->images = InspectionImage::where('inspection_id', $inspection->id)
+            ->where('point_id', $point->id)
+            ->orderBy('created_at', 'asc')
+            ->get();
+    }
+
+    $coverImage = InspectionImage::where('inspection_id', $inspection->id)
+        ->whereHas('point', function ($q) {
+            $q->where('name', 'Depan Kanan');
+        })->first();
+
+    // Jika tidak ada cover image, coba ambil gambar pertama
+    if (!$coverImage) {
+        $coverImage = InspectionImage::where('inspection_id', $inspection->id)->first();
+    }
 
     $pdf = Pdf::loadView('inspection.inspection_report', [
         'inspection' => $inspection,

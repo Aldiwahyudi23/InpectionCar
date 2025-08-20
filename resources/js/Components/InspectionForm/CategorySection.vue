@@ -103,6 +103,8 @@
           @save="saveResult(point.id)"
           @removeImage="removeImage(point.id, $event)"
         />
+
+        
       </div>
     </div>
   </div>

@@ -257,20 +257,12 @@
                                     $hasStatus = !empty($result->status);
                                     $hasNote = !empty($result->note);
                                     
-                                    // Tentukan kelas status
-                                    $statusClass = 'status-good';
-                                    if (strpos(strtolower($result->status ?? ''), 'rusak') !== false || 
-                                        strpos(strtolower($result->status ?? ''), 'tidak baik') !== false) {
-                                        $statusClass = 'status-bad';
-                                    } elseif (strpos(strtolower($result->status ?? ''), 'perbaikan') !== false || 
-                                             strpos(strtolower($result->status ?? ''), 'warning') !== false) {
-                                        $statusClass = 'status-warning';
-                                    }
+                                   
                                 @endphp
                                 
                                 {{-- Tampilkan status jika ada --}}
                                 @if($hasStatus)
-                                    <span class="status-badge {{ $statusClass }}">{{ $result->status }}</span>
+                                    <span class="status-badge">{{ $result->status }}</span>
                                 @endif
                                 
                                 {{-- Tampilkan note di samping jika status tidak ada --}}

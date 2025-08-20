@@ -80,6 +80,6 @@ class Inspection extends Model
 
     public function images()
     {
-        return $this->hasMany(InspectionImage::class);
+        return $this->hasMany(InspectionImage::class,'inspection_id');
     }
 }

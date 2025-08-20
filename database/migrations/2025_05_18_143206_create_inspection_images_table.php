@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('inspection_images', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('inspection_id')->constrained('inspections')->onDelete('cascade');
             $table->foreignId('point_id')->constrained('inspection_points')->onDelete('cascade');
             $table->string('image_path'); // Path gambar (contoh: 'uploads/inspection/123.jpg')
             $table->string('caption')->nullable(); // Opsional: deskripsi gambar

@@ -121,7 +121,7 @@ const props = defineProps({
 
   inspectionId: { // Tambahkan prop ini jika Anda menggunakannya di triggerUploadAndSave
     type: [String, Number],
-    required: false // Opsional jika inspectionId tidak selalu diperlukan di sini
+    required: true // Opsional jika inspectionId tidak selalu diperlukan di sini
   },
   pointId: {
     type: [String, Number],
