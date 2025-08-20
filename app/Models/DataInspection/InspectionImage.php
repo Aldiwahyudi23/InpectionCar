@@ -18,9 +18,14 @@ class InspectionImage extends Model
     /**
      * Get the inspection point that owns the image.
      */
+public function inspection()
+    {
+        return $this->belongsTo(Inspection::class);
+    }
+
     public function point()
     {
-        return $this->belongsTo(InspectionPoint::class);
+        return $this->belongsTo(InspectionPoint::class, 'point_id');
     }
 
     /**

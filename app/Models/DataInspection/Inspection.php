@@ -37,10 +37,6 @@ class Inspection extends Model
         return $this->belongsToMany(Categorie::class);
     }
 
-    public function results()
-    {
-        return $this->hasMany(InspectionResult::class);
-    }
 
     public function approver()
     {
@@ -75,5 +71,15 @@ class Inspection extends Model
      public function appMenu()
     {
         return $this->belongsTo(Categorie::class, 'app_menu_id');
+    }
+
+     public function results()
+    {
+        return $this->hasMany(InspectionResult::class);
+    }
+
+    public function images()
+    {
+        return $this->hasMany(InspectionImage::class);
     }
 }

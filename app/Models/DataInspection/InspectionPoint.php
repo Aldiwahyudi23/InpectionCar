@@ -73,4 +73,17 @@ class InspectionPoint extends Model
         return $this->belongsTo(AppMenu::class);
     }
 
+    // di InspectionPoint.php
+
+    public function results()
+    {
+        return $this->hasMany(InspectionResult::class, 'inspection_id', 'id');
+    }
+
+    public function images()
+    {
+        return $this->hasMany(InspectionImage::class, 'point_id', 'id');
+    }
+
+
 }

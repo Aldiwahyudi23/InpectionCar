@@ -378,7 +378,7 @@ const removeImage = async (pointId, imageIndex) => {
 // Final submit all
 const submitAll = () => {
   form.post(route('inspections.final-submit', { 
-    inspection: props.inspection.id 
+    id: props.inspection.id 
   }), {
     preserveScroll: true,
     onSuccess: () => {
@@ -389,6 +389,7 @@ const submitAll = () => {
     }
   });
 };
+
 
 onMounted(() => {
   setupSwipe();

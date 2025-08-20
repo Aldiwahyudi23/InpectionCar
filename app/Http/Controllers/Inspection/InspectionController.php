@@ -8,6 +8,7 @@ use App\Models\DataInspection\Categorie;
 use App\Models\DataInspection\Component;
 use App\Models\DataInspection\Inspection;
 use App\Models\DataInspection\InspectionImage;
+use App\Models\DataInspection\InspectionPoint;
 use App\Models\DataInspection\InspectionResult;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -50,6 +51,19 @@ class InspectionController extends Controller
 
 public function create(Inspection $inspection)
 {
+    // Validasi status yang diperbolehkan
+    $allowedStatuses = ['draft', 'in_progress', 'revisi', 'jeda', 'pending_review'];
+
+    if (! in_array($inspection->status, $allowedStatuses)) {
+        return redirect()->route('job.index')
+            ->with('error', 'Halaman inspeksi tidak bisa diakses karena status tidak valid.');
+    }
+
+    // Jika status pending_review, langsung arahkan ke halaman review
+    if ($inspection->status === 'pending_review') {
+        return redirect()->route('inspections.review', ['id' => $inspection->id]);
+    }
+
     // Jika status masih draft, ubah ke in-progress
     if ($inspection->status === 'draft') {
         $inspection->update([
@@ -57,61 +71,51 @@ public function create(Inspection $inspection)
         ]);
     }
 
-    //Untuk mengambil Component dari Point
-        // Ambil data AppMenu beserta relasi points yang sudah difilter
+    // --- kode existing kamu tetap ---
     $appMenu_com = AppMenu::with(['points' => function($query) {
         $query->where('is_active', true)
-            ->orderBy('order');
+              ->orderBy('order');
     }])
     ->where('is_active', true)
     ->where('category_id', $inspection->category_id)
     ->orderBy('order')
     ->get();
 
-    // Inisialisasi koleksi kosong untuk menyimpan component_ids
     $componentIds = collect();
-
-    // Loop melalui setiap AppMenu dan setiap point di dalamnya
     foreach ($appMenu_com as $menu) {
         foreach ($menu->points as $point) {
-            // Hanya tambahkan component_id jika tidak null
             if ($point->component_id !== null) {
                 $componentIds->push($point->component_id);
             }
         }
     }
 
-    // Ambil nilai unik dari koleksi component_ids
     $uniqueComponentIds = $componentIds->unique()->values();
-    // Ambil data komponen lengkap berdasarkan ID unik
     $components = Component::whereIn('id', $uniqueComponentIds)->get();
 
-    // Ambil AppMenu sesuai category_id inspection dengan filter status menu
     $appMenu = AppMenu::with(['points' => function($query) {
             $query->where('is_active', true)
-                  ->where('input_type', '!=', 'damage') // Filter out damage type
+                  ->where('input_type', '!=', 'damage')
                   ->orderBy('order');
         }])
         ->where('is_active', true)
-        ->where('input_type', 'menu') // Hanya tampilkan yang statusnya 'menu'
-        ->where('category_id', $inspection->category_id) // filter sesuai inspection
+        ->where('input_type', 'menu')
+        ->where('category_id', $inspection->category_id)
         ->orderBy('order')
         ->get();
 
-    // Load existing results (jika ada)
     $existingResults = InspectionResult::where('inspection_id', $inspection->id)
         ->get()
         ->keyBy('point_id');
 
-    // Load existing images (jika ada)
     $existingImages = InspectionImage::whereIn('point_id', 
         $appMenu->flatMap->points->pluck('id')
     )->get()
     ->groupBy('point_id');
 
     return Inertia::render('FrontEnd/Inspection/InspectionForm', [
-        'inspection' => $inspection->fresh()->load(['car', 'user']), // pakai fresh biar status terbaru ikut
-        'appMenu' => $appMenu, // Ganti categories menjadi appMenu
+        'inspection' => $inspection->fresh()->load(['car', 'user']),
+        'appMenu' => $appMenu,
         'existingResults' => $existingResults->values()->all(),
         'existingImages' => $existingImages,
         'components' => $components,
@@ -374,29 +378,75 @@ public function uploadImage(Request $request)
         }
     }
 
-    public function finalSubmit(Request $request, Inspection $inspection)
+public function finalSubmit(Request $request, $id)
 {
-    
+    // Cari inspeksi berdasarkan ID
+    $inspection = Inspection::findOrFail($id);
+
     // Update status inspeksi
     $inspection->update([
         'status' => 'pending_review',
-        'submitted_at' => now()
     ]);
-    
+
     // Redirect ke halaman review
-    return redirect()->route('inspections.review', ['inspection' => $inspection->id])
+    return redirect()->route('inspections.review', ['id' => $inspection->id])
         ->with('success', 'Inspeksi berhasil dikirim untuk review');
 }
 
-public function review(Inspection $inspection)
+// app/Http/Controllers/InspectionController.php
+
+public function review($id)
 {
-    // Cek status harus pending_review atau approved
-    if (!in_array($inspection->status, ['pending_review', 'approved'])) {
-        abort(403, 'Inspeksi belum siap untuk direview');
+    $inspection = Inspection::with([
+        'car',
+        'car.brand',
+        'car.model',
+        'car.type',
+        'category',
+    ])->findOrFail($id);
+
+    // cek status
+    if (in_array($inspection->status, ['draft', 'in_progress', 'jeda', 'revisi'])) {
+        return redirect()->route('job.index');
     }
-    
-    return view('inspections.review', compact('inspection'));
+
+    return inertia('FrontEnd/Inspection/Review', [
+        'inspection' => $inspection,
+    ]);
 }
+
+public function reviewPdf($id)
+{
+    $inspection = Inspection::with([
+        'car',
+        'car.brand',
+        'car.model',
+        'car.type',
+        'category',
+    ])->findOrFail($id);
+
+    // Ambil semua inspection_point berdasarkan category
+    $inspection_points = InspectionPoint::with([
+        'component',
+        'appMenu',
+        // Relasi results difilter hanya berdasarkan inspection_id
+        'results' => function ($query) use ($inspection) {
+            $query->where('inspection_id', $inspection->id);
+        },
+        // Relasi images (kalau memang punya inspection_id)
+         'images' => function ($query) {
+            // Ambil image berdasarkan point_id
+            $query->orderBy('created_at', 'desc');
+        },
+    ])->whereHas('appMenu', function ($query) use ($inspection) {
+        $query->where('category_id', $inspection->category_id);
+    })->get();
+
+    return view('inspection.inspection_report', compact('inspection', 'inspection_points'));
+}
+
+
+
 
 public function approve(Request $request, Inspection $inspection)
 {

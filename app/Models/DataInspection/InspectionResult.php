@@ -19,19 +19,16 @@ class InspectionResult extends Model
     /**
      * Get the inspection that owns the result.
      */
+
     public function inspection()
     {
-        return $this->belongsTo(Inspection::class);
+        return $this->belongsTo(Inspection::class,'inspection_id');
     }
 
-    /**
-     * Get the inspection point that owns the result.
-     */
     public function point()
     {
-        return $this->belongsTo(InspectionPoint::class);
+        return $this->belongsTo(InspectionPoint::class, 'point_id');
     }
-
       /**
      * Get all images for this result.
      */
