@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Inspection;
 use App\Http\Controllers\Controller;
 use App\Models\DataInspection\AppMenu;
 use App\Models\DataInspection\Categorie;
+use App\Models\DataInspection\Component;
 use App\Models\DataInspection\Inspection;
 use App\Models\DataInspection\InspectionImage;
 use App\Models\DataInspection\InspectionResult;
@@ -56,6 +57,35 @@ public function create(Inspection $inspection)
         ]);
     }
 
+    //Untuk mengambil Component dari Point
+        // Ambil data AppMenu beserta relasi points yang sudah difilter
+    $appMenu_com = AppMenu::with(['points' => function($query) {
+        $query->where('is_active', true)
+            ->orderBy('order');
+    }])
+    ->where('is_active', true)
+    ->where('category_id', $inspection->category_id)
+    ->orderBy('order')
+    ->get();
+
+    // Inisialisasi koleksi kosong untuk menyimpan component_ids
+    $componentIds = collect();
+
+    // Loop melalui setiap AppMenu dan setiap point di dalamnya
+    foreach ($appMenu_com as $menu) {
+        foreach ($menu->points as $point) {
+            // Hanya tambahkan component_id jika tidak null
+            if ($point->component_id !== null) {
+                $componentIds->push($point->component_id);
+            }
+        }
+    }
+
+    // Ambil nilai unik dari koleksi component_ids
+    $uniqueComponentIds = $componentIds->unique()->values();
+    // Ambil data komponen lengkap berdasarkan ID unik
+    $components = Component::whereIn('id', $uniqueComponentIds)->get();
+
     // Ambil AppMenu sesuai category_id inspection dengan filter status menu
     $appMenu = AppMenu::with(['points' => function($query) {
             $query->where('is_active', true)
@@ -84,6 +114,7 @@ public function create(Inspection $inspection)
         'appMenu' => $appMenu, // Ganti categories menjadi appMenu
         'existingResults' => $existingResults->values()->all(),
         'existingImages' => $existingImages,
+        'components' => $components,
     ]);
 }
 

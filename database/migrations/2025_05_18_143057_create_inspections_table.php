@@ -31,6 +31,7 @@ return new class extends Migration
         'cancelled'
     ])->default('draft'); // Hapus ->change() karena ini bukan alter table
     
+    $table->json('settings')->nullable(); // Kolom untuk menyimpan konfigurasi dinamis
     $table->text('notes')->nullable();
     $table->text('file')->nullable();
     $table->timestamps();

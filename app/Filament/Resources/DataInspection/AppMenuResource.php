@@ -7,6 +7,7 @@ use App\Filament\Resources\DataInspection\AppMenuResource\RelationManagers;
 use App\Filament\Resources\DataInspection\AppMenuResource\RelationManagers\InspectionPointsRelationManager;
 use App\Models\DataInspection\AppMenu;
 use Filament\Forms;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -25,7 +26,7 @@ class AppMenuResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-              ->schema([
+             ->schema([
                 Forms\Components\TextInput::make('name')
                     ->label('Nama Menu')
                     ->required()
@@ -39,12 +40,11 @@ class AppMenuResource extends Resource
                     ])
                     ->default('damage')
                     ->required(),
-                    
+
                 Forms\Components\Toggle::make('is_active')
                     ->label('Status Aktif')
                     ->default(true)
-                    ->inline(false) // Label di atas toggle
-                    
+                    ->inline(false), // Label di atas toggle
             ]);
     }
 

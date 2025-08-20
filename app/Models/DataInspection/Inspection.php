@@ -23,6 +23,7 @@ class Inspection extends Model
         'category_id',
         'inspection_date',
         'status',
+        'settings',
         'notes',
         'file',
     ];
