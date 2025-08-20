@@ -32,7 +32,7 @@ class AppMenuResource extends Resource
                     ->required()
                     ->maxLength(255),
 
-                Forms\Components\select::make('input_type')
+                Forms\Components\Select::make('input_type')
                     ->label('Tipe Input')
                     ->options([
                         'menu' => 'Menu',
