@@ -49,3 +49,7 @@ Route::get('/inspections/{id}/review', [InspectionController::class, 'review'])
 
 Route::get('/inspections/{id}/review-pdf', [InspectionController::class, 'reviewPdf'])
     ->name('inspections.review.pdf');
+
+    // Generate PDF
+Route::get('/inspections/{id}/download-pdf', [InspectionController::class, 'downloadPdf'])
+    ->name('inspections.download.pdf');

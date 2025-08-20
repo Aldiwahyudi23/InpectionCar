@@ -415,6 +415,7 @@ public function review($id)
     ]);
 }
 
+
 public function reviewPdf($id)
 {
     $inspection = Inspection::with([
@@ -425,27 +426,67 @@ public function reviewPdf($id)
         'category',
     ])->findOrFail($id);
 
-    // Ambil semua inspection_point berdasarkan category
     $inspection_points = InspectionPoint::with([
         'component',
         'appMenu',
-        // Relasi results difilter hanya berdasarkan inspection_id
         'results' => function ($query) use ($inspection) {
             $query->where('inspection_id', $inspection->id);
         },
-        // Relasi images (kalau memang punya inspection_id)
-         'images' => function ($query) {
-            // Ambil image berdasarkan point_id
-            $query->orderBy('created_at', 'desc');
+        'images' => function ($query) {
+            $query->orderBy('created_at', 'asc');
         },
     ])->whereHas('appMenu', function ($query) use ($inspection) {
         $query->where('category_id', $inspection->category_id);
     })->get();
 
-    return view('inspection.inspection_report', compact('inspection', 'inspection_points'));
+    $coverImage = InspectionImage::whereHas('point', function ($q) {
+        $q->where('name', 'Depan Kanan');
+    })->first();
+
+    return Inertia::render('FrontEnd/Inspection/Report/ReviewPDF', [
+        'inspection' => $inspection,
+        'inspection_points' => $inspection_points,
+        'coverImage' => $coverImage,
+    ]);
+
+    // return view('inspection.inspection_report', compact('inspection', 'inspection_points', 'coverImage')); 
 }
 
+public function downloadPdf($id)
+{
+    $inspection = Inspection::with([
+        'car',
+        'car.brand',
+        'car.model',
+        'car.type',
+        'category',
+    ])->findOrFail($id);
 
+    $inspection_points = InspectionPoint::with([
+        'component',
+        'appMenu',
+        'results' => function ($query) use ($inspection) {
+            $query->where('inspection_id', $inspection->id);
+        },
+        'images' => function ($query) {
+            $query->orderBy('created_at', 'asc');
+        },
+    ])->whereHas('appMenu', function ($query) use ($inspection) {
+        $query->where('category_id', $inspection->category_id);
+    })->get();
+
+    $coverImage = InspectionImage::whereHas('point', function ($q) {
+        $q->where('name', 'Depan Kanan');
+    })->first();
+
+    $pdf = Pdf::loadView('inspection.inspection_report', [
+        'inspection' => $inspection,
+        'inspection_points' => $inspection_points,
+        'coverImage' => $coverImage,
+    ])->setPaper('a4', 'portrait');
+
+    return $pdf->download('inspection_report_'.$inspection->id.'.pdf');
+}
 
 
 public function approve(Request $request, Inspection $inspection)
