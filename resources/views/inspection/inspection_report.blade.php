@@ -125,18 +125,22 @@
 
     {{-- Header dengan Foto Utama + Data Mobil --}}
     <div class="header">
-        @if($coverImage && file_exists(public_path($coverImage->image_path)))
+       
+         <div class="header" style="display: flex; align-items: flex-start; margin-bottom:20px;">
+            @if($coverImage && file_exists(public_path($coverImage->image_path)))
             <img src="{{ public_path($coverImage->image_path) }}" alt="Foto Utama">
-        @else
-            <div style="width:250px; height:188px; border:1px solid #ccc; display:flex; align-items:center; justify-content:center; margin-right:20px;">
-                <span>Gambar tidak tersedia</span>
-            </div>
-        @endif
-        <div class="car-info">
+            @else
+                <div style="width:250px; height:188px; border:1px solid #ccc; display:flex; align-items:center; justify-content:center; margin-right:20px;">
+                    <span>Gambar tidak tersedia</span>
+                </div>
+            @endif
+
             <h2>{{ strtoupper($inspection->car->brand->name.' '.$inspection->car->model->name.' '.$inspection->car->type->name) }}</h2>
             <h3>{{ $inspection->car->year }} {{ $inspection->car->engine_size }} CC {{ $inspection->car->fuel_type }} ({{ $inspection->car->model->period ?? '' }})</h3>
-            
-            <table>
+                
+        </div>
+        <div class="car-info">
+            <table style="border: none; border-collapse: collapse;">
                 <tr><td>Nomor Polisi</td><td>{{ $inspection->car->license_plate }}</td></tr>
                 <tr><td>Merek</td><td>{{ $inspection->car->brand->name }}</td></tr>
                 <tr><td>Model</td><td>{{ $inspection->car->model->name }}</td></tr>
@@ -175,8 +179,8 @@
                             
                             <span class="status-badge {{ $statusClass }}">{{ $res->status ?? '' }}</span>
                             
-                            @if(!empty($res->notes))
-                                : {{ $res->notes }}
+                            @if(!empty($res->note))
+                                : {{ $res->note }}
                             @endif
                         @endforeach
                     @else
@@ -189,7 +193,7 @@
                     <div class="images avoid-break">
                         @foreach($point->images as $img)
                             @if(file_exists(public_path($img->image_path)))
-                                <img src="{{ asset($img->image_path) }}" alt="image">
+                                <img src="{{ public_path($img->image_path) }}" alt="image">
                             @else
                                 <div style="width:120px; height:90px; border:1px solid #ddd; display:flex; align-items:center; justify-content:center; margin:5px;">
                                     <span style="font-size:10px;">Gambar tidak ditemukan</span>
