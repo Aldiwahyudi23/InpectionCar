@@ -1,151 +1,302 @@
 <script setup>
-import { computed ,defineProps} from "vue";
-import { Head } from "@inertiajs/vue3";
+import { computed } from 'vue';
 
 const props = defineProps({
-  inspection: Object,
-  inspection_points: Array,
-  coverImage: Object,
+    inspection: Object,
+    inspection_points: Array,
+    coverImage: Object,
 });
 
-// Grouping points berdasarkan component.name
+// Mengelompokkan point berdasarkan nama komponen
 const groupedPoints = computed(() => {
-  const groups = {};
-  props.inspection_points.forEach((point) => {
-    const comp = point.component?.name ?? "Tanpa Komponen";
-    if (!groups[comp]) groups[comp] = [];
-    groups[comp].push(point);
-  });
-  return groups;
+    const groups = {};
+    props.inspection_points.forEach((point) => {
+        const comp = point.component?.name ?? 'Tanpa Komponen';
+        if (!groups[comp]) {
+            groups[comp] = [];
+        }
+        groups[comp].push(point);
+    });
+    return groups;
 });
+
+// Fungsi untuk menentukan kelas CSS berdasarkan status
+const getStatusClass = (status) => {
+    const lowerStatus = status ? status.toLowerCase() : '';
+    if (lowerStatus.includes('rusak') || lowerStatus.includes('tidak baik') || lowerStatus.includes('bad')) {
+        return 'status-bad';
+    }
+    if (lowerStatus.includes('perbaikan') || lowerStatus.includes('warning')) {
+        return 'status-warning';
+    }
+    return 'status-good';
+};
 </script>
 
 <template>
-  <Head title="Laporan Inspeksi" />
+    <body>
+        <div class="header">
+          <!-- Tombol Download PDF -->
+            <div class="mt-6">
+              <a
+                :href="route('inspections.download.pdf', inspection.id)"
+                class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700"
+              >
+                Download PDF
+              </a>
+            </div>
 
-  <div class="p-6 text-sm text-gray-800">
-    
-    <!-- Header dengan foto utama dan data mobil -->
-    <div class="flex mb-6">
-      <div v-if="coverImage" class="mr-4">
-       <img
-          v-if="coverImage && coverImage.file_path"
-          :src="`/${coverImage.image_path}`"
-          alt="Foto Utama"
-          class="w-64 border rounded"
-        />
-      </div>
+            <div class="header-content">
+                <template v-if="coverImage && coverImage.full_url">
+                    <img :src="coverImage.full_url" alt="Foto Utama">
+                </template>
+                <template v-else>
+                    <div class="image-placeholder">
+                        <span>Gambar tidak tersedia</span>
+                    </div>
+                </template>
+                <div>
+                    <h2>{{ inspection.car.brand.name.toUpperCase() }} {{ inspection.car.model.name.toUpperCase() }} {{ inspection.car.type.name.toUpperCase() }}</h2>
+                    <h3>{{ inspection.car.year }} {{ inspection.car.engine_size }} CC {{ inspection.car.fuel_type }} ({{ inspection.car.model.period ?? '' }})</h3>
+                </div>
+            </div>
 
-      <div class="car-info">
-        <h2 class="text-lg font-bold uppercase">
-          {{
-            inspection.car.brand?.name +
-            " " +
-            inspection.car.model?.name +
-            " " +
-            inspection.car.type?.name
-          }}
-        </h2>
-        <h3 class="text-base text-gray-600">
-          {{
-            inspection.car.year +
-            " " +
-            inspection.car.engine_size +
-            " CC " +
-            inspection.car.fuel_type +
-            " (" +
-            (inspection.car.model?.period ?? "-") +
-            ")"
-          }}
-        </h3>
-
-        <table class="mt-3">
-          <tbody>
-            <tr>
-              <td class="font-bold pr-2">Nomor Polisi</td>
-              <td>{{ inspection.car.license_plate }}</td>
-            </tr>
-            <tr>
-              <td class="font-bold pr-2">Merek</td>
-              <td>{{ inspection.car.brand?.name }}</td>
-            </tr>
-            <tr>
-              <td class="font-bold pr-2">Model</td>
-              <td>{{ inspection.car.model?.name }}</td>
-            </tr>
-            <tr>
-              <td class="font-bold pr-2">Tipe</td>
-              <td>{{ inspection.car.type?.name }}</td>
-            </tr>
-            <tr>
-              <td class="font-bold pr-2">Periode Model</td>
-              <td>{{ inspection.car.model?.period ?? "-" }}</td>
-            </tr>
-            <tr>
-              <td class="font-bold pr-2">Warna</td>
-              <td>{{ inspection.car.color }}</td>
-            </tr>
-            <tr>
-              <td class="font-bold pr-2">Tahun Pembuatan</td>
-              <td>{{ inspection.car.year }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <h2 class="text-lg font-semibold mb-4">Hasil Inspeksi</h2>
-
-    <!-- Group Komponen -->
-    <div v-for="(points, componentName) in groupedPoints" :key="componentName" class="mb-6">
-      <div class="font-bold text-base mb-2">{{ componentName }}</div>
-
-      <!-- Looping point -->
-      <div v-for="point in points" :key="point.id" class="ml-4 mb-4">
-        <div>
-          <span class="inline-block min-w-[150px]">{{ point.name ?? "-" }}</span>
-
-          <!-- Hasil Result -->
-          <span v-if="point.results && point.results.length">
-            <span v-for="res in point.results" :key="res.id">
-              {{ res.status ?? "" }}
-              <span v-if="res.note">, {{ res.note }}</span>
-            </span>
-          </span>
+            <div class="car-info">
+                <table>
+                    <tbody>
+                        <tr>
+                            <td>Nomor Polisi</td>
+                            <td>{{ inspection.car.license_plate }}</td>
+                        </tr>
+                        <tr>
+                            <td>Merek</td>
+                            <td>{{ inspection.car.brand.name }}</td>
+                        </tr>
+                        <tr>
+                            <td>Model</td>
+                            <td>{{ inspection.car.model.name }}</td>
+                        </tr>
+                        <tr>
+                            <td>Tipe</td>
+                            <td>{{ inspection.car.type.name }}</td>
+                        </tr>
+                        <tr>
+                            <td>Periode Model</td>
+                            <td>{{ inspection.car.model.period ?? '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td>Warna</td>
+                            <td>{{ inspection.car.color }}</td>
+                        </tr>
+                        <tr>
+                            <td>Tahun Pembuatan</td>
+                            <td>{{ inspection.car.year }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- Foto -->
-        <div
-          v-if="point.images && point.images.length"
-          class="flex flex-wrap gap-2 mt-2 ml-6"
-        >
-          <img
-            v-for="img in point.images"
-            :key="img.id"
-            :src="`/${img.image_path}`"
-            alt="Foto"
-            class="w-[18%] max-w-[120px] border rounded"
-          />
+        <h2 class="results-title">Hasil Inspeksi</h2>
+
+        <div v-for="(points, componentName) in groupedPoints" :key="componentName" :class="['section', 'avoid-break', { 'photo-component': componentName === 'Foto Kendaraan' }]">
+            <div class="component-title">{{ componentName }}</div>
+
+            <template v-if="componentName === 'Foto Kendaraan'">
+                <div class="images">
+                    <template v-for="point in points" :key="point.id">
+                        <template v-if="point.images && point.images.length">
+                            <img v-for="img in point.images" :key="img.id" :src="img.full_url" alt="Foto Kendaraan" />
+                        </template>
+                        <template v-else>
+                            <div class="image-placeholder-small">
+                                <span>Gambar tidak ditemukan</span>
+                            </div>
+                        </template>
+                    </template>
+                </div>
+            </template>
+            <template v-else>
+                <div v-for="point in points" :key="point.id" class="point avoid-break">
+                    <span class="point-name">{{ point.name ?? '-' }}</span>
+
+                    <div class="point-content">
+                        <template v-if="point.results && point.results.length">
+                            <span :class="['status-badge', getStatusClass(point.results[0].status)]">
+                                {{ point.results[0].status ?? '' }}
+                            </span>
+                            <div v-if="point.results[0].note" class="point-note">
+                                {{ point.results[0].note }}
+                            </div>
+                        </template>
+                        <template v-else>
+                            <span class="status-badge status-warning">Belum diperiksa</span>
+                        </template>
+                    </div>
+
+                    <div v-if="point.images && point.images.length" class="images">
+                        <img v-for="img in point.images" :key="img.id" :src="img.full_url" alt="image" />
+                    </div>
+                </div>
+            </template>
         </div>
-      </div>
-    </div>
-    <!-- Tombol Download PDF -->
-    <div class="mt-6">
-      <a
-        :href="route('inspections.download.pdf', inspection.id)"
-        class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700"
-      >
-        Download PDF
-      </a>
-    </div>
-  </div>
+    </body>
 </template>
 
 <style scoped>
-table td {
-  padding: 2px 4px;
-  vertical-align: top;
-}
-
-
+    body {
+        font-family: Arial, sans-serif;
+        font-size: 13px;
+        color: #333;
+        margin: 0;
+        padding: 20px;
+    }
+    .header {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    .header-content {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+    .header img {
+        width: 250px;
+        height: 188px;
+        object-fit: cover;
+        border: 1px solid #ccc;
+    }
+    .image-placeholder, .image-placeholder-small {
+        border: 1px solid #ccc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 20px;
+    }
+    .image-placeholder {
+        width: 250px;
+        height: 188px;
+    }
+    .image-placeholder-small {
+        width: 120px;
+        height: 90px;
+    }
+    .car-info {
+        font-size: 13px;
+        flex: 1;
+    }
+    .car-info h2 {
+        margin: 0 0 5px 0;
+        font-size: 16px;
+        font-weight: bold;
+    }
+    .car-info h3 {
+        margin: 0 0 10px 0;
+        font-size: 14px;
+        font-weight: normal;
+        color: #555;
+    }
+    .car-info table {
+        margin-top: 10px;
+        border-collapse: collapse;
+        width: 100%;
+    }
+    .car-info td {
+        padding: 8px 0;
+        vertical-align: top;
+        border-bottom: 1px solid #ccc;
+    }
+    .car-info td:first-child {
+        width: 30%;
+        font-weight: bold;
+    }
+    .results-title {
+        border-bottom: 2px solid #333;
+        padding-bottom: 5px;
+        margin-top: 20px;
+    }
+    .section {
+        margin-bottom: 20px;
+    }
+    .component-title {
+        font-weight: bold;
+        font-size: 14px;
+        margin-top: 15px;
+        background-color: #f5f5f5;
+        padding: 5px 10px;
+        border-left: 3px solid #333;
+    }
+    .point {
+        margin-left: 15px;
+        margin-bottom: 10px;
+        padding: 5px 0;
+        border-bottom: 1px dotted #eee;
+    }
+    .point-name {
+        display: inline-block;
+        min-width: 150px;
+        font-weight: bold;
+        vertical-align: top;
+    }
+    .point-content {
+        display: inline-block;
+        width: calc(100% - 170px);
+        vertical-align: top;
+    }
+    .point-note {
+        margin: 5px 0;
+        font-style: italic;
+        color: #555;
+    }
+    .images {
+        display: flex;
+        flex-wrap: wrap;
+        margin-top: 5px;
+        gap: 10px;
+    }
+    .images img {
+        width: 120px;
+        height: 90px;
+        object-fit: cover;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+    }
+    .photo-component .images {
+        margin-left: 0;
+        justify-content: flex-start;
+        gap: 15px;
+    }
+    .photo-component .images img {
+        width: 45%;
+        max-width: 300px;
+        height: auto;
+        min-height: 180px;
+        margin: 0;
+        flex: 1 1 calc(50% - 15px);
+    }
+    .photo-component .point {
+        display: none;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 12px;
+        margin-right: 8px;
+    }
+    .status-good {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .status-bad {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    .status-warning {
+        background-color: #fff3cd;
+        color: #856404;
+    }
 </style>
+

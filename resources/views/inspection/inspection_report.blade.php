@@ -73,22 +73,32 @@
             padding: 5px 0;
             border-bottom: 1px dotted #eee;
         }
-        .point span { 
+        .point-name { 
             display: inline-block; 
             min-width: 150px; 
             font-weight: bold;
+            vertical-align: top;
+        }
+        .point-content {
+            display: inline-block;
+            width: calc(100% - 170px);
+            vertical-align: top;
+        }
+        .point-note {
+            margin: 5px 0;
+            font-style: italic;
+            color: #555;
         }
         .images { 
             display: flex; 
             flex-wrap: wrap; 
-            margin-top: 5px; 
-            margin-left: 25px; 
+            margin-top: 5px;
+            gap: 10px;
         }
         .images img { 
             width: 120px; 
             height: 90px;
             object-fit: cover;
-            margin: 5px; 
             border: 1px solid #ddd; 
             border-radius: 3px; 
         }
@@ -114,7 +124,7 @@
             padding: 2px 8px;
             border-radius: 3px;
             font-size: 12px;
-            margin-left: 10px;
+            margin-right: 8px;
         }
         .status-good {
             background-color: #d4edda;
@@ -142,6 +152,12 @@
             .photo-component .images img {
                 width: 100%;
                 flex: 1 1 100%;
+            }
+            .point-name {
+                min-width: 120px;
+            }
+            .point-content {
+                width: calc(100% - 130px);
             }
         }
     </style>
@@ -231,47 +247,63 @@
                 {{-- Tampilan normal untuk komponen lainnya --}}
                 @foreach($points as $point)
                     <div class="point avoid-break">
-                        <span>{{ $point->name ?? '-' }}</span>
+                        <span class="point-name">{{ $point->name ?? '-' }}</span>
                         
-                        {{-- Ambil hasil dari result.value --}}
-                        @if($point->results && $point->results->count())
-                            @foreach($point->results as $res)
+                        <div class="point-content">
+                            {{-- Cek apakah ada result untuk point ini --}}
+                            @if($point->results && $point->results->count())
                                 @php
+                                    $result = $point->results->first();
+                                    $hasStatus = !empty($result->status);
+                                    $hasNote = !empty($result->note);
+                                    
+                                    // Tentukan kelas status
                                     $statusClass = 'status-good';
-                                    if (strpos(strtolower($res->status ?? ''), 'rusak') !== false || 
-                                        strpos(strtolower($res->status ?? ''), 'tidak baik') !== false) {
+                                    if (strpos(strtolower($result->status ?? ''), 'rusak') !== false || 
+                                        strpos(strtolower($result->status ?? ''), 'tidak baik') !== false) {
                                         $statusClass = 'status-bad';
-                                    } elseif (strpos(strtolower($res->status ?? ''), 'perbaikan') !== false || 
-                                             strpos(strtolower($res->status ?? ''), 'warning') !== false) {
+                                    } elseif (strpos(strtolower($result->status ?? ''), 'perbaikan') !== false || 
+                                             strpos(strtolower($result->status ?? ''), 'warning') !== false) {
                                         $statusClass = 'status-warning';
                                     }
                                 @endphp
                                 
-                                <span class="status-badge {{ $statusClass }}">{{ $res->status ?? '' }}</span>
-                                
-                                @if(!empty($res->note))
-                                    : {{ $res->note }}
+                                {{-- Tampilkan status jika ada --}}
+                                @if($hasStatus)
+                                    <span class="status-badge {{ $statusClass }}">{{ $result->status }}</span>
                                 @endif
-                            @endforeach
-                        @else
-                            <span class="status-badge status-warning">Belum diperiksa</span>
-                        @endif
-                    </div>
-
-                    {{-- Foto --}}
-                    @if($point->images && $point->images->count())
-                        <div class="images avoid-break">
-                            @foreach($point->images as $img)
-                                @if(file_exists(public_path($img->image_path)))
-                                    <img src="{{ public_path($img->image_path) }}" alt="image">
-                                @else
-                                    <div style="width:120px; height:90px; border:1px solid #ddd; display:flex; align-items:center; justify-content:center; margin:5px;">
-                                        <span style="font-size:10px;">Gambar tidak ditemukan</span>
+                                
+                                {{-- Tampilkan note di samping jika status tidak ada --}}
+                                @if($hasNote && !$hasStatus)
+                                    <span class="point-note">{{ $result->note }}</span>
+                                @endif
+                                
+                                {{-- Tampilkan note di bawah jika status ada --}}
+                                @if($hasNote && $hasStatus)
+                                    <div class="point-note">{{ $result->note }}</div>
+                                @endif
+                                
+                                {{-- Tampilkan gambar jika ada --}}
+                                @if($point->images && $point->images->count())
+                                    <div class="images">
+                                        @foreach($point->images as $img)
+                                            @if(file_exists(public_path($img->image_path)))
+                                                <img src="{{ public_path($img->image_path) }}" alt="image">
+                                            @else
+                                                <div style="width:120px; height:90px; border:1px solid #ddd; display:flex; align-items:center; justify-content:center;">
+                                                    <span style="font-size:10px;">Gambar tidak ditemukan</span>
+                                                </div>
+                                            @endif
+                                        @endforeach
                                     </div>
                                 @endif
-                            @endforeach
+                                
+                            @else
+                                {{-- Jika tidak ada result --}}
+                                <span class="status-badge status-warning">Belum diperiksa</span>
+                            @endif
                         </div>
-                    @endif
+                    </div>
                 @endforeach
             @endif
         </div>
