@@ -510,7 +510,7 @@ public function downloadPdf($id)
         'coverImage' => $coverImage,
     ])->setPaper('a4', 'portrait');
 
-    return $pdf->download('inspection_report_'.$inspection->id.'.pdf');
+    return $pdf->download('inspection_report_'.$inspection->car->model->name.'_('. $inspection->plate_number.').pdf');
 }
 
 

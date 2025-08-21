@@ -71,12 +71,15 @@ Forms\Components\Fieldset::make('Settings Configuration')
                 ->schema([
                     Forms\Components\TextInput::make('settings.min')
                         ->numeric()
+                        ->default(0)
                         ->label('Minimum Value'),
                     Forms\Components\TextInput::make('settings.max')
                         ->numeric()
+                        ->default(100)
                         ->label('Maximum Value'),
                     Forms\Components\TextInput::make('settings.step')
                         ->numeric()
+                        ->default(9)
                         ->label('Step Value'),
                 ])
                 ->columns(3);
@@ -88,11 +91,14 @@ Forms\Components\Fieldset::make('Settings Configuration')
                 ->schema([
                     Forms\Components\TextInput::make('settings.min_length')
                         ->numeric()
+                        ->default(0)
                         ->label('Minimum Length'),
                     Forms\Components\TextInput::make('settings.max_length')
                         ->numeric()
+                        ->default(500)
                         ->label('Maximum Length'),
                     Forms\Components\TextInput::make('settings.placeholder')
+                        ->default('Masukkan teks di sini')
                         ->label('Placeholder Text'),
                 ])
                 ->columns(3);
@@ -104,13 +110,17 @@ Forms\Components\Fieldset::make('Settings Configuration')
                 ->schema([
                     Forms\Components\TextInput::make('settings.min_length')
                         ->numeric()
+                        ->default(0)
                         ->label('Minimum Length'),
                     Forms\Components\TextInput::make('settings.max_length')
                         ->numeric()
+                        ->default(500)
                         ->label('Maximum Length'),
                     Forms\Components\TextInput::make('settings.pattern')
+                        ->default('^[a-zA-Z0-9\s]+$') // Contoh regex untuk alfanumerik
                         ->label('Regex Pattern'),
                     Forms\Components\TextInput::make('settings.placeholder')
+                        ->default('Masukkan teks di sini')
                         ->label('Placeholder Text'),
                 ])
                 ->columns(2);
@@ -151,8 +161,8 @@ Forms\Components\Fieldset::make('Settings Configuration')
                             Forms\Components\TextInput::make('settings.max_value')
                                 ->numeric()
                                 ->label('Maximum Value')
-                                ->default(1000000000)
-                                ->placeholder('1000000000'),
+                                ->default(100000000)
+                                ->placeholder('100000000'),
                         ]),
                 ])
                 ->columns(1);
@@ -172,15 +182,18 @@ Forms\Components\Fieldset::make('Settings Configuration')
                     
                     Forms\Components\Grid::make(3)
                         ->schema([
-                            Forms\Components\TextInput::make('settings.textarea_min_length')
+                            Forms\Components\TextInput::make('settings.min_length')
                                 ->numeric()
+                                ->default(0)
                                 ->label('Min Length')
                                 ->visible(fn (callable $get) => $get('settings.show_textarea')),
-                            Forms\Components\TextInput::make('settings.textarea_max_length')
+                            Forms\Components\TextInput::make('settings.max_length')
                                 ->numeric()
+                                ->default(500)
                                 ->label('Max Length')
                                 ->visible(fn (callable $get) => $get('settings.show_textarea')),
-                            Forms\Components\TextInput::make('settings.textarea_placeholder')
+                            Forms\Components\TextInput::make('settings.placeholder')
+                                ->default('Masukkan teks di sini')
                                 ->label('Placeholder')
                                 ->visible(fn (callable $get) => $get('settings.show_textarea')),
                         ])
@@ -209,6 +222,7 @@ Forms\Components\Fieldset::make('Settings Configuration')
                                 ->label('Max Size (KB)')
                                 ->visible(fn (callable $get) => $get('settings.show_image_upload')),
                             Forms\Components\TagsInput::make('settings.allowed_types')
+                                ->default(['jpg', 'png'])
                                 ->placeholder('jpg, png, etc.')
                                 ->label('Allowed File Types')
                                 ->visible(fn (callable $get) => $get('settings.show_image_upload')),
@@ -354,13 +368,16 @@ Forms\Components\Fieldset::make('Settings Configuration')
                                 ->schema([
                                     Forms\Components\TextInput::make('settings.textarea_min_length')
                                         ->numeric()
+                                        ->default(0)
                                         ->label('Min Length')
                                         ->visible(fn (callable $get) => $get('settings.show_textarea')),
                                     Forms\Components\TextInput::make('settings.textarea_max_length')
                                         ->numeric()
+                                        ->default(500)
                                         ->label('Max Length')
                                         ->visible(fn (callable $get) => $get('settings.show_textarea')),
                                     Forms\Components\TextInput::make('settings.textarea_placeholder')
+                                        ->default('Masukkan teks di sini')
                                         ->label('Placeholder')
                                         ->visible(fn (callable $get) => $get('settings.show_textarea')),
                                 ])
@@ -431,15 +448,18 @@ Forms\Components\Fieldset::make('Settings Configuration')
                             
                             Forms\Components\Grid::make(3)
                                 ->schema([
-                                    Forms\Components\TextInput::make('settings.textarea_min_length')
+                                    Forms\Components\TextInput::make('settings.min_length')
                                         ->numeric()
+                                        ->default(0)
                                         ->label('Min Length')
                                         ->visible(fn (callable $get) => $get('settings.show_textarea')),
-                                    Forms\Components\TextInput::make('settings.textarea_max_length')
+                                    Forms\Components\TextInput::make('settings.max_length')
                                         ->numeric()
+                                        ->default(500)
                                         ->label('Max Length')
                                         ->visible(fn (callable $get) => $get('settings.show_textarea')),
-                                    Forms\Components\TextInput::make('settings.textarea_placeholder')
+                                    Forms\Components\TextInput::make('settings.placeholder')
+                                        ->default('Masukkan teks di sini')
                                         ->label('Placeholder')
                                         ->visible(fn (callable $get) => $get('settings.show_textarea')),
                                 ])
@@ -469,6 +489,7 @@ Forms\Components\Fieldset::make('Settings Configuration')
                                         ->visible(fn (callable $get) => $get('settings.show_image_upload')),
                                     Forms\Components\TagsInput::make('settings.allowed_types')
                                         ->placeholder('jpg, png, etc.')
+                                        ->default(['jpg', 'png'])
                                         ->label('Allowed File Types')
                                         ->visible(fn (callable $get) => $get('settings.show_image_upload')),
                                 ]),
@@ -575,8 +596,10 @@ Forms\Components\Fieldset::make('Settings Configuration')
             $schema[] = Forms\Components\Fieldset::make('Date Configuration')
                 ->schema([
                     Forms\Components\DatePicker::make('settings.min_date')
+                        ->default(now()->subYear()) // Default to one year ago
                         ->label('Minimum Date'),
                     Forms\Components\DatePicker::make('settings.max_date')
+                        ->default(now()->addYear()) // Default to one year in the future
                         ->label('Maximum Date'),
                 ])
                 ->columns(2);

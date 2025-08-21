@@ -28,7 +28,7 @@
           :min-length="point.settings?.min_length"
           :max-length="point.settings?.max_length"
           :pattern="point.settings?.pattern"
-          :placeholder="point.settings?.placeholder || 'Enter text'"
+          :placeholder="point.settings?.placeholder || 'Masukan text'"
           :error="form.errors[`results.${point.id}.note`]"
           @update:modelValue="updateResult(point.id, $event)"
           @save="saveResult(point.id)"
@@ -41,7 +41,7 @@
           :min="point.settings?.min"
           :max="point.settings?.max"
           :step="point.settings?.step || 1"
-          :placeholder="point.settings?.placeholder || 'Enter number'"
+          :placeholder="point.settings?.placeholder || 'Masukan number'"
           :error="form.errors[`results.${point.id}.note`]"
           @update:modelValue="updateResult(point.id, $event)"
           @save="saveResult(point.id)"
@@ -71,26 +71,37 @@
           @save="saveResult(point.id)"
         />
         
-        <input-select
-          v-if="point.input_type === 'select'"
-          v-model="form.results[point.id].status"
+        <input-textarea
+          v-if="point.input_type === 'textarea'"
+          v-model="form.results[point.id].note"
           :required="point.settings?.is_required"
-          :error="form.errors[`results.${point.id}.status`]"
+          :min-length="point.settings?.min_length"
+          :max-length="point.settings?.max_length"
+          :placeholder="point.settings?.placeholder || 'Masukkan teks di sini'"
+          :settings="point.settings"  
+          :error="form.errors[`results.${point.id}.note`]"
           @update:modelValue="updateResult(point.id, $event)"
           @save="saveResult(point.id)"
         />
-        
+
         <input-radio
           v-if="point.input_type === 'radio'"
           v-model="form.results[point.id].status"
+          :notes="form.results[point.id].note"
+          :images="form.results[point.id].images"
           :required="point.settings?.is_required"
-           :point-id="point.id"  
+          :point-id="point.id"  
+          :inspection-id="inspectionId" 
           :settings="point.settings"  
+          :point-name="point.name"
           :options="point.settings?.radios || defaultRadioOptions"
           :error="form.errors[`results.${point.id}.status`]"
           @update:modelValue="updateResult(point.id, $event)"
+          @update:notes="val => form.results[point.id].note = val"
+          @update:images="val => form.results[point.id].images = val"
           @save="saveResult(point.id)"
         />
+
         
         <input-image
           v-if="point.input_type === 'image'"
@@ -104,6 +115,14 @@
           @removeImage="removeImage(point.id, $event)"
         />
 
+         <input-select
+          v-if="point.input_type === 'select'"
+          v-model="form.results[point.id].status"
+          :required="point.settings?.is_required"
+          :error="form.errors[`results.${point.id}.status`]"
+          @update:modelValue="updateResult(point.id, $event)"
+          @save="saveResult(point.id)"
+        />
         
       </div>
     </div>
@@ -114,10 +133,11 @@
 import InputText from './InputText.vue';
 import InputNumber from './InputNumber.vue';
 import InputDate from './InputDate.vue';
+import InputAccount from './InputAccount.vue';
+import InputTextarea from './InputTextarea.vue';
 import InputSelect from './InputSelect.vue';
 import InputRadio from './InputRadio.vue';
 import InputImage from './InputImage.vue';
-import InputAccount from './InputAccount.vue';
 
 const props = defineProps({
   category: Object,

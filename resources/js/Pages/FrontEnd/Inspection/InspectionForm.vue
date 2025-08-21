@@ -204,6 +204,7 @@ const isMenuComplete = (menu) => {
       case 'number':
       case 'date':
       case 'account':
+      case 'textarea':
         return !!result.note;
       case 'select':
       case 'radio':
