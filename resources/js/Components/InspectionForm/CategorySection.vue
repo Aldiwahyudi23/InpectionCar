@@ -109,10 +109,13 @@
           :error="form.errors[`results.${point.id}.images`]"
           :inspection-id="inspectionId"   
           :point-id="point.id"  
+          :point-name="point.name"
           :settings="point.settings"         
           @update:modelValue="updateResult(point.id, $event)"
           @save="saveResult(point.id)"
           @removeImage="removeImage(point.id, $event)"
+          @update:notes="val => form.results[point.id].note = val"
+          @update:status="val => form.results[point.id].status = val"
         />
 
          <input-select

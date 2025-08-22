@@ -98,6 +98,7 @@
       :allow-multiple="allowMultiple"
       :max-files="settings.max_files"
       :is-uploading="isUploading"
+      :aspect-ratio="aspectRatio"
       @close="closePreviewModal"
       @save-images="triggerUploadAndSave"
       @remove-preview-image="handleRemovePreviewImage"

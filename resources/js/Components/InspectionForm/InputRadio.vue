@@ -1,7 +1,6 @@
 <template>
   <div class="mt-2 space-y-4">
-    <!-- Radio Options -->
-      <!-- Radio Options - Grid Layout untuk keseragaman -->
+    <!-- Radio Options - Grid Layout untuk keseragaman -->
     <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 w-full">
       <label
         v-for="(option, index) in options"
@@ -45,32 +44,30 @@
       </div>
       
       <!-- Display images -->
-
-  <div
-    v-if="images.length > 0 && selectedOption.settings?.show_image_upload"
-    class="mt-3"
-  >
-    <div class="flex gap-2 overflow-x-auto" style="scrollbar-width: none">
       <div
-        v-for="(image, index) in images"
-        :key="index"
-        class="relative flex-shrink-0"
-        style="width: 80px; height: 80px;"
+        v-if="images.length > 0 && selectedOption.settings?.show_image_upload"
+        class="mt-3"
       >
-        <img
-          :src="getImageSrc(image)"
-          class="w-full h-full object-cover rounded"
-        />
-        <span
-          v-if="index === 3 && images.length > 4"
-          class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-xs"
-        >
-          +{{ images.length - 4 }}
-        </span>
+        <div class="flex gap-2 overflow-x-auto" style="scrollbar-width: none">
+          <div
+            v-for="(image, index) in images"
+            :key="index"
+            class="relative flex-shrink-0"
+            style="width: 80px; height: 80px;"
+          >
+            <img
+              :src="getImageSrc(image)"
+              class="w-full h-full object-cover rounded"
+            />
+            <span
+              v-if="index === 3 && images.length > 4"
+              class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-xs"
+            >
+              +{{ images.length - 4 }}
+            </span>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-
       
       <!-- Display notes -->
       <div v-if="notes && selectedOption.settings?.show_textarea" class="mt-2">
@@ -79,62 +76,25 @@
     </div>
 
     <!-- Modal untuk opsi yang dipilih -->
-    <BottomSheetModal
+    <RadioOptionModal
       :show="showOptionModal"
       :title="pointName || 'Detail'"
       :subtitle="selectedOption?.description"
+      :name="'modal-radio-' + pointId"
+      :options="options"
+      :selected-value="tempRadioValue"
+      :notes-value="tempNotes"
+      :images-value="tempImages"
+      :point-id="pointId"
+      :inspection-id="inspectionId"
+      @update:selectedValue="tempRadioValue = $event"
+      @update:notesValue="tempNotes = $event"
+      @update:imagesValue="handleImageUpdate($event)"
       @close="closeOptionModal"
-    >
-      <div class="space-y-4">
-        <!-- Textarea Section -->
-        <div v-if="selectedOption?.settings?.show_textarea" class="space-y-2">
-          <Textarea
-            :model-value="tempNotes"
-            :point-id="pointId"
-            :inspection-id="inspectionId"
-            :settings="selectedOption.settings"
-            :required="required"
-            :min-length="selectedOption.settings?.min_length"
-            :max-length="selectedOption.settings?.max_length"
-            :placeholder="selectedOption.settings?.placeholder || 'Tambahkan keterangan...'"
-            @update:modelValue="val => { tempNotes = val; }"
-            @save="handleTextareaSave"
-          />
-        </div>
-
-        <!-- Image Upload Section -->
-        <div v-if="selectedOption?.settings?.show_image_upload" class="mt-4">
-          <h4 class="text-sm font-medium text-gray-700 mb-2">Upload Foto:</h4>
-          <InputImage
-            :model-value="tempImages"
-            :point-id="pointId"
-            :inspection-id="inspectionId"
-            :settings="selectedOption.settings"
-            @update:modelValue="val => { tempImages = val; handleImageUpdate(val); }"
-            @save="handleImageSave"
-          />
-        </div>
-      </div>
-
-      <template #footer>
-        <div class="flex gap-2">
-          <button
-            type="button"
-            @click="closeOptionModal"
-            class="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Batal
-          </button>
-          <button
-            type="button"
-            @click="saveAllData"
-            class="flex-1 px-4 py-2 bg-indigo-600 border border-transparent rounded-md shadow-sm text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Simpan
-          </button>
-        </div>
-      </template>
-    </BottomSheetModal>
+      @save="saveAllData"
+      @saveTextarea="handleTextareaSave"
+      @saveImage="handleImageSave"
+    />
 
     <p v-if="error" class="mt-2 text-sm text-red-600">
       {{ error }}
@@ -144,16 +104,14 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import InputImage from './InputImage.vue';
-import Textarea from './InputTextarea.vue';
-import BottomSheetModal from './BottomSheetModal.vue';
+import RadioOptionModal from './RadioOptionModal.vue';
 
 const props = defineProps({
   modelValue: String,
   required: Boolean,
   error: String,
   pointId: [String, Number],
-  pointName: String, // Tambahkan prop untuk nama point
+  pointName: String,
   inspectionId: [String, Number],
   options: {
     type: Array,
@@ -176,6 +134,7 @@ const imageValues = ref([...props.images]);
 const showOptionModal = ref(false);
 const tempNotes = ref('');
 const tempImages = ref([]);
+const tempRadioValue = ref('');
 const originalImages = ref([]);
 
 // computed
@@ -195,8 +154,15 @@ const hasSettings = (option) => {
 watch(() => props.notes, (val) => {
   notesValue.value = val;
 });
+
 watch(() => props.images, (val) => {
   imageValues.value = [...val];
+});
+
+watch(() => props.modelValue, (val) => {
+  if (val) {
+    tempRadioValue.value = val;
+  }
 });
 
 // handler radio change
@@ -225,6 +191,7 @@ const getImageSrc = (image) => {
 
 // modal functions
 const openOptionModal = () => {
+  tempRadioValue.value = props.modelValue;
   tempNotes.value = notesValue.value;
   tempImages.value = [...imageValues.value];
   originalImages.value = [...imageValues.value];
@@ -235,6 +202,7 @@ const closeOptionModal = () => {
   // Revert to original values if cancelled
   tempNotes.value = notesValue.value;
   tempImages.value = [...imageValues.value];
+  tempRadioValue.value = props.modelValue;
   showOptionModal.value = false;
 };
 
@@ -258,20 +226,39 @@ const handleImageSave = (data) => {
   // Gambar sudah langsung tersimpan saat diupload melalui handleImageUpdate
 };
 
+// // Handler untuk save textarea
+// const handleTextareaSave = (data) => {
+//   notesValue.value = data.notes;
+//   emit('update:notes', data.notes);
+//   emit('save', { 
+//     pointId: props.pointId, 
+//     inspectionId: props.inspectionId, 
+//     value: props.modelValue,
+//     notes: data.notes,
+//     images: imageValues.value
+//   });
+// };
 
 // Simpan semua data
 const saveAllData = () => {
+  // Update radio value jika berubah
+  if (tempRadioValue.value !== props.modelValue) {
+    emit('update:modelValue', tempRadioValue.value);
+  }
+  
   // Simpan notes
   notesValue.value = tempNotes.value;
   emit('update:notes', tempNotes.value);
   
-  // Gambar sudah tersimpan melalui handleImageUpdate
+  // Simpan images
+  imageValues.value = [...tempImages.value];
+  emit('update:images', [...tempImages.value]);
   
   // Kirim semua data untuk disimpan
   emit('save', { 
     pointId: props.pointId, 
     inspectionId: props.inspectionId, 
-    value: props.modelValue,
+    value: tempRadioValue.value,
     notes: tempNotes.value,
     images: tempImages.value
   });
