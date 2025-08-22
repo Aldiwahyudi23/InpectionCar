@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('category_id')->constrained('categories');
             $table->string('name');
-            $table->enum('input_type', ['menu', 'damage'])->default('damage');
+            $table->enum('input_type', ['menu', 'damage'])->default('menu');
             $table->integer('order')->default(0);
             $table->boolean('is_active')->default(true);
             $table->timestamps();

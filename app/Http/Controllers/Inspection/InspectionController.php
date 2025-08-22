@@ -72,8 +72,8 @@ public function create(Inspection $inspection)
         ]);
     }
 
-    // --- kode existing kamu tetap ---
-    $appMenu_com = AppMenu::with(['points' => function($query) {
+ // Ambil appMenu tanpa filter damage points (ambil semua points)
+    $appMenu = AppMenu::with(['points' => function($query) {
         $query->where('is_active', true)
               ->orderBy('order');
     }])
@@ -82,8 +82,25 @@ public function create(Inspection $inspection)
     ->orderBy('order')
     ->get();
 
+     $appMenu_damage = AppMenu::with(['points' => function($query) {
+        $query->where('is_active', true)
+              ->orderBy('order');
+    }])
+    ->where('input_type', 'damage')
+    ->where('is_active', true)
+    ->where('category_id', $inspection->category_id)
+    ->orderBy('order')
+    ->get();
+
+    // Ambil damage points secara terpisah
+    $damagePoints = InspectionPoint::where('is_active', true)
+        ->whereIn('app_menu_id', $appMenu_damage->pluck('id'))
+        ->orderBy('order')
+        ->get();
+
+    // Ambil component IDs (jika masih diperlukan)
     $componentIds = collect();
-    foreach ($appMenu_com as $menu) {
+    foreach ($appMenu as $menu) {
         foreach ($menu->points as $point) {
             if ($point->component_id !== null) {
                 $componentIds->push($point->component_id);
@@ -94,17 +111,7 @@ public function create(Inspection $inspection)
     $uniqueComponentIds = $componentIds->unique()->values();
     $components = Component::whereIn('id', $uniqueComponentIds)->get();
 
-    $appMenu = AppMenu::with(['points' => function($query) {
-            $query->where('is_active', true)
-                  ->where('input_type', '!=', 'damage')
-                  ->orderBy('order');
-        }])
-        ->where('is_active', true)
-        ->where('input_type', 'menu')
-        ->where('category_id', $inspection->category_id)
-        ->orderBy('order')
-        ->get();
-
+    // Ambil existing results dan images
     $existingResults = InspectionResult::where('inspection_id', $inspection->id)
         ->get()
         ->keyBy('point_id');
@@ -120,6 +127,7 @@ public function create(Inspection $inspection)
         'existingResults' => $existingResults->values()->all(),
         'existingImages' => $existingImages,
         'components' => $components,
+        'damagePoints' => $damagePoints, // Kirim damage points terpisah
     ]);
 }
 

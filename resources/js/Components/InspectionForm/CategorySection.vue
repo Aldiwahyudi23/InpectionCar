@@ -1,12 +1,11 @@
 <template>
   <div class="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
     <div class="bg-indigo-50 px-6 py-2 border-b border-indigo-100">
-      <h2 class="text-xl font-semibold text-indigo-700">{{ category.name }}</h2>
+      <h2 class="text-xl font-semibold text-indigo-700">{{ category.name }} </h2>
     </div>
     
-    <div class="p-4 space-y-4"> <div 
-        v-for="point in category.points" 
-        :key="point.id" 
+    <div class="p-4 space-y-4"> 
+      <div v-for="point in category.points" :key="point.id" 
         class="space-y-2 pb-4 border-b border-gray-100 last:border-0 last:pb-0" >
         <div class="flex items-start justify-between">
           <label class="block text-sm font-medium text-gray-700">
