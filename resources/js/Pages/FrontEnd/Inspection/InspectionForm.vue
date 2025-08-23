@@ -175,7 +175,7 @@
     <!-- Modal Radio Option untuk Damage Points -->
     <RadioOptionModal
     v-if="showRadioModal"
-    :key="modalKey"
+    :key="modalselectedPoint?.id"
       :show="showRadioModal"
       :title="selectedPoint?.name || 'Detail Point'"
       :subtitle="selectedPoint?.description"
@@ -225,7 +225,6 @@ const props = defineProps({
 // State untuk modal
 const showSearchModal = ref(false);
 const showRadioModal = ref(false);
-const modalKey = ref(0);
 const searchQuery = ref('');
 const selectedPoint = ref(null);
 const tempRadioValue = ref(null);
@@ -406,8 +405,12 @@ const form = useForm(initializeForm());
 
 // Check if menu is complete
 const isMenuComplete = (menu) => {
+  // Kalau menu ini tipe damage → selalu dianggap complete (tidak dihitung)
+  if (menu.input_type === 'damage') {
+    return true;
+  }
+
   return menu.points.every(point => {
-    
     const result = form.results[point.id];
     if (!result) return false;
     
@@ -423,11 +426,14 @@ const isMenuComplete = (menu) => {
         return !!result.status;
       case 'image':
         return result.images?.length > 0;
+      case 'imageTOradio':
+        return result.images?.length > 0;
       default:
         return !!result.status || !!result.note;
     }
   });
 };
+
 
 // Change active category
 const changeCategory = (menuId) => {

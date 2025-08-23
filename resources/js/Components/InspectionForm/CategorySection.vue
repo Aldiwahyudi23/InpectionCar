@@ -93,7 +93,28 @@
           :inspection-id="inspectionId" 
           :settings="point.settings"  
           :point-name="point.name"
-          :selected-point="point"
+          :selected-point="point.app_menu.input_type === 'damage' ? point : null"
+          :options="point.settings?.radios || defaultRadioOptions"
+          :error="form.errors[`results.${point.id}.status`]"
+          @update:modelValue="updateResult(point.id, $event)"
+          @update:notes="val => form.results[point.id].note = val"
+          @update:images="val => form.results[point.id].images = val"
+          @save="saveResult(point.id)"
+          @hapus="HapusPoint(point.id)"
+        />
+
+        <InputImageToRadio
+          v-if="point.input_type === 'imageTOradio'"
+          v-model="form.results[point.id].status"
+          :notes="form.results[point.id].note"
+          :images="form.results[point.id].images"
+          :required="point.settings?.is_required"
+          :point-id="point.id"  
+          :inspection-id="inspectionId" 
+          :settings="point.settings"  
+          :point-name="point.name"
+          :point = "point"
+          :selected-point="point.app_menu.input_type === 'damage' ? point : null"
           :options="point.settings?.radios || defaultRadioOptions"
           :error="form.errors[`results.${point.id}.status`]"
           @update:modelValue="updateResult(point.id, $event)"
@@ -142,6 +163,7 @@ import InputTextarea from './InputTextarea.vue';
 import InputSelect from './InputSelect.vue';
 import InputRadio from './InputRadio.vue';
 import InputImage from './InputImage.vue';
+import InputImageToRadio from './InputImageToRadio.vue';
 import { Ham } from 'lucide-vue-next';
 
 const props = defineProps({

@@ -53,7 +53,7 @@
             v-for="(image, index) in images"
             :key="index"
             class="relative flex-shrink-0"
-            style="width: 80px; height: 80px;"
+            style="width: 130px; height: 130px;"
           >
             <img
               :src="getImageSrc(image)"
@@ -77,6 +77,8 @@
 
     <!-- Modal untuk opsi yang dipilih -->
     <RadioOptionModal
+    v-if="showOptionModal"
+    :key="selectedPoint?.id"
       :show="showOptionModal"
       :title="pointName || 'Detail'"
       :subtitle="selectedOption?.description"
@@ -204,9 +206,9 @@ const openOptionModal = () => {
 
 const closeOptionModal = () => {
   // Revert to original values if cancelled
-  tempNotes.value = notesValue.value;
-  tempImages.value = [...imageValues.value];
-  tempRadioValue.value = props.modelValue;
+  tempNotes.value = '';
+  tempImages.value = [];
+  tempRadioValue.value = '';
   showOptionModal.value = false;
 };
 
@@ -272,9 +274,7 @@ const saveAllData = () => {
 };
 
 const HapusPoint = (pointId) => {
-  if (confirm("Apakah kamu yakin ingin menghapus data ini?")) {
     emit("hapus", pointId);
-  }
   showOptionModal.value = false;
 };
 </script>

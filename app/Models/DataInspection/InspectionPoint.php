@@ -68,9 +68,9 @@ class InspectionPoint extends Model
     {
         return $this->belongsTo(Component::class, 'component_id', 'id');
     }
-    public function appMenu()
+    public function app_menu()
     {
-        return $this->belongsTo(AppMenu::class);
+        return $this->belongsTo(AppMenu::class, 'app_menu_id', 'id');
     }
 
     // di InspectionPoint.php

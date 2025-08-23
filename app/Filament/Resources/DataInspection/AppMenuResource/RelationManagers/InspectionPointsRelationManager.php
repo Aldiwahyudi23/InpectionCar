@@ -39,6 +39,7 @@ class InspectionPointsRelationManager extends RelationManager
                         'account' => 'Account',
                         'date' => 'Date',
                         'image' => 'Image',
+                        'imageTOradio' => 'Image to Radio',
                         'radio' => 'Radio Botton',
                         'checkbox' => 'Checkbox',
                         'textarea' => 'Textarea',
@@ -168,128 +169,6 @@ Forms\Components\Fieldset::make('Settings Configuration')
                 ->columns(1);
         }
 
-        // Settings for damage input
-        elseif ($inputType === 'damage') {
-            $schema[] = Forms\Components\Fieldset::make('Damage Configuration')
-                ->schema([
-                    // Textarea Settings dalam Panel
-            Forms\Components\Section::make('Textarea Settings')
-                ->schema([
-                    Forms\Components\Toggle::make('settings.show_textarea')
-                        ->label('Show Textarea for this value')
-                        ->default(false)
-                        ->reactive(),
-                    
-                    Forms\Components\Grid::make(3)
-                        ->schema([
-                            Forms\Components\TextInput::make('settings.min_length')
-                                ->numeric()
-                                ->default(0)
-                                ->label('Min Length')
-                                ->visible(fn (callable $get) => $get('settings.show_textarea')),
-                            Forms\Components\TextInput::make('settings.max_length')
-                                ->numeric()
-                                ->default(500)
-                                ->label('Max Length')
-                                ->visible(fn (callable $get) => $get('settings.show_textarea')),
-                            Forms\Components\TextInput::make('settings.placeholder')
-                                ->default('Masukkan teks di sini')
-                                ->label('Placeholder')
-                                ->visible(fn (callable $get) => $get('settings.show_textarea')),
-                        ])
-                ])
-                ->collapsible()
-                ->collapsed(fn (callable $get) => !$get('settings.show_textarea')),
-            
-            // Image Upload Settings dalam Panel
-            Forms\Components\Section::make('Image Upload Settings')
-                ->schema([
-                    Forms\Components\Toggle::make('settings.show_image_upload')
-                        ->label('Show Image Upload for this value')
-                        ->default(false)
-                        ->reactive(),
-                    
-                    Forms\Components\Grid::make(3)
-                        ->schema([
-                            Forms\Components\TextInput::make('settings.max_files')
-                                ->numeric()
-                                ->default(1)
-                                ->label('Max Files')
-                                ->visible(fn (callable $get) => $get('settings.show_image_upload')),
-                            Forms\Components\TextInput::make('settings.max_size')
-                                ->numeric()
-                                ->default(2048)
-                                ->label('Max Size (KB)')
-                                ->visible(fn (callable $get) => $get('settings.show_image_upload')),
-                            Forms\Components\TagsInput::make('settings.allowed_types')
-                                ->default(['jpg', 'png'])
-                                ->placeholder('jpg, png, etc.')
-                                ->label('Allowed File Types')
-                                ->visible(fn (callable $get) => $get('settings.show_image_upload')),
-                        ]),
-                    
-                    // Camera Settings dalam Panel
-                    Forms\Components\Section::make('Camera Settings')
-                        ->schema([
-                            Forms\Components\Grid::make(2)
-                                ->schema([
-                                    Forms\Components\Toggle::make('settings.enable_flash')
-                                        ->default(true)
-                                        ->label('Flash')
-                                        ->visible(fn (callable $get) => $get('settings.show_image_upload')),
-                                    Forms\Components\Toggle::make('settings.enable_camera_switch')
-                                        ->default(true)
-                                        ->label('Kamera Switch')
-                                        ->visible(fn (callable $get) => $get('settings.show_image_upload')),
-                                ]),
-                            
-                            Forms\Components\Select::make('settings.camera_aspect_ratio')
-                                ->options([
-                                    '4:3' => '4:3',
-                                    '3:4' => '3:4',
-                                    '16:9' => '16:9',
-                                    '1:1' => '1:1',
-                                ])
-                                ->default('4:3')
-                                ->label('Camera Aspect Ratio')
-                                ->visible(fn (callable $get) => $get('settings.show_image_upload'))
-                                ->columnSpanFull(),
-                        ])
-                        ->visible(fn (callable $get) => $get('settings.show_image_upload'))
-                        ->collapsible()
-                ])
-                ->collapsible()
-                ->collapsed(fn (callable $get) => !$get('settings.show_image_upload')),
-            
-            // Damage Settings dalam Panel
-            Forms\Components\Section::make('Damage Options')
-                ->schema([
-                    Forms\Components\Toggle::make('settings.enable_damage')
-                        ->label('Enable Damage Options for this value')
-                        ->default(false)
-                        ->reactive(),
-                    
-                    Forms\Components\Repeater::make('settings.damage_options')
-                        ->schema([
-                            Forms\Components\TextInput::make('value')
-                                ->required()
-                                ->label('Damage Value'),
-                            Forms\Components\TextInput::make('label')
-                                ->required()
-                                ->label('Damage Label'),
-                        ])
-                        ->defaultItems(1)
-                        ->columns(2)
-                        ->visible(fn (callable $get) => $get('settings.enable_damage'))
-                        ->label('Damage Options')
-                        ->columnSpanFull(),
-                ])
-                ->collapsible()
-                ->collapsed(fn (callable $get) => !$get('settings.enable_damage')),
-                ])
-                ->columns(2);
-        }
-
         // Settings for image input
         elseif ($inputType === 'image') {
             $schema[] = Forms\Components\Section::make('Image Configuration')
@@ -300,16 +179,18 @@ Forms\Components\Fieldset::make('Settings Configuration')
                                 ->numeric()
                                 ->default(1)
                                 ->label('Maximum Files'),
+
                             Forms\Components\TextInput::make('settings.max_size')
                                 ->numeric()
                                 ->default(2048)
                                 ->label('Max Size (KB)'),
+
                             Forms\Components\TagsInput::make('settings.allowed_types')
                                 ->default(['jpg', 'png'])
                                 ->placeholder('jpg, png, etc.')
                                 ->label('Allowed File Types'),
                         ]),
-                    
+
                     Forms\Components\Section::make('Camera Settings')
                         ->schema([
                             Forms\Components\Grid::make(2)
@@ -317,11 +198,12 @@ Forms\Components\Fieldset::make('Settings Configuration')
                                     Forms\Components\Toggle::make('settings.enable_flash')
                                         ->default(true)
                                         ->label('Flash'),
+
                                     Forms\Components\Toggle::make('settings.enable_camera_switch')
                                         ->default(true)
                                         ->label('Kamera Switch'),
                                 ]),
-                            
+
                             Forms\Components\Select::make('settings.camera_aspect_ratio')
                                 ->options([
                                     '4:3' => '4:3',
@@ -334,18 +216,64 @@ Forms\Components\Fieldset::make('Settings Configuration')
                                 ->columnSpanFull(),
                         ])
                         ->collapsible(),
-                    
-                    // Toggle untuk menambahkan radio button options
-                    Forms\Components\Section::make('Radio Button Options')
-                        ->schema([
-                            Forms\Components\Toggle::make('settings.enable_radio_options')
-                                ->label('Enable Radio Button Options')
-                                ->default(false)
-                                ->reactive(),
-                            
-                            Forms\Components\Repeater::make('settings.radio_options')
+                ])
+                ->columns(1);
+        }
+
+        // Settings for image input
+        elseif ($inputType === 'imageTOradio') {
+            $schema[] = 
+            Forms\Components\Section::make('Image Configuration')
                 ->schema([
-                    // Value dan Label
+                    Forms\Components\Grid::make(3)
+                        ->schema([
+                            Forms\Components\TextInput::make('settings.max_files')
+                                ->numeric()
+                                ->default(1)
+                                ->label('Maximum Files'),
+
+                            Forms\Components\TextInput::make('settings.max_size')
+                                ->numeric()
+                                ->default(2048)
+                                ->label('Max Size (KB)'),
+
+                            Forms\Components\TagsInput::make('settings.allowed_types')
+                                ->default(['jpg', 'png'])
+                                ->placeholder('jpg, png, etc.')
+                                ->label('Allowed File Types'),
+                        ]),
+
+                    Forms\Components\Section::make('Camera Settings')
+                        ->schema([
+                            Forms\Components\Grid::make(2)
+                                ->schema([
+                                    Forms\Components\Toggle::make('settings.enable_flash')
+                                        ->default(true)
+                                        ->label('Flash'),
+
+                                    Forms\Components\Toggle::make('settings.enable_camera_switch')
+                                        ->default(true)
+                                        ->label('Kamera Switch'),
+                                ]),
+
+                            Forms\Components\Select::make('settings.camera_aspect_ratio')
+                                ->options([
+                                    '4:3' => '4:3',
+                                    '3:4' => '3:4',
+                                    '16:9' => '16:9',
+                                    '1:1' => '1:1',
+                                ])
+                                ->default('4:3')
+                                ->label('Camera Aspect Ratio')
+                                ->columnSpanFull(),
+                        ])
+                        ->collapsible(),
+                ])
+                ->columns(1);
+            $schema[] =
+                Forms\Components\Repeater::make('settings.radios')
+                ->schema([
+                      // Value dan Label
                     Forms\Components\Grid::make(2)
                         ->schema([
                             Forms\Components\TextInput::make('value')
@@ -366,17 +294,17 @@ Forms\Components\Fieldset::make('Settings Configuration')
                             
                             Forms\Components\Grid::make(3)
                                 ->schema([
-                                    Forms\Components\TextInput::make('settings.textarea_min_length')
+                                    Forms\Components\TextInput::make('settings.min_length')
                                         ->numeric()
                                         ->default(0)
                                         ->label('Min Length')
                                         ->visible(fn (callable $get) => $get('settings.show_textarea')),
-                                    Forms\Components\TextInput::make('settings.textarea_max_length')
+                                    Forms\Components\TextInput::make('settings.max_length')
                                         ->numeric()
                                         ->default(500)
                                         ->label('Max Length')
                                         ->visible(fn (callable $get) => $get('settings.show_textarea')),
-                                    Forms\Components\TextInput::make('settings.textarea_placeholder')
+                                    Forms\Components\TextInput::make('settings.placeholder')
                                         ->default('Masukkan teks di sini')
                                         ->label('Placeholder')
                                         ->visible(fn (callable $get) => $get('settings.show_textarea')),
@@ -411,17 +339,10 @@ Forms\Components\Fieldset::make('Settings Configuration')
                         ->collapsible()
                         ->collapsed(fn (callable $get) => !$get('settings.enable_damage')),
                 ])
-                                ->defaultItems(1)
-                                ->columns(1)
-                                ->visible(fn (callable $get) => $get('settings.enable_radio_options'))
-                                ->label('Radio Options')
-                                ->columnSpanFull(),
-                        ])
-                        ->collapsible()
-                        ->collapsed(fn (callable $get) => !$get('settings.enable_radio_options')),
-                ])
+                ->columnSpanFull()
                 ->columns(1);
         }
+
 
         // Settings for select/checkbox/option inputs
         elseif (in_array($inputType, ['select', 'checkbox', 'radio'])) {
@@ -618,7 +539,7 @@ Forms\Components\Fieldset::make('Settings Configuration')
             ->recordTitleAttribute('Manager')
             ->columns([
                     
-                 Tables\Columns\TextColumn::make('appMenu.name')
+                 Tables\Columns\TextColumn::make('app_menu.name')
                     ->label('Nama Menu')
                     ->sortable()
                     ->searchable(),
@@ -651,8 +572,8 @@ Forms\Components\Fieldset::make('Settings Configuration')
             ->filters([
                   Tables\Filters\TrashedFilter::make(),
 
-                Tables\Filters\SelectFilter::make('appMenu')
-                    ->relationship('appMenu', 'name')
+                Tables\Filters\SelectFilter::make('app_menu')
+                    ->relationship('app_menu', 'name')
                     ->searchable()
                     ->preload(),
 

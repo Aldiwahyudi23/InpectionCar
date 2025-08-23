@@ -76,7 +76,10 @@ public function create(Inspection $inspection)
     $appMenu = AppMenu::with(['points' => function($query) {
         $query->where('is_active', true)
               ->orderBy('order');
-    }])
+    },
+     'points.component', // relasi component di dalam points
+    'points.app_menu',   // relasi appMenu di dalam points
+    ])
     ->where('is_active', true)
     ->where('category_id', $inspection->category_id)
     ->orderBy('order')
@@ -85,7 +88,11 @@ public function create(Inspection $inspection)
      $appMenu_damage = AppMenu::with(['points' => function($query) {
         $query->where('is_active', true)
               ->orderBy('order');
-    }])
+    },
+    'points.component', // relasi component di dalam points
+    'points.app_menu',   // relasi appMenu di dalam points
+    ])
+
     ->where('input_type', 'damage')
     ->where('is_active', true)
     ->where('category_id', $inspection->category_id)
@@ -93,7 +100,7 @@ public function create(Inspection $inspection)
     ->get();
 
     // Ambil damage points secara terpisah
-    $damagePoints = InspectionPoint::with(['component','appMenu'])
+    $damagePoints = InspectionPoint::with(['component','app_menu'])
         ->where('is_active', true)
         ->whereIn('app_menu_id', $appMenu_damage->pluck('id'))
         ->orderBy('order')

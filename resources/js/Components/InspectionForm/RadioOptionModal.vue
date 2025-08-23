@@ -6,6 +6,22 @@
     @close="$emit('close')"
   >
     <div class="space-y-4">
+      <div v-if="point.input_type === 'imageTOradio'" class="mt-2">
+        <h4 class="text-sm font-medium text-gray-700 mb-2">
+          <span v-if="point.settings?.required" class="text-red-500">*</span>
+        </h4>
+        <InputImage
+          :model-value="imagesValue"
+          :point-id="pointId"
+          :inspection-id="inspectionId"
+          :settings="point.settings"
+          @update:modelValue="$emit('update:imagesValue', $event)"
+          @save="$emit('saveImage', $event)"
+        />
+        <p v-if="point.settings?.required && imagesValue.length === 0" class="text-xs text-red-500">
+          Foto wajib diupload
+        </p>
+      </div>
       <!-- Radio Options di dalam Modal -->
       <div class="grid grid-cols-2 gap-2">
         <label
@@ -147,6 +163,7 @@ const props = defineProps({
   },
 
   selectedPoint: Object,
+  point: Object
 });
 
 const emit = defineEmits([
@@ -161,9 +178,7 @@ const emit = defineEmits([
 ]);
 
 const hapusPoint = (pointId) => {
-  if (confirm("Apakah kamu yakin ingin menghapus data ini?")) {
     emit("hapus", pointId);
-  }
 };
 
 const selectedOption = computed(() =>
