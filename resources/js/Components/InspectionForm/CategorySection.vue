@@ -93,12 +93,14 @@
           :inspection-id="inspectionId" 
           :settings="point.settings"  
           :point-name="point.name"
+          :selected-point="point"
           :options="point.settings?.radios || defaultRadioOptions"
           :error="form.errors[`results.${point.id}.status`]"
           @update:modelValue="updateResult(point.id, $event)"
           @update:notes="val => form.results[point.id].note = val"
           @update:images="val => form.results[point.id].images = val"
           @save="saveResult(point.id)"
+          @hapus="HapusPoint(point.id)"
         />
 
         
@@ -140,11 +142,13 @@ import InputTextarea from './InputTextarea.vue';
 import InputSelect from './InputSelect.vue';
 import InputRadio from './InputRadio.vue';
 import InputImage from './InputImage.vue';
+import { Ham } from 'lucide-vue-next';
 
 const props = defineProps({
   category: Object,
   form: Object,
   inspectionId: [String, Number],
+  selectedPoint: Object,
 });
 
 const emit = defineEmits(['saveResult', 'updateResult', 'removeImage']);
@@ -185,6 +189,10 @@ const saveResult = (pointId) => {
 
 const removeImage = (pointId, imageIndex) => {
   emit('removeImage', { pointId, imageIndex });
+};
+
+const HapusPoint = (pointId) => {
+    emit("hapusPoint", pointId);
 };
 </script>
 

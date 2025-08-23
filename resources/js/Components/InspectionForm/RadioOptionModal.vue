@@ -72,26 +72,45 @@
         </p>
       </div>
     </div>
+    
+<template #footer>
+  <!-- Tombol Hapus Data (hanya muncul jika ada selectedPoint) -->
+  <button 
+    v-if="selectedPoint" 
+    @click="hapusPoint(pointId)"
+    class="flex items-center justify-center text-red-600 hover:text-red-800 mb-3"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" 
+         class="h-5 w-5 mr-1" 
+         fill="none" 
+         viewBox="0 0 24 24" 
+         stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2-3H7m5 0v3" />
+    </svg>
+    Hapus Data
+  </button>
 
-    <template #footer>
-      <div class="flex gap-2">
-        <button
-          type="button"
-          @click="$emit('close')"
-          class="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-        >
-          Batal
-        </button>
-        <button
-          type="button"
-          @click="$emit('save')"
-          :disabled="!isFormValid"
-          class="flex-1 px-4 py-2 bg-indigo-600 border border-transparent rounded-md shadow-sm text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
-        >
-          Simpan
-        </button>
-      </div>
-    </template>
+  <!-- Tombol Batal & Simpan -->
+  <div class="flex gap-2">
+    <button
+      type="button"
+      @click="$emit('close')"
+      class="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+    >
+      Batal
+    </button>
+    <button
+      type="button"
+      @click="$emit('save')"
+      :disabled="!isFormValid"
+      class="flex-1 px-4 py-2 bg-indigo-600 border border-transparent rounded-md shadow-sm text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
+    >
+      Simpan
+    </button>
+  </div>
+</template>
+
   </BottomSheetModal>
 </template>
 
@@ -125,7 +144,9 @@ const props = defineProps({
   showImageUpload: {
     type: Boolean,
     default: true
-  }
+  },
+
+  selectedPoint: Object,
 });
 
 const emit = defineEmits([
@@ -134,9 +155,16 @@ const emit = defineEmits([
   'update:imagesValue',
   'close',
   'save',
+  'hapus',
   'saveTextarea',
   'saveImage'
 ]);
+
+const hapusPoint = (pointId) => {
+  if (confirm("Apakah kamu yakin ingin menghapus data ini?")) {
+    emit("hapus", pointId);
+  }
+};
 
 const selectedOption = computed(() =>
   props.options.find(opt => opt.value === props.selectedValue)

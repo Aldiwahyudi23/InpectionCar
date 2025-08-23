@@ -83,6 +83,7 @@
           :form="form"
           @saveResult="saveResult"
           @updateResult="updateResult"
+          @hapusPoint="hapusData"
           @removeImage="removeImage"
         />
 
@@ -160,7 +161,7 @@
             <div class="font-medium text-gray-900">{{ point.name }}</div>
             <div class="text-sm text-gray-500">{{ point.description }}</div>
             <div class="text-xs text-gray-400 mt-1">
-              Menu: {{ getMenuName(point.menu_id) }}
+              {{ getComponentName(point) }}
             </div>
             <!-- Tampilkan status jika sudah ada data -->
             <div v-if="hasPointData(point.id)" class="text-xs text-green-600 mt-1">
@@ -183,10 +184,11 @@
       :point-id="selectedPoint?.id"
       :settings="selectedPoint?.settings || {}"
       :options="selectedPoint?.settings.radios || []"
-
+      :selected-Point="selectedPoint"
       :selected-value="tempRadioValue ?? ''"
       :images-value="tempImages ?? []"
       :notes-value="tempNotes ?? ''"
+      :selected-point="selectedPoint"
 
       :existing-data="getExistingPointData(selectedPoint?.id)"
       @update:selectedValue= "tempRadioValue = $event"
@@ -194,6 +196,7 @@
       @update:imagesValue="tempImages = $event"
       @save="saveAllData"
       @close="closeRadioModal"
+      @hapus="hapusData"
     />
   </div>
 </template>
@@ -257,7 +260,7 @@ const filteredDamagePoints = computed(() => {
   return allDamagePoints.value.filter(point => 
     point.name?.toLowerCase().includes(query) ||
     point.description?.toLowerCase().includes(query) ||
-    getMenuName(point.menu_id)?.toLowerCase().includes(query)
+    getComponentName(point)?.toLowerCase().includes(query)
   );
 });
 
@@ -268,11 +271,19 @@ const hasPointData = (pointId) => {
   return result && (result.status || result.note || result.images?.length > 0);
 };
 
-// Get nama menu berdasarkan ID
-const getMenuName = (menuId) => {
-  const menu = props.appMenu.find(m => m.id === menuId);
-  return menu ? menu.name : 'Menu Tidak Diketahui';
+// ✅ Cek apakah point terpilih punya component dengan input_type = "damage"
+const isDamagePoint = computed(() => {
+  if (!selectedPoint.value) return false;
+  return selectedPoint.value.component?.input_type === "damage";
+});
+
+
+// Ambil nama component berdasarkan point.component_id
+const getComponentName = (point) => {
+  const component = props.components.find(c => c.id === point.component_id);
+  return component ? component.name : 'Komponen Tidak Diketahui';
 };
+
 
 // Get existing data untuk point
 const getExistingPointData = (pointId) => {
@@ -510,6 +521,38 @@ const updateResult = ({ pointId, type, value }) => {
   saveResult(pointId);
 };
 
+const hapusData = async (pointId) => {
+  if (!pointId || !pointId) return;
+
+  if (confirm("Apakah kamu yakin ingin menghapus data ini?")) {
+    try {
+      await router.post(route('inspections.delete-result'), {
+        inspection_id: props.inspection.id,
+        point_id: pointId,
+      }, {
+        preserveScroll: true,
+        preserveState: true,
+        only: ['existingResults'], 
+        onSuccess: () => {
+          // Hapus data dari form.results
+          if (form.results[pointId]) {
+            delete form.results[pointId];
+          }
+          // Tampilkan pesan sukses
+          successMessage.value = "Data berhasil dihapus!";
+          setTimeout(() => {
+            successMessage.value = "";
+          }, 2000); // hilang setelah 2 detik
+        },
+      });
+    } catch (error) {
+      console.error('Error menghapus hasil:', error);
+    }
+
+    // Tutup modal
+    closeRadioModal();
+  }
+};
 
 // Fungsi untuk update data kendaraan
 const updateVehicleDetails = (vehicleData) => {

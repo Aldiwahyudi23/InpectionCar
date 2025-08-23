@@ -93,7 +93,8 @@ public function create(Inspection $inspection)
     ->get();
 
     // Ambil damage points secara terpisah
-    $damagePoints = InspectionPoint::where('is_active', true)
+    $damagePoints = InspectionPoint::with(['component','appMenu'])
+        ->where('is_active', true)
         ->whereIn('app_menu_id', $appMenu_damage->pluck('id'))
         ->orderBy('order')
         ->get();
@@ -390,6 +391,50 @@ public function uploadImage(Request $request)
             return response()->json(['success' => false, 'message' => 'Image record not found in database.'], 404);
         }
     }
+
+ public function deleteResultImage(Request $request)
+{
+    $request->validate([
+        'inspection_id' => 'required|exists:inspections,id',
+        'point_id' => 'required|exists:inspection_points,id',
+    ]);
+
+    // 1. Hapus hasil (result) jika ada
+    $result = InspectionResult::where('inspection_id', $request->inspection_id)
+        ->where('point_id', $request->point_id)
+        ->first();
+
+    if ($result) {
+        $result->delete();
+    }
+
+    // 2. Ambil semua gambar terkait
+    $images = InspectionImage::where('inspection_id', $request->inspection_id)
+        ->where('point_id', $request->point_id)
+        ->get();
+
+    foreach ($images as $image) {
+        if ($image->image_path) {
+            // Lokasi file fisik
+            $fullPathToDelete = public_path($image->image_path);
+
+            if (file_exists($fullPathToDelete)) {
+                try {
+                    unlink($fullPathToDelete); // hapus file fisik
+                } catch (\Exception $e) {
+                    Log::error("Gagal hapus file: {$fullPathToDelete}. Error: {$e->getMessage()}");
+                }
+            } else {
+                Log::warning("File tidak ditemukan: {$fullPathToDelete}, skip hapus.");
+            }
+        }
+
+        // Hapus record di DB
+        $image->delete();
+    }
+
+}
+
 
 public function finalSubmit(Request $request, $id)
 {

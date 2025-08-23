@@ -87,6 +87,7 @@
       :images-value="tempImages"
       :point-id="pointId"
       :inspection-id="inspectionId"
+      :selected-point="selectedPoint"
       @update:selectedValue="tempRadioValue = $event"
       @update:notesValue="tempNotes = $event"
       @update:imagesValue="handleImageUpdate($event)"
@@ -94,6 +95,7 @@
       @save="saveAllData"
       @saveTextarea="handleTextareaSave"
       @saveImage="handleImageSave"
+      @hapus="HapusPoint(pointId)"
     />
 
     <p v-if="error" class="mt-2 text-sm text-red-600">
@@ -117,6 +119,7 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
+   selectedPoint: Object,
   notes: { type: String, default: '' },
   images: { type: Array, default: () => [] }
 });
@@ -125,7 +128,8 @@ const emit = defineEmits([
   'update:modelValue',
   'update:notes',
   'update:images',
-  'save'
+  'save',
+  'hapus'
 ]);
 
 // reactive local state
@@ -264,6 +268,13 @@ const saveAllData = () => {
   });
   
   // Tutup modal
+  showOptionModal.value = false;
+};
+
+const HapusPoint = (pointId) => {
+  if (confirm("Apakah kamu yakin ingin menghapus data ini?")) {
+    emit("hapus", pointId);
+  }
   showOptionModal.value = false;
 };
 </script>
