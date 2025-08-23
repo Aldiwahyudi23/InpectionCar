@@ -182,6 +182,27 @@ public function store(Request $request)
         //
     }
 
+ public function updateConclusion(Request $request, Inspection $inspection)
+{
+    $data = $request->validate([
+        'flooded' => 'required|in:yes,no',
+        'collision' => 'required|in:yes,no',
+        'collision_severity' => 'nullable|in:light,heavy',
+        'conclusion_note' => 'nullable|string',
+    ]);
+
+    $settings = $inspection->settings ?? [];
+    $settings['conclusion'] = $data;
+
+    $inspection->update([
+        'settings' => $settings,
+    ]);
+
+    return back()->with('success', 'Kesimpulan diperbarui');
+}
+
+
+
 // InspectionController.php
     public function saveResult(Request $request)
     {

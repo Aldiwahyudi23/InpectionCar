@@ -41,6 +41,11 @@ class InspectionResource extends Resource
                     ->required()
                     ->searchable()
                     ->preload(),
+
+                Forms\Components\TextInput::make('plate_number')
+                    ->label('No. Polisi')
+                    ->required()
+                    ->maxLength(9),   
                     
                 Forms\Components\Select::make('car_id')
                     ->label('Mobil')
@@ -51,14 +56,30 @@ class InspectionResource extends Resource
                         ]))
                     ->searchable()
                     ->nullable(),
+
+                Forms\Components\Select::make('status')
+                    ->options([
+                        'draft' => 'Draft',
+                        'in_progress' => 'In Progress',
+                        'pending_review' => 'Pending Review',
+                        'approved' => 'Approved',
+                        'rejected' => 'Rejected',
+                        'revision_required' => 'Revision Required',
+                        'completed' => 'Completed',
+                        'cancelled' => 'Cancelled',
+                    ])
+                    ->default('draft')
+                    ->required(),
                     
                 Forms\Components\DateTimePicker::make('inspection_date')
                     ->label('Tanggal Inspeksi')
                     ->required()
                     ->default(now()),
                 
-                Forms\Components\Hidden::make('status')
-                    ->default('draft'),
+                Forms\Components\Textarea::make('notes')
+                    ->label('Catatan')
+                    ->rows(3)
+                    ->columnSpanFull()
                     
 
             ]);
@@ -81,6 +102,11 @@ class InspectionResource extends Resource
                 Tables\Columns\TextColumn::make('category.name')
                     ->label('Category')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('plate_number')
+                    ->label('No. Polisi')
+                    ->sortable()
+                    ->searchable(),
                     
                 Tables\Columns\TextColumn::make('carDisplay')
                     ->label('Mobil')

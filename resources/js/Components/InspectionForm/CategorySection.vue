@@ -90,6 +90,7 @@
           :images="form.results[point.id].images"
           :required="point.settings?.is_required"
           :point-id="point.id"  
+          :point="point"
           :inspection-id="inspectionId" 
           :settings="point.settings"  
           :point-name="point.name"

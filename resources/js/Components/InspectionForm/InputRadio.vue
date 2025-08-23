@@ -88,6 +88,7 @@
       :notes-value="tempNotes"
       :images-value="tempImages"
       :point-id="pointId"
+      :point="point"
       :inspection-id="inspectionId"
       :selected-point="selectedPoint"
       @update:selectedValue="tempRadioValue = $event"
@@ -114,6 +115,7 @@ const props = defineProps({
   modelValue: String,
   required: Boolean,
   error: String,
+  point: Object,
   pointId: [String, Number],
   pointName: String,
   inspectionId: [String, Number],
