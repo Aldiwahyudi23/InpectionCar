@@ -189,7 +189,7 @@
       :images-value="tempImages ?? []"
       :notes-value="tempNotes ?? ''"
       :selected-point="selectedPoint"
-
+      :point="selectedPoint"
       :existing-data="getExistingPointData(selectedPoint?.id)"
       @update:selectedValue= "tempRadioValue = $event"
       @update:notesValue= "tempNotes = $event"
