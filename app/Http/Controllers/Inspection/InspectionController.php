@@ -538,8 +538,8 @@ public function reviewPdf($id)
     ])->findOrFail($id);
 
     // Ambil semua points berdasarkan category
-    $inspection_points = InspectionPoint::with(['component', 'appMenu'])
-        ->whereHas('appMenu', function ($query) use ($inspection) {
+    $inspection_points = InspectionPoint::with(['component', 'app_menu'])
+        ->whereHas('app_menu', function ($query) use ($inspection) {
             $query->where('category_id', $inspection->category_id);
         })->get();
 
@@ -584,8 +584,8 @@ public function downloadPdf($id)
     ])->findOrFail($id);
 
     // Ambil semua points berdasarkan category
-    $inspection_points = InspectionPoint::with(['component', 'appMenu'])
-        ->whereHas('appMenu', function ($query) use ($inspection) {
+    $inspection_points = InspectionPoint::with(['component', 'app_menu'])
+        ->whereHas('app_menu', function ($query) use ($inspection) {
             $query->where('category_id', $inspection->category_id);
         })->get();
 
