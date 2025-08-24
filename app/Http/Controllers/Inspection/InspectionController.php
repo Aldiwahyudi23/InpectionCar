@@ -129,6 +129,9 @@ public function create(Inspection $inspection)
     )->get()
     ->groupBy('point_id');
 
+    $CarDetail = CarDetail::with(['brand', 'model', 'type'])
+        ->get();
+
     return Inertia::render('FrontEnd/Inspection/InspectionForm', [
         'inspection' => $inspection->fresh()->load(['car', 'user']),
         'appMenu' => $appMenu,
@@ -136,6 +139,7 @@ public function create(Inspection $inspection)
         'existingImages' => $existingImages,
         'components' => $components,
         'damagePoints' => $damagePoints, // Kirim damage points terpisah
+        'carDetails' => $CarDetail,
     ]);
 }
 
@@ -182,25 +186,47 @@ public function store(Request $request)
         //
     }
 
- public function updateConclusion(Request $request, Inspection $inspection)
+public function updateConclusion(Request $request, Inspection $inspection)
 {
-    $data = $request->validate([
+    $validated = $request->validate([
         'flooded' => 'required|in:yes,no',
         'collision' => 'required|in:yes,no',
-        'collision_severity' => 'nullable|in:light,heavy',
-        'conclusion_note' => 'nullable|string',
+        'collision_severity' => 'nullable|required_if:collision,yes|in:light,heavy',
+        'conclusion_note' => 'nullable|string|max:1000',
     ]);
 
+    // Pastikan settings adalah array
     $settings = $inspection->settings ?? [];
-    $settings['conclusion'] = $data;
+    
+    // Pastikan settings adalah array, bukan string
+    if (is_string($settings)) {
+        $settings = json_decode($settings, true) ?? [];
+    }
 
-    $inspection->update([
+    // Siapkan data untuk settings (tanpa conclusion_note)
+    $conclusionData = [
+        'flooded' => $validated['flooded'],
+        'collision' => $validated['collision'],
+        'collision_severity' => $validated['collision_severity'] ?? null,
+    ];
+
+    // Update settings
+    $settings['conclusion'] = $conclusionData;
+
+    // Update inspection
+    $updateData = [
         'settings' => $settings,
-    ]);
+    ];
+
+    // Only update note if conclusion_note is provided
+    if (isset($validated['conclusion_note'])) {
+        $updateData['notes'] = $validated['conclusion_note'];
+    }
+
+    $inspection->update($updateData);
 
     return back()->with('success', 'Kesimpulan diperbarui');
 }
-
 
 
 // InspectionController.php

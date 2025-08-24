@@ -1,6 +1,6 @@
 <template>
-  <div class="bg-white rounded-xl shadow-md p-6">
-    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Kesimpulan Inspeksi</h2>
+  <div class="bg-white rounded-xl shadow-md p-4">
+    <h4 class="text-2xl font-semibold text-gray-800 mb-4">Kesimpulan Inspeksi</h4>
 
     <!-- Banjir -->
     <div class="mb-6">
@@ -105,21 +105,52 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import { debounce } from 'lodash'
 
 const props = defineProps({
   inspectionId: { type: Number, required: true },
-  settings: { type: Object, default: () => ({}) }
+  inspection: {
+    type: Object,
+    required: true
+  },
 })
+
+// Helper function untuk parse settings dengan aman
+const parseSettings = (settings) => {
+  if (!settings) return {};
+  
+  // Jika settings adalah string, coba parse sebagai JSON
+  if (typeof settings === 'string') {
+    try {
+      return JSON.parse(settings) || {};
+    } catch (e) {
+      console.error('Error parsing settings JSON:', e);
+      return {};
+    }
+  }
+  
+  // Jika settings sudah object, return langsung
+  if (typeof settings === 'object' && settings !== null) {
+    return settings;
+  }
+  
+  return {};
+}
+
+// Ambil data conclusion dari settings yang sudah di-parse
+const conclusionSettings = computed(() => {
+  const settings = parseSettings(props.inspection.settings);
+  return settings.conclusion || {};
+});
 
 // Gunakan ref untuk reactive state
 const form = ref({
-  flooded: props.settings?.flooded || '',
-  collision: props.settings?.collision || '',
-  collision_severity: props.settings?.collision_severity || '',
-  conclusion_note: props.settings?.conclusion_note || ''
+  flooded: conclusionSettings.value.flooded || '',
+  collision: conclusionSettings.value.collision || '',
+  collision_severity: conclusionSettings.value.collision_severity || '',
+  conclusion_note: props.inspection.notes || '' // Ambil dari inspection.note, bukan settings
 })
 
 // Options untuk radio
@@ -140,12 +171,23 @@ const severityOptions = [
 
 // Fungsi untuk menyimpan data ke server
 const saveToServer = () => {
+  // Siapkan data untuk dikirim
+  const dataToSend = {
+    flooded: form.value.flooded,
+    collision: form.value.collision,
+    collision_severity: form.value.collision === 'yes' ? form.value.collision_severity : null,
+    conclusion_note: form.value.conclusion_note
+  }
+
   router.post(
     route('inspections.updateConclusion', props.inspectionId),
-    { ...form.value },
+    dataToSend,
     {
       preserveScroll: true,
       preserveState: true,
+      onError: (errors) => {
+        console.error('Error saving conclusion:', errors);
+      }
     }
   )
 }
@@ -153,7 +195,7 @@ const saveToServer = () => {
 // Debounce untuk textarea
 const debouncedSave = debounce(saveToServer, 500)
 
-// Watch untuk perubahan pada form (kecuali textarea)
+// Watch untuk perubahan pada radio buttons
 watch([
   () => form.value.flooded,
   () => form.value.collision,
@@ -164,9 +206,24 @@ watch([
 
 // Inisialisasi form saat component mounted
 onMounted(() => {
-  // Pastikan nilai default terset jika tidak ada dari props
-  if (!form.value.flooded) form.value.flooded = ''
-  if (!form.value.collision) form.value.collision = ''
-  if (!form.value.collision_severity) form.value.collision_severity = ''
-})
+  initializeForm();
+});
+
+// Watch untuk perubahan props.inspection
+watch(() => props.inspection, () => {
+  initializeForm();
+}, { deep: true });
+
+// Fungsi untuk inisialisasi form
+const initializeForm = () => {
+  const settings = parseSettings(props.inspection.settings);
+  const conclusion = settings.conclusion || {};
+  
+  form.value = {
+    flooded: conclusion.flooded || '',
+    collision: conclusion.collision || '',
+    collision_severity: conclusion.collision_severity || '',
+    conclusion_note: props.inspection.notes || ''
+  };
+};
 </script>

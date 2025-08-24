@@ -32,6 +32,24 @@ class Inspection extends Model
         'inspection_date' => 'datetime',
     ];
 
+    public function getSettingsAttribute($value)
+    {
+        if (is_string($value)) {
+            return json_decode($value, true) ?? [];
+        }
+        
+        return $value ?? [];
+    }
+
+    public function setSettingsAttribute($value)
+    {
+        if (is_array($value)) {
+            $this->attributes['settings'] = json_encode($value);
+        } else {
+            $this->attributes['settings'] = $value;
+        }
+    }
+    
     public function categories()
     {
         return $this->belongsToMany(Categorie::class);

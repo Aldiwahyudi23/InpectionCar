@@ -19,4 +19,8 @@ class Brand extends Model
     protected $casts = [
         'is_active' => 'boolean'
     ];
+    public function cars()
+    {
+        return $this->hasMany(CarDetail::class, 'brand_id');
+    }
 }

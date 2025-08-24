@@ -34,17 +34,23 @@
           </span>
         </button>
 
-        <!-- Menu Kesimpulan -->
-        <button
-          @click="changeCategory('conclusion')"
-          class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200"
-          :class="{
-            'bg-indigo-600 text-white': activeCategory === 'conclusion',
-            'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== 'conclusion'
-          }"
+         <!-- Menu Kesimpulan -->
+      <button
+        @click="changeCategory('conclusion')"
+        class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200"
+        :class="{
+          'bg-indigo-600 text-white': activeCategory === 'conclusion',
+          'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== 'conclusion'
+        }"
+      >
+        Kesimpulan
+        <span 
+          v-if="conclusionStatus.isComplete"
+          class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs rounded-full bg-green-500 text-white"
         >
-          Kesimpulan
-        </button>
+          ✓
+        </span>
+      </button>
       </div>
     </div>
 
@@ -64,11 +70,9 @@
         <VehicleDetails
           v-if="activeCategory === 'vehicle'"
           :inspection="inspection"
-          :car="car"
-          :brands="brands"
-          :car-models="carModels"
-          :car-types="carTypes"
-          @update-vehicle="updateVehicleDetails"
+          :CarDetail="CarDetail"
+           @update-vehicle="updateVehicleDetails"
+          @save-car-details="saveNewCarDetails"
         />
 
         <!-- Menu Inspeksi Biasa -->
@@ -91,6 +95,9 @@
         <conclusion-section
           v-else-if="activeCategory === 'conclusion'"
           :form="form"
+          :inspection-id="inspection.id"
+          :inspection="inspection"  
+          :settings="inspection.settings || {}"
           @updateConclusion="updateConclusion"
         />
       </transition>
@@ -98,6 +105,7 @@
 
     <!-- Tombol Simpan Final (hanya tampil di kesimpulan) -->
     <div v-if="activeCategory === 'conclusion'" class="flex justify-end gap-4 mt-8 p-6 bg-white rounded-xl shadow-md">
+
       <button
         type="button"
         @click="submitAll"
@@ -217,7 +225,7 @@ const props = defineProps({
   appMenu: Array, // Ganti categories menjadi appMenu
   existingResults: Array,
   existingImages: Object,
-   car: Object, // Tambahkan prop car
+  CarDetail: Object, // Tambahkan prop car
   components: Array, // Terima props baru
   damagePoints: Array, // Terima props untuk damage points
 });
@@ -410,6 +418,11 @@ const isMenuComplete = (menu) => {
     return true;
   }
 
+    // Khusus untuk menu kesimpulan (conclusion)
+  if (isConclusionComplete) {
+    return true;
+  }
+
   return menu.points.every(point => {
     const result = form.results[point.id];
     if (!result) return false;
@@ -432,8 +445,65 @@ const isMenuComplete = (menu) => {
         return !!result.status || !!result.note;
     }
   });
+
+  
 };
 
+// FUNGSI PARSE SETTINGS YANG HARUS DITAMBAHKAN
+const parseSettings = (settings) => {
+  if (!settings) return {};
+  
+  // Jika settings adalah string, coba parse sebagai JSON
+  if (typeof settings === 'string') {
+    try {
+      return JSON.parse(settings) || {};
+    } catch (e) {
+      console.error('Error parsing settings JSON:', e);
+      return {};
+    }
+  }
+  
+  // Jika settings sudah object, return langsung
+  if (typeof settings === 'object' && settings !== null) {
+    return settings;
+  }
+  
+  return {};
+};
+
+// Fungsi khusus untuk mengecek kelengkapan kesimpulan
+const isConclusionComplete = () => {
+  const settings = parseSettings(props.inspection.settings);
+  const conclusionData = settings.conclusion || {};
+  
+  // Cek apakah semua field kesimpulan sudah diisi
+  const hasFlooded = !!conclusionData.flooded;
+  const hasCollision = !!conclusionData.collision;
+  
+  // Jika collision = 'yes', pastikan severity juga diisi
+  const hasValidCollision = conclusionData.collision === 'yes' 
+    ? !!conclusionData.collision_severity 
+    : true;
+  
+  // Pastikan catatan kesimpulan juga diisi
+  const hasConclusionNote = !!props.inspection.notes?.trim();
+  
+  return hasFlooded && hasCollision && hasValidCollision && hasConclusionNote;
+};
+
+// Computed property untuk status kesimpulan
+const conclusionStatus = computed(() => {
+  const settings = parseSettings(props.inspection.settings);
+  const conclusionData = settings.conclusion || {};
+  
+  return {
+    flooded: conclusionData.flooded || null,
+    collision: conclusionData.collision || null,
+    collision_severity: conclusionData.collision_severity || null,
+    note: props.inspection.notes || null,
+    isComplete: isConclusionComplete()
+  };
+});
 
 // Change active category
 const changeCategory = (menuId) => {
@@ -595,6 +665,12 @@ const saveConclusion = debounce(() => {
 
 // Final submit all
 const submitAll = () => {
+  // Pastikan SEMUA menu lengkap termasuk kesimpulan
+  if (!allMenusComplete.value) {
+    alert('Harap lengkapi semua menu inspeksi termasuk kesimpulan sebelum submit final');
+    return;
+  }
+
   form.post(route('inspections.final-submit', { 
     id: props.inspection.id 
   }), {
@@ -618,9 +694,14 @@ watch(activeCategory, (newVal) => {
 });
 
 const allMenusComplete = computed(() => {
-  return props.appMenu.every(menu => isMenuComplete(menu));
+  // 1. Cek semua menu regular dari appMenu
+  const regularMenusComplete = props.appMenu.every(menu => isMenuComplete(menu));
+  
+  // 2. Cek kesimpulan (tambahan di luar appMenu)
+  const conclusionComplete = isConclusionComplete();
+  
+  return regularMenusComplete && conclusionComplete;
 });
-
 // State untuk mengontrol tampilan modal
 const showBottomSheetModal = ref(false);
 

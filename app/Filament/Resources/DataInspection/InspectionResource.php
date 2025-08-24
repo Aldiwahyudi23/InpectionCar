@@ -79,6 +79,11 @@ class InspectionResource extends Resource
                 Forms\Components\Textarea::make('notes')
                     ->label('Catatan')
                     ->rows(3)
+                    ->columnSpanFull(),
+
+                Forms\Components\Textarea::make('settings')
+                    ->label('json')
+                    ->rows(3)
                     ->columnSpanFull()
                     
 
@@ -146,6 +151,9 @@ class InspectionResource extends Resource
                     ->label('Notes')
                     ->limit(30)
                     ->tooltip(fn ($record) => $record->notes),
+
+                Tables\Columns\TextColumn::make('settings')
+                    ->label('settings'),
                     
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat')

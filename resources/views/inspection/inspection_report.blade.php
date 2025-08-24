@@ -109,12 +109,12 @@
             gap: 15px;
         }
         .photo-component .images img {
-            width: 45%;
+            width: 30%;
             max-width: 300px;
             height: auto;
             min-height: 180px;
             margin: 0;
-            flex: 1 1 calc(50% - 15px);
+            flex: 1 1 calc(33.333% - 15px);
         }
         .photo-component .point {
             display: none; /* Sembunyikan titik inspeksi untuk foto kendaraan */
@@ -147,6 +147,21 @@
             page-break-inside: avoid;
         }
         
+        /* Gaya untuk gambar dalam hasil inspeksi */
+        .inspection-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .inspection-images img {
+            width: calc(20% - 8px); /* 5 gambar per baris */
+            height: 90px;
+            object-fit: cover;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        
         /* Media query untuk tampilan responsif */
         @media (max-width: 768px) {
             .photo-component .images img {
@@ -159,6 +174,22 @@
             .point-content {
                 width: calc(100% - 130px);
             }
+            .inspection-images img {
+                width: calc(50% - 8px); /* 2 gambar per baris pada layar kecil */
+            }
+        }
+        
+        /* Gaya untuk kesimpulan/notes */
+        .conclusion {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #333;
+            border-radius: 4px;
+        }
+        .conclusion h3 {
+            margin-top: 0;
+            color: #333;
         }
     </style>
 </head>
@@ -179,7 +210,7 @@
 
             <div>
                 <h2 style="margin: 0;">{{ strtoupper($inspection->car->brand->name.' '.$inspection->car->model->name.' '.$inspection->car->type->name) }}</h2>
-                <h3 style="margin: 5px 0 0 0; font-weight: normal;">{{ $inspection->car->year }} {{ $inspection->car->engine_size }} CC {{ $inspection->car->fuel_type }} ({{ $inspection->car->model->period ?? '' }})</h3>
+                <h3 style="margin: 5px 0 0 0; font-weight: normal;">{{ $inspection->car->year }} {{ $inspection->car->cc }} CC {{ $inspection->car->transmission }} {{ $inspection->car->fuel_type }} ({{ $inspection->car->production_period ?? '' }})</h3>
             </div>
         </div>
 
@@ -188,7 +219,7 @@
             <table style="width: 100%; border-collapse: collapse;">
                 <tr>
                     <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">Nomor Polisi</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">{{ $inspection->car->license_plate }}</td>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">{{ $inspection->license_plate }}</td>
                 </tr>
                 <tr>
                     <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">Merek</td>
@@ -203,8 +234,20 @@
                     <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">{{ $inspection->car->type->name }}</td>
                 </tr>
                 <tr>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">CC</td>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">{{ $inspection->car->cc }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">Bahan Bakar</td>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">{{ $inspection->car->fuel_type }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">Transmisi</td>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">{{ $inspection->car->transmission }}</td>
+                </tr>
+                <tr>
                     <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">Periode Model</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">{{ $inspection->car->model->period ?? '-' }}</td>
+                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">{{ $inspection->car->production_period ?? '-' }}</td>
                 </tr>
                 <tr>
                     <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">Warna</td>
@@ -216,6 +259,14 @@
                 </tr>
             </table>
         </div>
+        
+        {{-- Kesimpulan/Notes --}}
+        @if($inspection->notes)
+        <div class="conclusion">
+            <h3>Kesimpulan Inspeksi:</h3>
+            <p>{{ $inspection->notes }}</p>
+        </div>
+        @endif
     </div>
 
 
@@ -235,7 +286,7 @@
                                 @if(file_exists(public_path($img->image_path)))
                                     <img src="{{ public_path($img->image_path) }}" alt="Foto Kendaraan">
                                 @else
-                                    <div style="width:45%; max-width:300px; height:180px; border:1px solid #ddd; display:flex; align-items:center; justify-content:center; margin:5px;">
+                                    <div style="width:30%; max-width:300px; height:180px; border:1px solid #ddd; display:flex; align-items:center; justify-content:center; margin:5px;">
                                         <span style="font-size:10px;">Gambar tidak ditemukan</span>
                                     </div>
                                 @endif
@@ -257,37 +308,38 @@
                                     $hasStatus = !empty($result->status);
                                     $hasNote = !empty($result->note);
                                     
-                                   
+                                    // Tentukan kelas CSS berdasarkan status
+                                    $statusClass = 'status-warning';
+                                    if (in_array(strtolower($result->status), ['normal', 'ada', 'baik', 'good', 'ok'])) {
+                                        $statusClass = 'status-good';
+                                    } elseif (in_array(strtolower($result->status), ['tidak normal', 'tidak ada', 'rusak', 'bad', 'not ok'])) {
+                                        $statusClass = 'status-bad';
+                                    }
                                 @endphp
                                 
                                 {{-- Tampilkan status jika ada --}}
                                 @if($hasStatus)
-                                    <span class="status-badge">{{ $result->status }}</span>
-                                @endif
-                                
-                                {{-- Tampilkan note di samping jika status tidak ada --}}
-                                @if($hasNote && !$hasStatus)
-                                    <span class="point-note">{{ $result->note }}</span>
-                                @endif
-                                
-                                {{-- Tampilkan note di bawah jika status ada --}}
-                                @if($hasNote && $hasStatus)
-                                    <div class="point-note">{{ $result->note }}</div>
+                                    <span class="status-badge {{ $statusClass }}">{{ $result->status }}</span>
                                 @endif
                                 
                                 {{-- Tampilkan gambar jika ada --}}
                                 @if($point->images && $point->images->count())
-                                    <div class="images">
+                                    <div class="inspection-images">
                                         @foreach($point->images as $img)
                                             @if(file_exists(public_path($img->image_path)))
                                                 <img src="{{ public_path($img->image_path) }}" alt="image">
                                             @else
-                                                <div style="width:120px; height:90px; border:1px solid #ddd; display:flex; align-items:center; justify-content:center;">
+                                                <div style="width:calc(20% - 8px); height:90px; border:1px solid #ddd; display:flex; align-items:center; justify-content:center;">
                                                     <span style="font-size:10px;">Gambar tidak ditemukan</span>
                                                 </div>
                                             @endif
                                         @endforeach
                                     </div>
+                                @endif
+                                
+                                {{-- Tampilkan note di bawah status dan gambar --}}
+                                @if($hasNote)
+                                    <div class="point-note">{{ $result->note }}</div>
                                 @endif
                                 
                             @else
