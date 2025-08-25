@@ -66,7 +66,7 @@ const getStatusClass = (status) => {
                     <tbody>
                         <tr>
                             <td>Nomor Polisi</td>
-                            <td>{{ inspection.car.license_plate }}</td>
+                            <td>{{ inspection.plate_number }}</td>
                         </tr>
                         <tr>
                             <td>Merek</td>

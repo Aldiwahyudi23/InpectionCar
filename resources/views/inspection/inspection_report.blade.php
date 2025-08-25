@@ -89,19 +89,20 @@
             font-style: italic;
             color: #555;
         }
-        .images { 
-            display: flex; 
-            flex-wrap: wrap; 
-            margin-top: 5px;
+       .images {
+            display: flex;
+            flex-wrap: wrap;
             gap: 10px;
         }
-        .images img { 
-            width: 120px; 
-            height: 90px;
-            object-fit: cover;
-            border: 1px solid #ddd; 
-            border-radius: 3px; 
+
+        .images img {
+            width: 120px;       /* lebar sama */
+            height: 120px;      /* tinggi sama → persegi */
+            object-fit: cover;  /* supaya isi gambar rapih */
+            border: 1px solid #ddd;
+            border-radius: 3px;
         }
+
         /* Gaya khusus untuk komponen Foto Kendaraan */
         .photo-component .images {
             margin-left: 0;
@@ -125,6 +126,7 @@
             border-radius: 3px;
             font-size: 12px;
             margin-right: 8px;
+            margin-bottom: 10px; /* kasih jarak ke bawah */
         }
         .status-good {
             background-color: #d4edda;
@@ -152,7 +154,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            margin-top: 10px;
+            margin-top: 15px;
         }
         .inspection-images img {
             width: calc(20% - 8px); /* 5 gambar per baris */
@@ -175,7 +177,7 @@
                 width: calc(100% - 130px);
             }
             .inspection-images img {
-                width: calc(50% - 8px); /* 2 gambar per baris pada layar kecil */
+                width: calc(20% - 8px); /* 2 gambar per baris pada layar kecil */
             }
         }
         
@@ -214,53 +216,23 @@
             </div>
         </div>
 
-        {{-- Tabel info mobil --}}
+     {{-- Tabel info mobil --}}
         <div class="car-info">
-            <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">Nomor Polisi</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">{{ $inspection->license_plate }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">Merek</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">{{ $inspection->car->brand->name }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">Model</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">{{ $inspection->car->model->name }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">Tipe</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">{{ $inspection->car->type->name }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">CC</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">{{ $inspection->car->cc }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">Bahan Bakar</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">{{ $inspection->car->fuel_type }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">Transmisi</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">{{ $inspection->car->transmission }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">Periode Model</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">{{ $inspection->car->production_period ?? '-' }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">Warna</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">{{ $inspection->car->color }}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">Tahun Pembuatan</td>
-                    <td style="padding: 8px 0; border-bottom: 1px solid #ccc;">{{ $inspection->car->year }}</td>
-                </tr>
+            <table>
+                <tr><td>Nomor Polisi</td><td>{{ $inspection->plate_number }}</td></tr>
+                <tr><td>Merek</td><td>{{ $inspection->car->brand->name }}</td></tr>
+                <tr><td>Model</td><td>{{ $inspection->car->model->name }}</td></tr>
+                <tr><td>Tipe</td><td>{{ $inspection->car->type->name }}</td></tr>
+                <tr><td>CC</td><td>{{ $inspection->car->cc }}</td></tr>
+                <tr><td>Bahan Bakar</td><td>{{ $inspection->car->fuel_type }}</td></tr>
+                <tr><td>Transmisi</td><td>{{ $inspection->car->transmission }}</td></tr>
+                <tr><td>Periode Model</td><td>{{ $inspection->car->production_period ?? '-' }}</td></tr>
+                <tr><td>Warna</td><td>{{ $inspection->car->color }}</td></tr>
+                <tr><td>Tahun Pembuatan</td><td>{{ $inspection->car->year }}</td></tr>
             </table>
         </div>
         
-        {{-- Kesimpulan/Notes --}}
+        {{-- Kesimpulan --}}
         @if($inspection->notes)
         <div class="conclusion">
             <h3>Kesimpulan Inspeksi:</h3>
@@ -324,7 +296,7 @@
                                 
                                 {{-- Tampilkan gambar jika ada --}}
                                 @if($point->images && $point->images->count())
-                                    <div class="inspection-images">
+                                    <div class="inspection-images mt">
                                         @foreach($point->images as $img)
                                             @if(file_exists(public_path($img->image_path)))
                                                 <img src="{{ public_path($img->image_path) }}" alt="image">
