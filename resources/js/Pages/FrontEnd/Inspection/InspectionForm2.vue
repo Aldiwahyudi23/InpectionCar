@@ -34,27 +34,27 @@
           </span>
         </button>
 
-        <!-- Menu Kesimpulan -->
-        <button
-          @click="changeCategory('conclusion')"
-          class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200"
-          :class="{
-            'bg-indigo-600 text-white': activeCategory === 'conclusion',
-            'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== 'conclusion'
-          }"
+         <!-- Menu Kesimpulan -->
+      <button
+        @click="changeCategory('conclusion')"
+        class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200"
+        :class="{
+          'bg-indigo-600 text-white': activeCategory === 'conclusion',
+          'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== 'conclusion'
+        }"
+      >
+        Kesimpulan
+        <span 
+          v-if="conclusionStatus.isComplete"
+          class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs rounded-full bg-green-500 text-white"
         >
-          Kesimpulan
-          <span 
-            v-if="conclusionStatus.isComplete"
-            class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs rounded-full bg-green-500 text-white"
-          >
-            ✓
-          </span>
-        </button>
+          ✓
+        </span>
+      </button>
       </div>
     </div>
 
-    <!-- Pesan sukses -->
+     <!-- Pesan sukses -->
     <transition name="fade">
       <div
         v-if="successMessage"
@@ -71,7 +71,7 @@
           v-if="activeCategory === 'vehicle'"
           :inspection="inspection"
           :CarDetail="CarDetail"
-          @update-vehicle="updateVehicleDetails"
+           @update-vehicle="updateVehicleDetails"
           @save-car-details="saveNewCarDetails"
         />
 
@@ -105,6 +105,7 @@
 
     <!-- Tombol Simpan Final (hanya tampil di kesimpulan) -->
     <div v-if="activeCategory === 'conclusion'" class="flex justify-end gap-4 mt-8 p-6 bg-white rounded-xl shadow-md">
+
       <button
         type="button"
         @click="submitAll"
@@ -156,7 +157,7 @@
         <!-- List Hasil Pencarian -->
         <div class="max-h-64 overflow-y-auto">
           <div v-if="filteredDamagePoints.length === 0" class="text-center py-4 text-gray-500">
-            Tidak ada point yang ditemukan
+            Tidak ada point yang ditemukan {{  }}
           </div>
           
           <button
@@ -181,8 +182,8 @@
 
     <!-- Modal Radio Option untuk Damage Points -->
     <RadioOptionModal
-      v-if="showRadioModal"
-      :key="selectedPoint?.id"
+    v-if="showRadioModal"
+    :key="modalselectedPoint?.id"
       :show="showRadioModal"
       :title="selectedPoint?.name || 'Detail Point'"
       :subtitle="selectedPoint?.description"
@@ -190,15 +191,16 @@
       :inspection-id="inspection.id"
       :point-id="selectedPoint?.id"
       :settings="selectedPoint?.settings || {}"
-      :options="selectedPoint?.settings?.radios || []"
+      :options="selectedPoint?.settings.radios || []"
       :selected-Point="selectedPoint"
-      :selected-value="tempRadioValue"
-      :images-value="tempImages"
-      :notes-value="tempNotes"
+      :selected-value="tempRadioValue ?? ''"
+      :images-value="tempImages ?? []"
+      :notes-value="tempNotes ?? ''"
+      :selected-point="selectedPoint"
       :point="selectedPoint"
       :existing-data="getExistingPointData(selectedPoint?.id)"
-      @update:selectedValue="tempRadioValue = $event"
-      @update:notesValue="tempNotes = $event"
+      @update:selectedValue= "tempRadioValue = $event"
+      @update:notesValue= "tempNotes = $event"
       @update:imagesValue="tempImages = $event"
       @save="saveAllData"
       @close="closeRadioModal"
@@ -206,6 +208,7 @@
     />
   </div>
 </template>
+
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
@@ -219,12 +222,12 @@ import BottomSheetModal from '@/Components/InspectionForm/BottomSheetModal.vue';
 
 const props = defineProps({
   inspection: Object,
-  appMenu: Array,
+  appMenu: Array, // Ganti categories menjadi appMenu
   existingResults: Array,
   existingImages: Object,
-  CarDetail: Object,
-  components: Array,
-  damagePoints: Array,
+  CarDetail: Object, // Tambahkan prop car
+  components: Array, // Terima props baru
+  damagePoints: Array, // Terima props untuk damage points
 });
 
 // State untuk modal
@@ -232,10 +235,11 @@ const showSearchModal = ref(false);
 const showRadioModal = ref(false);
 const searchQuery = ref('');
 const selectedPoint = ref(null);
-const tempRadioValue = ref('');
-const tempNotes = ref('');
+const tempRadioValue = ref(null);
+const tempNotes = ref("");
 const tempImages = ref([]);
-const successMessage = ref('');
+
+const successMessage = ref(""); // <- state untuk pesan
 
 // Filter points untuk tampilan normal: sembunyikan damage points kecuali ada data
 const getVisiblePoints = (points, isDamageMenu) => {
@@ -248,7 +252,7 @@ const getVisiblePoints = (points, isDamageMenu) => {
   });
 };
 
-// Gunakan damagePoints dari props
+// Gunakan damagePoints dari props (yang dikirim dari controller)
 const allDamagePoints = computed(() => {
   return props.damagePoints || [];
 });
@@ -267,17 +271,26 @@ const filteredDamagePoints = computed(() => {
   );
 });
 
+
 // Cek apakah point sudah memiliki data
 const hasPointData = (pointId) => {
   const result = form.results[pointId];
   return result && (result.status || result.note || result.images?.length > 0);
 };
 
+// ✅ Cek apakah point terpilih punya component dengan input_type = "damage"
+const isDamagePoint = computed(() => {
+  if (!selectedPoint.value) return false;
+  return selectedPoint.value.component?.input_type === "damage";
+});
+
+
 // Ambil nama component berdasarkan point.component_id
 const getComponentName = (point) => {
   const component = props.components.find(c => c.id === point.component_id);
   return component ? component.name : 'Komponen Tidak Diketahui';
 };
+
 
 // Get existing data untuk point
 const getExistingPointData = (pointId) => {
@@ -292,43 +305,48 @@ const getExistingPointData = (pointId) => {
 const selectPoint = (point) => {
   selectedPoint.value = point;
 
-    // ambil nilai awal dari form.results untuk point tsb
+  // ambil nilai awal dari form.results untuk point tsb
   const existing = form.results[point.id] || {};
   tempRadioValue.value = existing.status || '';
-  tempNotes.value = existing.note || '';
-  tempImages.value = Array.isArray(existing.images) ? [...existing.images] : [];
+  tempNotes.value      = existing.note || '';
+  tempImages.value     = Array.isArray(existing.images) ? [...existing.images] : [];
 
   showSearchModal.value = false;
   showRadioModal.value = true;
 };
 
+
+
 // Handle save data dari modal
-const saveAllData = () => {
+const saveAllData = (data) => {
   // Update form results
   if (selectedPoint.value) {
     form.results[selectedPoint.value.id] = {
       ...form.results[selectedPoint.value.id],
-      status: tempRadioValue.value,
-      note: tempNotes.value,
-      images: Array.isArray(tempImages.value) ? [...tempImages.value] : []
+    status: tempRadioValue.value,
+    note:   tempNotes.value,
+     images: Array.isArray(tempImages.value) ? [...tempImages.value] : []
     };
     
     // Kirim ke server
     saveResult(selectedPoint.value.id);
-     // Tampilkan pesan sukses
+
+       // Tampilkan pesan sukses
     successMessage.value = "Data berhasil disimpan!";
     setTimeout(() => {
       successMessage.value = "";
-    }, 1000);
+    }, 2000); // hilang setelah 2 detik
   }
   
   closeRadioModal();
 }; 
 
+
 // Close modal pencarian
 const closeSearchModal = () => {
   showSearchModal.value = false;
   searchQuery.value = '';
+
 };
 
 // Close modal radio
@@ -340,22 +358,27 @@ const closeRadioModal = () => {
   tempImages.value = [];
 };
 
+
 // Akses inspection dari page props
 const page = usePage();
 const inspection = page.props.inspection;
+const car = page.props.car; // Akses data mobil
 
-// Ubah inisialisasi activeCategory
-const activeCategory = ref(props.appMenu[0]?.id || 'conclusion');
+// Ubah inisialisasi activeCategory untuk bisa menerima 'summary'
+const activeCategory = ref(props.appMenu[0]?.id || 'summary'); // Default ke menu pertama atau 'summary'
 const activeIndex = ref(0);
+const categoriesWrapper = ref(null); 
 
 // Properti terhitung untuk mendapatkan data menu aktif
 const activeMenuData = computed(() => {
-  return activeCategory.value !== 'conclusion' 
+  return activeCategory.value !== 'summary' 
     ? props.appMenu.find(m => m.id === activeCategory.value)
     : null;
 });
 
-// Inisialisasi form
+
+
+// Inisialisasi form (termasuk damage points)
 const initializeForm = () => {
   const results = {};
   
@@ -384,26 +407,25 @@ const initializeForm = () => {
   };
 };
 
+
+
 const form = useForm(initializeForm());
 
-// PERBAIKAN: Fungsi isMenuComplete yang benar
+// Check if menu is complete
 const isMenuComplete = (menu) => {
-  // Kalau menu ini tipe damage → selalu dianggap complete
+  // Kalau menu ini tipe damage → selalu dianggap complete (tidak dihitung)
   if (menu.input_type === 'damage') {
     return true;
   }
 
-  // Khusus untuk menu kesimpulan
-  if (menu.id === 'conclusion') {
-    return isConclusionComplete();
+    // Khusus untuk menu kesimpulan (conclusion)
+  if (isConclusionComplete) {
+    return true;
   }
 
   return menu.points.every(point => {
     const result = form.results[point.id];
     if (!result) return false;
-    
-    // Parse settings untuk point
-    const settings = parseSettings(point.settings);
     
     switch(point.input_type) {
       case 'text':
@@ -411,53 +433,91 @@ const isMenuComplete = (menu) => {
       case 'date':
       case 'account':
       case 'textarea':
-        return !!result.note?.trim();
-      
+        return !!result.note;
       case 'select':
       case 'radio':
-        if (!result.status) return false;
-        
-        // Cek jika opsi yang dipilih memiliki requirements tambahan
-        const selectedOption = settings.radios?.find(opt => opt.value === result.status);
-        if (selectedOption?.settings) {
-          // Validasi textarea jika required
-          if (selectedOption.settings.show_textarea && selectedOption.settings.required && !result.note?.trim()) {
-            return false;
-          }
-          // Validasi image jika required
-          if (selectedOption.settings.show_image_upload && selectedOption.settings.required && result.images?.length === 0) {
-            return false;
-          }
-        }
-        return true;
-      
-      case 'imageTOradio':
-        // Harus ada gambar DAN pilihan radio
-        if (result.images?.length === 0 || !result.status) return false;
-        
-        // Cek requirements tambahan dari opsi yang dipilih
-        const selectedOptionImage = settings.radios?.find(opt => opt.value === result.status);
-        if (selectedOptionImage?.settings) {
-          // Validasi textarea jika required
-          if (selectedOptionImage.settings.show_textarea && selectedOptionImage.settings.required && !result.note?.trim()) {
-            return false;
-          }
-        }
-        return true;
-      
+        return !!result.status;
       case 'image':
         return result.images?.length > 0;
-      
+      case 'imageTOradio':
+        return result.images?.length > 0;
       default:
-        return !!result.status || !!result.note?.trim();
+        return !!result.status || !!result.note;
     }
   });  
 };
 
-// Fungsi parse settings
+
+// const isMenuComplete = (menu) => {
+//   if (menu.input_type === 'damage') return true;
+//   if (isConclusionComplete) return true;
+
+//   return menu.points.every(point => {
+//     const result = form.results[point.id];
+//     if (!result) return false;
+
+//     switch (point.input_type) {
+//       case 'text':
+//       case 'number':
+//       case 'date':
+//       case 'account':
+//       case 'textarea':
+//         return !!result.note;
+
+//       case 'select':
+//       case 'radio': {
+//         if (!result.status) return false;
+
+//         const selectedOption = point.settings?.radios?.find(
+//           opt => opt.value === result.status
+//         );
+//         if (!selectedOption) return false;
+
+//         // Cek textarea kalau diwajibkan
+//         if (selectedOption.settings?.show_textarea && !result.note) {
+//           return false;
+//         }
+
+//         // Cek image upload kalau diwajibkan
+//         if (selectedOption.settings?.show_image_upload && !(result.images?.length > 0)) {
+//           return false;
+//         }
+
+//         return true;
+//       }
+
+//       case 'imageTOradio': {
+//         if (!result.status) return false;
+//         if (!(result.images?.length > 0)) return false;
+
+//         const selectedOption = point.settings?.radios?.find(
+//           opt => opt.value === result.status
+//         );
+//         if (!selectedOption) return false;
+
+//         // Kalau ada textarea wajib isi
+//         if (selectedOption.settings?.show_textarea && !result.note) {
+//           return false;
+//         }
+
+//         return true;
+//       }
+
+//       case 'image':
+//         return result.images?.length > 0;
+
+//       default:
+//         return !!result.status || !!result.note;
+//     }
+//   });
+// };
+
+
+// FUNGSI PARSE SETTINGS YANG HARUS DITAMBAHKAN
 const parseSettings = (settings) => {
   if (!settings) return {};
   
+  // Jika settings adalah string, coba parse sebagai JSON
   if (typeof settings === 'string') {
     try {
       return JSON.parse(settings) || {};
@@ -467,6 +527,7 @@ const parseSettings = (settings) => {
     }
   }
   
+  // Jika settings sudah object, return langsung
   if (typeof settings === 'object' && settings !== null) {
     return settings;
   }
@@ -510,6 +571,14 @@ const conclusionStatus = computed(() => {
 
 // Change active category
 const changeCategory = (menuId) => {
+  if (menuId === 'summary') {
+    activeIndex.value = props.appMenu.length;
+  } else {
+    const index = props.appMenu.findIndex(m => m.id === menuId);
+    if (index >= 0) {
+      activeIndex.value = index;
+    }
+  }
   activeCategory.value = menuId;
 };
 
@@ -521,11 +590,15 @@ const navigate = (direction) => {
   
   if (newIndex >= 0 && newIndex <= maxIndex) {
     activeIndex.value = newIndex;
-    activeCategory.value = props.appMenu[newIndex]?.id || 'conclusion';
+    if (newIndex === maxIndex) {
+      activeCategory.value = 'summary';
+    } else {
+      activeCategory.value = props.appMenu[newIndex].id;
+    }
   }
 };
 
-// Setup swipe gestures
+// Handle swipe gestures
 const setupSwipe = () => {
   let touchStartX = 0;
   let touchEndX = 0;
@@ -540,9 +613,9 @@ const setupSwipe = () => {
   };
   
   const handleSwipe = () => {
-    if (touchEndX < touchStartX - 150) {
+    if (touchEndX < touchStartX - 100) {
       navigate(1);
-    } else if (touchEndX > touchStartX + 150) {
+    } else if (touchEndX > touchStartX + 100) {
       navigate(-1);
     }
   };
@@ -573,6 +646,7 @@ const saveResult = debounce(async (pointId) => {
       preserveScroll: true,
       preserveState: true,
       only: ['existingResults'], 
+      onSuccess: () => {},
     });
   } catch (error) {
     console.error('Error menyimpan hasil:', error);
@@ -588,7 +662,7 @@ const updateResult = ({ pointId, type, value }) => {
 };
 
 const hapusData = async (pointId) => {
-  if (!pointId) return;
+  if (!pointId || !pointId) return;
 
   if (confirm("Apakah kamu yakin ingin menghapus data ini?")) {
     try {
@@ -600,25 +674,29 @@ const hapusData = async (pointId) => {
         preserveState: true,
         only: ['existingResults'], 
         onSuccess: () => {
+          // Hapus data dari form.results
           if (form.results[pointId]) {
             delete form.results[pointId];
           }
+          // Tampilkan pesan sukses
           successMessage.value = "Data berhasil dihapus!";
           setTimeout(() => {
             successMessage.value = "";
-          }, 2000);
+          }, 2000); // hilang setelah 2 detik
         },
       });
     } catch (error) {
       console.error('Error menghapus hasil:', error);
     }
 
+    // Tutup modal
     closeRadioModal();
   }
 };
 
 // Fungsi untuk update data kendaraan
 const updateVehicleDetails = (vehicleData) => {
+  // Kirim update ke server
   router.post(route('inspections.update-vehicle'), {
     inspection_id: inspection.id,
     ...vehicleData
@@ -651,6 +729,7 @@ const saveConclusion = debounce(() => {
 
 // Final submit all
 const submitAll = () => {
+  // Pastikan SEMUA menu lengkap termasuk kesimpulan
   if (!allMenusComplete.value) {
     alert('Harap lengkapi semua menu inspeksi termasuk kesimpulan sebelum submit final');
     return;
@@ -669,7 +748,8 @@ const submitAll = () => {
   });
 };
 
-// Watcher untuk perubahan activeCategory
+
+// Watcher untuk perubahan activeCategory untuk menggulir navigasi horizontal
 watch(activeCategory, (newVal) => {
   const menuButton = document.querySelector(`.flex-shrink-0[data-category-id="${newVal}"]`);
   if (menuButton) {
@@ -681,11 +761,13 @@ const allMenusComplete = computed(() => {
   // 1. Cek semua menu regular dari appMenu
   const regularMenusComplete = props.appMenu.every(menu => isMenuComplete(menu));
   
-  // 2. Cek kesimpulan
+  // 2. Cek kesimpulan (tambahan di luar appMenu)
   const conclusionComplete = isConclusionComplete();
   
   return regularMenusComplete && conclusionComplete;
 });
+// State untuk mengontrol tampilan modal
+const showBottomSheetModal = ref(false);
 
 // Watcher untuk search query
 watch(searchQuery, debounce(() => {
@@ -695,6 +777,7 @@ watch(searchQuery, debounce(() => {
 onMounted(() => {
   setupSwipe();
 });
+
 </script>
 
 <style scoped>
@@ -707,7 +790,7 @@ onMounted(() => {
   scrollbar-width: none;
 }
 
-/* Transisi untuk conditional rendering */
+/* Transisi untuk conditional rendering (v-if) */
 .category-slide-enter-active,
 .category-slide-leave-active {
   transition: all 0.3s ease-out;
@@ -734,4 +817,4 @@ onMounted(() => {
 .fade-leave-to {
   opacity: 0;
 }
-</style>
+</style>      

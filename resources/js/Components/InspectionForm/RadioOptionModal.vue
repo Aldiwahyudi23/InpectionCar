@@ -197,6 +197,11 @@ const isFormValid = computed(() => {
     if (props.point.settings?.required && props.imagesValue.length === 0) {
       return false;
     }
+        // Validasi max files jika diatur
+    if (props.point.settings.max_files && props.imagesValue.length > props.point.settings.max_files) {
+      return false;
+    }
+
     return true;
   }
   

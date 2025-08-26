@@ -4,29 +4,11 @@
       <!-- Header -->
       <div class="webcam-header">
         <div class="inspection-point-name">{{ currentInspectionPoint }}</div>
-                <!-- Additional controls -->
-        <div class="advanced-controls">
-          <!-- Focus Mode Selector -->
-          <select v-model="focusMode" class="focus-selector" @change="changeFocusMode">
-            <option value="continuous">Auto Focus</option>
-            <option value="manual">Manual Focus</option>
-            <option value="single-shot">Single Focus</option>
-          </select>
-          
-          <!-- Quality Selector -->
-          <select v-model="qualityLevel" class="quality-selector" @change="changeQuality">
-            <option value="high">High Quality</option>
-            <option value="medium">Medium Quality</option>
-            <option value="low">Low Quality</option>
-          </select>
-        </div>
-
         <button @click="closeModal" class="p-2 rounded-full text-white hover:bg-gray-700 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        
       </div>
 
       <!-- Video Container dengan aspect ratio -->
@@ -37,21 +19,6 @@
         
         <!-- Aspect ratio guide overlay -->
         <div class="aspect-ratio-guide" :style="aspectRatioGuideStyle"></div>
-
-         <!-- Focus indicator -->
-        <div v-if="showFocusIndicator" class="focus-indicator" :style="focusIndicatorStyle">
-          <div class="focus-ring"></div>
-        </div>
-        
-        <!-- HD Badge -->
-        <div class="hd-badge">
-          <span class="hd-text">HD</span>
-        </div>
-        
-        <!-- Focus status -->
-        <div v-if="focusStatus" class="focus-status">
-          {{ focusStatus }}
-        </div>
       </div>
 
       <!-- Footer controls -->
@@ -117,25 +84,6 @@ const isFlashSupported = ref(false);
 const isFlashOn = ref(false);
 const showScreenFlash = ref(false);
 const currentInspectionPoint = ref(props.inspectionPoint || 'Camera');
-const showFocusIndicator = ref(false);
-const focusIndicatorStyle = ref({});
-const focusStatus = ref('');
-const focusMode = ref('continuous');
-const qualityLevel = ref('high');
-
-// Computed property untuk resolusi berdasarkan quality level
-const resolutionSettings = computed(() => {
-  switch (qualityLevel.value) {
-    case 'high':
-      return { width: 1920, height: 1080 }; // Full HD
-    case 'medium':
-      return { width: 1280, height: 720 };  // HD
-    case 'low':
-      return { width: 640, height: 480 };   // VGA
-    default:
-      return { width: 1920, height: 1080 };
-  }
-});
 
 // Computed property untuk style video container berdasarkan aspect ratio
 const videoContainerStyle = computed(() => {
@@ -173,33 +121,17 @@ const initializeWebcam = async () => {
     mediaStream.getTracks().forEach(track => track.stop());
   }
   isFlashOn.value = false;
-  showFocusIndicator.value = false;
-  focusStatus.value = '';
   
   try {
     const videoConstraints = {
       facingMode: currentFacingMode.value,
-      width: { ideal: resolutionSettings.value.width },
-      height: { ideal: resolutionSettings.value.height },
-      aspectRatio: { ideal: props.aspectRatio || 4/3 },
-      frameRate: { ideal: 30 }
+      width: { ideal: 1920 },
+      height: { ideal: 1080 },
+      aspectRatio: { ideal: props.aspectRatio || 4/3 }
     };
     
-    // Tambahkan constraints untuk kualitas tinggi
-    if (qualityLevel.value === 'high') {
-      videoConstraints.width = { ideal: 1920, max: 3840 };
-      videoConstraints.height = { ideal: 1080, max: 2160 };
-      videoConstraints.frameRate = { ideal: 30, max: 60 };
-    }
-    
-    // Set focus mode berdasarkan pilihan
-    if (focusMode.value !== 'manual') {
-      videoConstraints.advanced = [{ focusMode: focusMode.value }];
-    }
-    
     if (currentFacingMode.value === 'environment') {
-      if (!videoConstraints.advanced) videoConstraints.advanced = [];
-      videoConstraints.advanced.push({ focusMode: focusMode.value });
+      videoConstraints.advanced = [{ focusMode: "continuous" }];
     }
     
     mediaStream = await navigator.mediaDevices.getUserMedia({ 
@@ -212,10 +144,6 @@ const initializeWebcam = async () => {
     
     webcamVideo.value.onloadedmetadata = async () => {
       await checkCameraCapabilities();
-      // Auto focus saat pertama kali
-      if (focusMode.value === 'continuous' || focusMode.value === 'single-shot') {
-        await triggerAutoFocus();
-      }
     };
     
   } catch (err) {
@@ -242,120 +170,8 @@ const checkCameraCapabilities = async () => {
     const capabilities = videoTrack.getCapabilities();
     isFlashSupported.value = capabilities.torch || 
                             (capabilities.fillLightMode && capabilities.fillLightMode.includes('torch'));
-    
-    // Check focus capabilities
-    const focusCapabilities = capabilities.focusDistance || {};
-    console.log('Camera capabilities:', capabilities);
-    
   } catch (error) {
     console.error("Error checking camera capabilities:", error);
-  }
-};
-
-const handleTapToFocus = async (event) => {
-  if (!videoTrack || focusMode.value === 'continuous') return;
-  
-  const rect = webcamVideo.value.getBoundingClientRect();
-  const x = ((event.clientX - rect.left) / rect.width) * 100;
-  const y = ((event.clientY - rect.top) / rect.height) * 100;
-  
-  // Show focus indicator
-  showFocusIndicator.value = true;
-  focusIndicatorStyle.value = {
-    left: `${x}%`,
-    top: `${y}%`,
-    transform: 'translate(-50%, -50%)'
-  };
-  
-  focusStatus.value = 'Focusing...';
-  
-  try {
-    if (focusMode.value === 'single-shot') {
-      await triggerSingleFocus(x, y);
-    } else if (focusMode.value === 'manual') {
-      await triggerManualFocus(x, y);
-    }
-    
-    setTimeout(() => {
-      showFocusIndicator.value = false;
-      focusStatus.value = 'Focused';
-      setTimeout(() => { focusStatus.value = ''; }, 2000);
-    }, 1000);
-    
-  } catch (error) {
-    console.error("Focus failed:", error);
-    focusStatus.value = 'Focus failed';
-    setTimeout(() => { focusStatus.value = ''; }, 2000);
-  }
-};
-
-const triggerAutoFocus = async () => {
-  if (!videoTrack) return;
-  
-  try {
-    const capabilities = videoTrack.getCapabilities();
-    if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-      await videoTrack.applyConstraints({
-        advanced: [{ focusMode: 'continuous' }]
-      });
-      focusStatus.value = 'Auto Focus Enabled';
-      setTimeout(() => { focusStatus.value = ''; }, 2000);
-    }
-  } catch (error) {
-    console.warn("Auto focus not supported:", error);
-  }
-};
-
-const triggerSingleFocus = async (x, y) => {
-  if (!videoTrack) return;
-  
-  try {
-    // Untuk single focus, kita gunakan point of interest jika supported
-    const capabilities = videoTrack.getCapabilities();
-    if (capabilities.pointsOfInterest) {
-      await videoTrack.applyConstraints({
-        advanced: [{
-          pointsOfInterest: [{ x: x/100, y: y/100 }],
-          focusMode: 'single-shot'
-        }]
-      });
-    } else if (capabilities.focusMode && capabilities.focusMode.includes('single-shot')) {
-      await videoTrack.applyConstraints({
-        advanced: [{ focusMode: 'single-shot' }]
-      });
-    }
-  } catch (error) {
-    console.warn("Single focus not supported:", error);
-  }
-};
-
-const triggerManualFocus = async (x, y) => {
-  if (!videoTrack) return;
-  
-  try {
-    const capabilities = videoTrack.getCapabilities();
-    if (capabilities.pointsOfInterest) {
-      await videoTrack.applyConstraints({
-        advanced: [{
-          pointsOfInterest: [{ x: x/100, y: y/100 }],
-          focusMode: 'manual'
-        }]
-      });
-    }
-  } catch (error) {
-    console.warn("Manual focus not supported:", error);
-  }
-};
-
-const changeFocusMode = async () => {
-  if (props.show) {
-    await initializeWebcam();
-  }
-};
-
-const changeQuality = async () => {
-  if (props.show) {
-    await initializeWebcam();
   }
 };
 
@@ -750,99 +566,5 @@ onBeforeUnmount(() => {
     width: 18px;
     height: 18px;
   }
-}
-
-.focus-indicator {
-  position: absolute;
-  width: 60px;
-  height: 60px;
-  z-index: 15;
-  pointer-events: none;
-}
-
-.focus-ring {
-  width: 100%;
-  height: 100%;
-  border: 2px solid #00ff00;
-  border-radius: 50%;
-  animation: focusPulse 1s ease-in-out;
-}
-
-@keyframes focusPulse {
-  0% { transform: scale(0.8); opacity: 0; }
-  50% { transform: scale(1.2); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.hd-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: rgba(0, 0, 0, 0.7);
-  padding: 4px 8px;
-  border-radius: 4px;
-  z-index: 15;
-}
-
-.hd-text {
-  color: #00ff00;
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.focus-status {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  z-index: 15;
-}
-
-.advanced-controls {
-  display: flex;
-  gap: 10px;
-  margin-top: 15px;
-  justify-content: center;
-}
-
-.focus-selector,
-.quality-selector {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #ccc;
-  border-radius: 20px;
-  padding: 8px 16px;
-  font-size: 12px;
-  color: #333;
-  cursor: pointer;
-}
-
-.focus-selector:hover,
-.quality-selector:hover {
-  background: rgba(255, 255, 255, 1);
-}
-
-/* Improved video quality */
-.webcam-video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: brightness(1.05) contrast(1.05);
-}
-
-/* Enhanced capture button */
-.capture-button {
-  background: linear-gradient(145deg, #ffffff, #e6e6e6);
-  border: 2px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.capture-button:active {
-  transform: scale(0.95);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 </style>
