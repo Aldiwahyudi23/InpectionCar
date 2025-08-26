@@ -43,7 +43,7 @@
             'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== 'conclusion'
           }"
         >
-          Kesimpulan {{ CarDetail }}
+          Kesimpulan
           <span 
             v-if="conclusionStatus.isComplete"
             class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs rounded-full bg-green-500 text-white"
@@ -74,6 +74,7 @@
           @update-vehicle="updateVehicleDetails"
           @save-car-details="saveNewCarDetails"
         />
+
 
         <!-- Menu Inspeksi Biasa -->
         <category-section
@@ -117,6 +118,7 @@
         </svg>
         <span>{{ form.processing ? 'Mengirim...' : 'Final Kirim Inspeksi' }}</span>
       </button>
+      
     </div>
 
     <!-- Floating Button untuk Akses Damage Points -->
@@ -617,37 +619,12 @@ const hapusData = async (pointId) => {
   }
 };
 
-// Fungsi untuk update data kendaraan
-const updateVehicleDetails = (vehicleData) => {
-  router.post(route('inspections.update-vehicle'), {
-    inspection_id: inspection.id,
-    ...vehicleData
-  }, {
-    preserveScroll: true,
-    onSuccess: () => {
-      console.log('Data kendaraan berhasil diupdate');
-    }
-  });
-};
-
 // Fungsi untuk update kesimpulan
 const updateConclusion = (conclusionData) => {
   Object.assign(form.conclusion, conclusionData);
   saveConclusion();
 };
 
-// Simpan kesimpulan
-const saveConclusion = debounce(() => {
-  router.post(route('inspections.save-conclusion'), {
-    inspection_id: inspection.id,
-    ...form.conclusion
-  }, {
-    preserveScroll: true,
-    onSuccess: () => {
-      console.log('Kesimpulan berhasil disimpan');
-    }
-  });
-}, 500);
 
 // Final submit all
 const submitAll = () => {

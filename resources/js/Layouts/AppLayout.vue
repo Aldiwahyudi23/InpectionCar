@@ -195,31 +195,34 @@ if ('serviceWorker' in navigator) {
             </div>
         </header>
 
-        <main class="flex-grow">
+        <main class="flex-grow pb-16"> 
             <slot />
         </main>
 
-     <nav class="bg-white border-t border-gray-500 fixed bottom-0 left-0 right-0 z-10 sm:hidden rounded-tl-xl rounded-tr-xl overflow-hidden">
-    <div class="grid grid-cols-3 h-16">
-        <Link :href="route('dashboard')" :class="['flex flex-col items-center justify-center text-gray-500 hover:text-gray-700 focus:outline-none', route().current('dashboard') ? 'bg-green-300' : '']">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0l2-2m-2-2v-1a1 1 0 00-1-1h-3m12 0l2 2m-2-2v-1a1 1 0 00-1-1h-3" />
-            </svg>
-            <span class="text-xs">Home</span>
-        </Link>
-        <Link :href="route('job.index')" :class="['flex flex-col items-center justify-center text-gray-500 hover:text-gray-700 focus:outline-none', route().current('job.index') ? 'bg-green-300' : '']">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            <span class="text-xs">Tugas</span>
-        </Link>
-        <Link :href="route('profile.show')" :class="['flex flex-col items-center justify-center text-gray-500 hover:text-gray-700 focus:outline-none', route().current('profile.show') ? 'bg-green-300' : '']">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            <span class="text-xs">Pengaturan</span>
-        </Link>
-    </div>
-</nav>
+        <nav class="bg-white border-t border-gray-500 fixed bottom-0 left-0 right-0 z-10 sm:hidden rounded-tl-xl rounded-tr-xl overflow-hidden">
+            <div class="grid grid-cols-3 h-16">
+                <Link :href="route('dashboard')" :class="['flex flex-col items-center justify-center text-gray-500 hover:text-gray-700 focus:outline-none', route().current('dashboard') ? 'bg-green-300' : '']">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0l2-2m-2-2v-1a1 1 0 00-1-1h-3m12 0l2 2m-2-2v-1a1 1 0 00-1-1h-3" />
+                    </svg>
+                    <span class="text-xs">Home</span>
+                </Link>
+
+                <Link :href="route('job.index')" :class="['flex flex-col items-center justify-center text-gray-500 hover:text-gray-700 focus:outline-none', route().current('job.index') ? 'bg-green-300' : '']">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <span class="text-xs">Tugas</span>
+                </Link>
+
+                <Link :href="route('profile.show')" :class="['flex flex-col items-center justify-center text-gray-500 hover:text-gray-700 focus:outline-none', route().current('profile.show') ? 'bg-green-300' : '']">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span class="text-xs">Pengaturan</span>
+                </Link>
+            </div>
+        </nav>
+
     </div>
 </template>

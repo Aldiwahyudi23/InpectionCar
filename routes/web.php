@@ -26,22 +26,29 @@ Route::middleware([
 });
 
 Route::get('/job', [JobController::class, 'index'])->name('job.index');
- Route::get('/job/history', [JobController::class, 'history'])->name('inspections.history');
+Route::get('/job/history', [JobController::class, 'history'])->name('inspections.history');
 
-  Route::get('/inspections/{inspection}/create', [InspectionController::class, 'create'])
-        ->name('inspections.create');
+Route::get('/inspections/{inspection}/start', [InspectionController::class, 'start'])
+        ->name('inspections.start');
+
+Route::get('/inspections/create/new', [InspectionController::class, 'create'])
+        ->name('inspections.create.new');
+Route::post('/inspections', [InspectionController::class, 'store'])->name('inspections.store');
         
     // Store inspection results
-    Route::post('/inspections/{inspection}/store-results', [InspectionController::class, 'storeResults'])
+Route::post('/inspections/{inspection}/store-results', [InspectionController::class, 'storeResults'])
         ->name('inspections.store-results');
 
 // routes/web.php
 Route::post('/inspections/save-result', [InspectionController::class, 'saveResult'])->name('inspections.save-result');
 Route::post('/inspections/delete-result-image', [InspectionController::class, 'deleteResultImage'])->name('inspections.delete-result');
 // Di web.php
-Route::post('/inspections/update-vehicle-details', [InspectionController::class, 'updateVehicleDetails']);
-Route::post('/inspections/update-vehicle', [InspectionController::class, 'updateVehicle']);
-Route::post('/inspections/save-conclusion', [InspectionController::class, 'saveConclusion']);
+Route::post('/inspections/{inspection}/vehicle-details', [InspectionController::class, 'updateVehicleDetails'])
+    ->name('inspections.updateVehicleDetails');
+
+Route::post('/inspections/{inspection}/conclusion', [InspectionController::class, 'updateConclusion'])
+    ->name('inspections.updateConclusion');
+    
 Route::post('/inspections/upload-image', [InspectionController::class, 'uploadImage'])->name('inspections.upload-image');
 Route::delete('/inspections/delete-image', [InspectionController::class, 'deleteImage'])->name('inspections.delete-image');
 // Final submit
@@ -60,6 +67,4 @@ Route::get('/inspections/{id}/download-pdf', [InspectionController::class, 'down
     ->name('inspections.download.pdf');
 
 
-Route::post('/inspections/{inspection}/conclusion', [InspectionController::class, 'updateConclusion'])
-    ->name('inspections.updateConclusion');
 

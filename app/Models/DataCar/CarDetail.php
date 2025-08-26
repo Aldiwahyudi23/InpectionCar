@@ -18,7 +18,8 @@ class CarDetail extends Model
         'cc',
         'transmission',
         'fuel_type',
-        'production_period'
+        'production_period',
+        'description',
     ];
 
     protected $casts = [
@@ -44,5 +45,11 @@ class CarDetail extends Model
     {
         return $this->hasMany(Inspection::class, 'car_id');
     }
+
+    public function images()
+{
+    return $this->hasMany(ImageCar::class, 'car_id');
+}
+
 
 }

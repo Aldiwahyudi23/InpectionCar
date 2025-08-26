@@ -1,7 +1,7 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
-import { CalendarDaysIcon, ArrowRightIcon } from '@heroicons/vue/24/outline';
+import { CalendarDaysIcon, ArrowRightIcon, PlusIcon } from '@heroicons/vue/24/outline';
 import { CarIcon } from 'lucide-vue-next'; // citycar icon
 import { ref } from 'vue';
 
@@ -42,14 +42,14 @@ const getButtonLabel = (status) => {
 
         <div class="py-6 md:py-10">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6 text-center">
+                <h3 class="text-xl md:text-3xl font-bold text-gray-900 mb-6 text-center">
                     Inspeksi yang Harus Diselesaikan
-                </h1>
+                </h3>
 
                 <!-- Jika ada tasks -->
                 <div
                     v-if="tasks.length > 0"
-                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"
                 >
                     <div
                         v-for="task in tasks"
@@ -118,6 +118,16 @@ const getButtonLabel = (status) => {
             </div>
         </div>
 
+        <!-- Tombol Mengambang untuk Membuat Inspeksi Baru -->
+        <Link
+            :href="route('inspections.create.new')"
+            class="fixed bottom-16 right-6 z-40 p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors duration-200 animate-bounce"
+            title="Buat Inspeksi Baru"
+        >
+            <PlusIcon class="h-6 w-6" />
+        </Link>
+
+
         <!-- Confirmation Modal -->
         <div
             v-if="showModal"
@@ -128,8 +138,7 @@ const getButtonLabel = (status) => {
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Konfirmasi</h3>
 
                     <!-- Info Mobil -->
-
-                     <div v-if="selectedTask?.car" class="flex items-center mb-4">
+                    <div v-if="selectedTask?.car" class="flex items-center mb-4">
                         <CarIcon class="h-8 w-8 text-blue-500 mr-3" />
                         <div>
                             <p class="font-medium text-gray-800">
@@ -162,7 +171,7 @@ const getButtonLabel = (status) => {
                             Batal
                         </button>
                         <Link
-                            :href="`/inspections/${selectedTask?.id}/create`"
+                            :href="`/inspections/${selectedTask?.id}/start`"
                             method="get"
                             class="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700"
                         >
@@ -175,3 +184,21 @@ const getButtonLabel = (status) => {
 
     </AppLayout>
 </template>
+
+<style scoped>
+.animate-bounce {
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+</style>

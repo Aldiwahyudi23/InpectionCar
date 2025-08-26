@@ -34,23 +34,19 @@ class InspectionController extends Controller
      */
    
       // Show the inspection form
-//    public function create(Inspection $inspection)
-//     {
-//         // Load categories with their active inspection points
-//         $categories = Categorie::with(['points' => function($query) {
-//             $query->where('is_active', true)->orderBy('order');
-//         }])
-//         ->where('is_active', true)
-//         ->orderBy('order')
-//         ->get();
+   public function create(Inspection $inspection)
+    {
+         $CarDetail = CarDetail::with(['brand', 'model', 'type'])
+        ->get();
+        $Category = Categorie::all();
 
-//         return Inertia::render('FrontEnd/Inspection/Create', [
-//             'inspection' => $inspection->load(['car', 'user']),
-//             'categories' => $categories,
-//         ]);
-//     }
+        return Inertia::render('FrontEnd/Inspection/Create', [
+            'CarDetail' => $CarDetail,
+            'Category' => $Category,
+        ]);
+    }
 
-public function create(Inspection $inspection)
+public function start(Inspection $inspection)
 {
     // Validasi status yang diperbolehkan
     $allowedStatuses = ['draft', 'in_progress', 'revisi', 'jeda', 'pending_review'];
@@ -132,6 +128,7 @@ public function create(Inspection $inspection)
     $CarDetail = CarDetail::with(['brand', 'model', 'type'])
         ->get();
 
+    // DD($CarDetail);
     return Inertia::render('FrontEnd/Inspection/InspectionForm', [
         'inspection' => $inspection->fresh()->load(['car', 'user']),
         'appMenu' => $appMenu,
@@ -139,7 +136,7 @@ public function create(Inspection $inspection)
         'existingImages' => $existingImages,
         'components' => $components,
         'damagePoints' => $damagePoints, // Kirim damage points terpisah
-        'carDetails' => $CarDetail,
+        'CarDetail' => $CarDetail,
     ]);
 }
 
@@ -151,7 +148,58 @@ public function create(Inspection $inspection)
 // app/Http/Controllers/InspectionController.php
 public function store(Request $request)
 {
-   //
+     // Perbaikan: Jika dijadwalkan, gabungkan tanggal dan waktu menjadi satu field
+        if ($request->input('is_scheduled')) {
+            $scheduledAt = $request->input('scheduled_at_date') . ' ' . $request->input('scheduled_at_time');
+            $request->merge(['scheduled_at' => $scheduledAt]);
+        }
+
+    // Validasi data yang masuk dari form
+        $validated = $request->validate([
+            'plate_number' => 'required|string|max:20',
+            'category_id' => 'required|exists:categories,id',
+            'is_scheduled' => 'required|boolean',
+            'scheduled_at' => 'nullable|date', // Digunakan jika is_scheduled true
+            'car_id' => 'nullable',
+            'car_name' => 'required_without:car_id|nullable|string|max:100',
+        ]);
+
+        $carId = $validated['car_id'] ?? null;
+
+     
+
+        // Siapkan data dasar untuk inspeksi
+        $inspectionData = [
+            'user_id' => Auth::user()->id,
+            'plate_number' => $validated['plate_number'],
+            'category_id' => $validated['category_id'],
+            'car_id' => $carId,
+            'car_name' => $validated['car_name'] ?? null,
+            'status' => $validated['is_scheduled'] ? 'draft' : 'in_progress',
+        ];
+
+        // Atur waktu jadwal atau waktu mulai sekarang
+        if ($validated['is_scheduled']) {
+            $inspectionData['inspection_date'] = $validated['scheduled_at'];
+        } else {
+            $inspectionData['inspection_date'] = now(); // Gunakan waktu sekarang
+            // Anda bisa mengatur status menjadi 'in_progress' atau 'completed'
+            $inspectionData['status'] = 'in_progress';
+        }
+
+        // Buat entri inspeksi baru di database
+        $inspection = Inspection::create($inspectionData);
+
+        // Tentukan respons berdasarkan status jadwal
+        if ($validated['is_scheduled']) {
+            // Jika dijadwalkan, kembali ke halaman sebelumnya dengan pesan sukses
+            return redirect()->route('job.index')
+                ->with('success', 'Inspeksi berhasil dijadwalkan.');
+        } else {
+            // Jika mulai inspeksi sekarang, redirect ke halaman start dengan ID inspeksi
+            return redirect()->route('inspections.start', ['inspection' => $inspection->id]);
+        }
+
 }
 
     /**
@@ -185,48 +233,6 @@ public function store(Request $request)
     {
         //
     }
-
-public function updateConclusion(Request $request, Inspection $inspection)
-{
-    $validated = $request->validate([
-        'flooded' => 'required|in:yes,no',
-        'collision' => 'required|in:yes,no',
-        'collision_severity' => 'nullable|required_if:collision,yes|in:light,heavy',
-        'conclusion_note' => 'nullable|string|max:1000',
-    ]);
-
-    // Pastikan settings adalah array
-    $settings = $inspection->settings ?? [];
-    
-    // Pastikan settings adalah array, bukan string
-    if (is_string($settings)) {
-        $settings = json_decode($settings, true) ?? [];
-    }
-
-    // Siapkan data untuk settings (tanpa conclusion_note)
-    $conclusionData = [
-        'flooded' => $validated['flooded'],
-        'collision' => $validated['collision'],
-        'collision_severity' => $validated['collision_severity'] ?? null,
-    ];
-
-    // Update settings
-    $settings['conclusion'] = $conclusionData;
-
-    // Update inspection
-    $updateData = [
-        'settings' => $settings,
-    ];
-
-    // Only update note if conclusion_note is provided
-    if (isset($validated['conclusion_note'])) {
-        $updateData['notes'] = $validated['conclusion_note'];
-    }
-
-    $inspection->update($updateData);
-
-    return back()->with('success', 'Kesimpulan diperbarui');
-}
 
 
 // InspectionController.php
@@ -265,83 +271,68 @@ public function updateConclusion(Request $request, Inspection $inspection)
         }
     }
 
-    // Di InspectionController
-    public function updateVehicle(Request $request)
+        public function updateConclusion(Request $request, Inspection $inspection)
     {
         $validated = $request->validate([
-            'inspection_id' => 'required|exists:inspections,id',
-            'plate_number' => 'required|string|max:20'
-        ]);
-
-        $inspection = Inspection::find($validated['inspection_id']);
-        $inspection->plate_number = $validated['plate_number'];
-        $inspection->save();
-
-        return response()->json(['message' => 'Data kendaraan berhasil diupdate']);
-    }
-
-    public function saveConclusion(Request $request)
-    {
-        $validated = $request->validate([
-            'inspection_id' => 'required|exists:inspections,id',
             'flooded' => 'required|in:yes,no',
             'collision' => 'required|in:yes,no',
             'collision_severity' => 'nullable|required_if:collision,yes|in:light,heavy',
-            'conclusion_note' => 'nullable|string'
+            'conclusion_note' => 'nullable|string|max:1000',
         ]);
 
-        $inspection = Inspection::find($validated['inspection_id']);
-        $inspection->conclusion = $validated;
-        $inspection->save();
+        // Pastikan settings adalah array
+        $settings = $inspection->settings ?? [];
+        
+        // Pastikan settings adalah array, bukan string
+        if (is_string($settings)) {
+            $settings = json_decode($settings, true) ?? [];
+        }
 
-        return response()->json(['message' => 'Kesimpulan berhasil disimpan']);
+        // Siapkan data untuk settings (tanpa conclusion_note)
+        $conclusionData = [
+            'flooded' => $validated['flooded'],
+            'collision' => $validated['collision'],
+            'collision_severity' => $validated['collision_severity'] ?? null,
+        ];
+
+        // Update settings
+        $settings['conclusion'] = $conclusionData;
+
+        // Update inspection
+        $updateData = [
+            'settings' => $settings,
+        ];
+
+        // Only update note if conclusion_note is provided
+        if (isset($validated['conclusion_note'])) {
+            $updateData['notes'] = $validated['conclusion_note'];
+        }
+
+        $inspection->update($updateData);
+
+        return back()->with('success', 'Kesimpulan diperbarui');
     }
-// Di InspectionController.php
-public function updateVehicleDetails(Request $request)
+    // Di InspectionController.php
+public function updateVehicleDetails(Request $request, Inspection $inspection)
 {
+    // 1. Validasi data yang masuk, termasuk `car_id` sebagai opsional
     $validated = $request->validate([
-        'inspection_id' => 'required|exists:inspections,id',
         'plate_number' => 'required|string|max:20',
-        'brand_id' => 'required|exists:brands,id',
-        'car_model_id' => 'required|exists:car_models,id',
-        'car_type_id' => 'required|exists:car_types,id',
-        'year' => 'required|integer|min:1990|max:' . date('Y'),
-        'cc' => 'nullable|integer|min:500|max:10000',
-        'transmission' => 'required|in:AT,MT,CVT',
-        'fuel_type' => 'required|string|max:50',
-        'production_period' => 'nullable|string|max:100'
+        'car_id' => 'nullable',
+        'car_name' => 'nullable|string|max:100',
     ]);
 
-    // Update inspection plate number
-    $inspection = Inspection::find($validated['inspection_id']);
-    $inspection->plate_number = $validated['plate_number'];
-    $inspection->save();
-
-    // Update atau create car details
-    $carDetail = CarDetail::updateOrCreate(
-        ['id' => $inspection->car_id],
-        [
-            'brand_id' => $validated['brand_id'],
-            'car_model_id' => $validated['car_model_id'],
-            'car_type_id' => $validated['car_type_id'],
-            'year' => $validated['year'],
-            'cc' => $validated['cc'],
-            'transmission' => $validated['transmission'],
-            'fuel_type' => $validated['fuel_type'],
-            'production_period' => $validated['production_period']
-        ]
-    );
-
-    // Jika car detail baru dibuat, update inspection dengan car_id
-    if (!$inspection->car_id) {
-        $inspection->car_id = $carDetail->id;
-        $inspection->save();
-    }
-
-    return response()->json([
-        'message' => 'Data kendaraan berhasil diupdate',
-        'car' => $carDetail
+    // 2. Gunakan Route Model Binding untuk memperbarui data
+    //    Tidak perlu Inspection::find() lagi
+    $inspection->update([
+        'plate_number' => $validated['plate_number'],
+        'car_id' => $validated['car_id'],
+        'car_name' => $validated['car_name'],
     ]);
+
+    // 3. Kembalikan respons yang sesuai dengan Inertia.js
+    //    Redirect ke halaman sebelumnya dengan pesan flash
+    return redirect()->back()->with('success', 'Data kendaraan berhasil diperbarui.');
 }
 
 public function uploadImage(Request $request)

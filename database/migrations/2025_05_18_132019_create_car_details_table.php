@@ -21,6 +21,7 @@ return new class extends Migration
             $table->enum('transmission', ['AT', 'MT', 'CVT'])->default('AT');
             $table->string('fuel_type');
             $table->string('production_period');
+            $table->longText('description')->nullable();
             $table->timestamps();
             $table->softDeletes(); // Menambahkan kolom deleted_at untuk soft delete
         });

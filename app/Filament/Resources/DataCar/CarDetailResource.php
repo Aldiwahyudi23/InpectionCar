@@ -4,6 +4,7 @@ namespace App\Filament\Resources\DataCar;
 
 use App\Filament\Resources\DataCar\CarDetailResource\Pages;
 use App\Filament\Resources\DataCar\CarDetailResource\RelationManagers;
+use App\Filament\Resources\DataCar\CarDetailResource\RelationManagers\ImageCarsRelationManager;
 use App\Models\DataCar\Brand;
 use App\Models\DataCar\CarDetail;
 use App\Models\DataCar\CarModel;
@@ -168,6 +169,11 @@ class CarDetailResource extends Resource
                         return $state;
                     })
                     ->columnSpanFull(),
+                Forms\Components\Textarea::make('description')
+                    ->label('Deskripsi')
+                    ->rows(4)
+                    ->placeholder('Masukkan deskripsi mobil di sini...')
+                    ->helperText('Deskripsi tambahan tentang mobil.')
             ]);
     }
 
@@ -233,7 +239,7 @@ class CarDetailResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+             ImageCarsRelationManager::class,
         ];
     }
 
