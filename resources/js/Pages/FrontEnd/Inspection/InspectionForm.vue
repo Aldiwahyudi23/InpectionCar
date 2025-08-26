@@ -411,106 +411,106 @@ const initializeForm = () => {
 
 const form = useForm(initializeForm());
 
-// // Check if menu is complete
-// const isMenuComplete = (menu) => {
-//   // Kalau menu ini tipe damage → selalu dianggap complete (tidak dihitung)
-//   if (menu.input_type === 'damage') {
-//     return true;
-//   }
-
-//     // Khusus untuk menu kesimpulan (conclusion)
-//   if (isConclusionComplete) {
-//     return true;
-//   }
-
-//   return menu.points.every(point => {
-//     const result = form.results[point.id];
-//     if (!result) return false;
-    
-//     switch(point.input_type) {
-//       case 'text':
-//       case 'number':
-//       case 'date':
-//       case 'account':
-//       case 'textarea':
-//         return !!result.note;
-//       case 'select':
-//       case 'radio':
-//         return !!result.status;
-//       case 'image':
-//         return result.images?.length > 0;
-//       case 'imageTOradio':
-//         return result.images?.length > 0;
-//       default:
-//         return !!result.status || !!result.note;
-//     }
-//   });  
-// };
-
-
+// Check if menu is complete
 const isMenuComplete = (menu) => {
-  if (menu.input_type === 'damage') return true;
-  if (isConclusionComplete) return true;
+  // Kalau menu ini tipe damage → selalu dianggap complete (tidak dihitung)
+  if (menu.input_type === 'damage') {
+    return true;
+  }
+
+    // Khusus untuk menu kesimpulan (conclusion)
+  if (isConclusionComplete) {
+    return true;
+  }
 
   return menu.points.every(point => {
     const result = form.results[point.id];
     if (!result) return false;
-
-    switch (point.input_type) {
+    
+    switch(point.input_type) {
       case 'text':
       case 'number':
       case 'date':
       case 'account':
       case 'textarea':
         return !!result.note;
-
       case 'select':
-      case 'radio': {
-        if (!result.status) return false;
-
-        const selectedOption = point.settings?.radios?.find(
-          opt => opt.value === result.status
-        );
-        if (!selectedOption) return false;
-
-        // Cek textarea kalau diwajibkan
-        if (selectedOption.settings?.show_textarea && !result.note) {
-          return false;
-        }
-
-        // Cek image upload kalau diwajibkan
-        if (selectedOption.settings?.show_image_upload && !(result.images?.length > 0)) {
-          return false;
-        }
-
-        return true;
-      }
-
-      case 'imageTOradio': {
-        if (!result.status) return false;
-        if (!(result.images?.length > 0)) return false;
-
-        const selectedOption = point.settings?.radios?.find(
-          opt => opt.value === result.status
-        );
-        if (!selectedOption) return false;
-
-        // Kalau ada textarea wajib isi
-        if (selectedOption.settings?.show_textarea && !result.note) {
-          return false;
-        }
-
-        return true;
-      }
-
+      case 'radio':
+        return !!result.status;
       case 'image':
         return result.images?.length > 0;
-
+      case 'imageTOradio':
+        return result.images?.length > 0;
       default:
         return !!result.status || !!result.note;
     }
-  });
+  });  
 };
+
+
+// const isMenuComplete = (menu) => {
+//   if (menu.input_type === 'damage') return true;
+//   if (isConclusionComplete) return true;
+
+//   return menu.points.every(point => {
+//     const result = form.results[point.id];
+//     if (!result) return false;
+
+//     switch (point.input_type) {
+//       case 'text':
+//       case 'number':
+//       case 'date':
+//       case 'account':
+//       case 'textarea':
+//         return !!result.note;
+
+//       case 'select':
+//       case 'radio': {
+//         if (!result.status) return false;
+
+//         const selectedOption = point.settings?.radios?.find(
+//           opt => opt.value === result.status
+//         );
+//         if (!selectedOption) return false;
+
+//         // Cek textarea kalau diwajibkan
+//         if (selectedOption.settings?.show_textarea && !result.note) {
+//           return false;
+//         }
+
+//         // Cek image upload kalau diwajibkan
+//         if (selectedOption.settings?.show_image_upload && !(result.images?.length > 0)) {
+//           return false;
+//         }
+
+//         return true;
+//       }
+
+//       case 'imageTOradio': {
+//         if (!result.status) return false;
+//         if (!(result.images?.length > 0)) return false;
+
+//         const selectedOption = point.settings?.radios?.find(
+//           opt => opt.value === result.status
+//         );
+//         if (!selectedOption) return false;
+
+//         // Kalau ada textarea wajib isi
+//         if (selectedOption.settings?.show_textarea && !result.note) {
+//           return false;
+//         }
+
+//         return true;
+//       }
+
+//       case 'image':
+//         return result.images?.length > 0;
+
+//       default:
+//         return !!result.status || !!result.note;
+//     }
+//   });
+// };
 
 
 // FUNGSI PARSE SETTINGS YANG HARUS DITAMBAHKAN

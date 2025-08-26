@@ -33,49 +33,67 @@
       </div>
 
       <!-- Image Viewer -->
-<!-- Image Viewer -->
-<div class="flex-1 flex items-center justify-center overflow-hidden relative">
-  <div
-    class="relative w-full max-w-full"
-    :style="{
-      paddingTop: aspectRatio ? (100 / aspectRatio) + '%' : '75%', // fallback 4:3
-    }"
-    @touchstart="handleTouchStart"
-    @touchmove="handleTouchMove"
-    @touchend="handleTouchEnd"
-  >
-    <img
-      v-if="currentImage"
-      :src="getImageSrc(currentImage)"
-      class="absolute inset-0 w-full h-full object-contain transition-transform duration-300 ease-in-out bg-black"
-      :style="{ transform: `rotate(${currentImage.rotation}deg)` }"
-    />
-  </div>
+      <div class="flex-1 flex items-center justify-center overflow-hidden relative">
+        <div
+          class="relative w-full max-w-full"
+          :style="{
+            paddingTop: aspectRatio ? (100 / aspectRatio) + '%' : '75%',
+          }"
+          @touchstart="handleTouchStart"
+          @touchmove="handleTouchMove"
+          @touchend="handleTouchEnd"
+        >
+          <img
+            v-if="currentImage"
+            :src="getImageSrc(currentImage)"
+            class="absolute inset-0 w-full h-full object-contain transition-transform duration-300 ease-in-out bg-black"
+            :style="{ transform: `rotate(${currentImage.rotation}deg)` }"
+          />
+        </div>
 
-  <!-- Navigation Buttons -->
-  <button
-    v-if="editableImages.length > 1"
-    @click="prevImage"
-    class="absolute left-4 p-3 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
-  >
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-    </svg>
-  </button>
-  <button
-    v-if="editableImages.length > 1"
-    @click="nextImage"
-    class="absolute right-4 p-3 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
-  >
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-    </svg>
-  </button>
-</div>
+        <!-- Navigation Buttons -->
+        <button
+          v-if="editableImages.length > 1"
+          @click="prevImage"
+          class="absolute left-4 p-3 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <button
+          v-if="editableImages.length > 1"
+          @click="nextImage"
+          class="absolute right-4 p-3 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
 
-
-      <!-- Footer -->
+      <!-- Action Buttons -->
       <div class="flex flex-col gap-3 p-4 bg-black bg-opacity-70 shadow-inner">
+        <!-- Tombol Hapus untuk gambar yang sudah tersimpan -->
+        <button
+          v-if="currentImage && currentImage.id && !currentImage.isNew"
+          @click="removeCurrentImage"
+          class="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+          :disabled="isUploading"
+        >
+          Hapus Gambar
+        </button>
+
+        <!-- Tombol Tambah Gambar jika masih bisa menambah -->
+        <button
+          v-if="allowMultiple && editableImages.length < maxFiles"
+          @click="triggerAddMorePhotos"
+          class="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+          :disabled="isUploading"
+        >
+          Tambah Gambar
+        </button>
+
         <div class="flex gap-3 w-full">
           <button
             @click="cancelPreview"
@@ -88,14 +106,14 @@
           <button
             v-if="!isUploading"
             @click="saveImages"
-            class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            class="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
           >
             Simpan
           </button>
 
           <button
             v-else
-            class="flex-1 px-4 py-3 bg-blue-400 text-white rounded-lg cursor-not-allowed flex items-center justify-center font-medium"
+            class="flex-1 px-4 py-3 bg-indigo-400 text-white rounded-lg cursor-not-allowed flex items-center justify-center font-medium"
             disabled
           >
             Menyimpan<span class="loading-dots ml-1"><span>.</span><span>.</span><span>.</span></span>
@@ -132,6 +150,7 @@ const editableImages = ref([]);
 const touchStartX = ref(0);
 const touchEndX = ref(0);
 
+// Computed property untuk gambar yang sedang aktif
 const currentImage = computed(() => {
   if (editableImages.value.length > 0) {
     return editableImages.value[currentPreviewIndex.value];
@@ -139,22 +158,21 @@ const currentImage = computed(() => {
   return null;
 });
 
-// Sync dengan props
+// Watch untuk perubahan props images
 watch(
   () => props.images,
   (newImages) => {
+    // Salin images ke editableImages
     editableImages.value = newImages.map((img) => ({ ...img }));
 
     if (props.show && newImages.length > 0) {
-      if (props.initialIndex === -1 || props.initialIndex >= newImages.length) {
-        currentPreviewIndex.value = newImages.length - 1;
-      } else {
-        currentPreviewIndex.value = props.initialIndex;
-      }
+      // Selalu tampilkan gambar terbaru (index terakhir)
+      currentPreviewIndex.value = newImages.length - 1;
     } else {
       currentPreviewIndex.value = 0;
     }
 
+    // Jika tidak ada gambar, tutup modal
     if (newImages.length === 0 && props.show) {
       cancelPreview();
     }
@@ -162,26 +180,56 @@ watch(
   { deep: true, immediate: true }
 );
 
+// Watch untuk perubahan show prop
+watch(
+  () => props.show,
+  (isShowing) => {
+    if (isShowing && props.images.length > 0) {
+      // Selalu tampilkan gambar terbaru saat modal dibuka
+      currentPreviewIndex.value = props.images.length - 1;
+    }
+  }
+);
+
+/**
+ * Mendapatkan URL sumber gambar
+ */
 const getImageSrc = (image) => {
   return image.preview || (image.image_path ? `/${image.image_path}` : '');
 };
 
+/**
+ * Memutar gambar 90 derajat
+ */
 const rotateImage = () => {
   if (currentImage.value) {
     currentImage.value.rotation = (currentImage.value.rotation + 90) % 360;
   }
 };
 
+/**
+ * Navigasi ke gambar berikutnya
+ */
 const nextImage = () => {
   currentPreviewIndex.value =
-    currentPreviewIndex.value < editableImages.value.length - 1 ? currentPreviewIndex.value + 1 : 0;
+    currentPreviewIndex.value < editableImages.value.length - 1 
+      ? currentPreviewIndex.value + 1 
+      : 0;
 };
 
+/**
+ * Navigasi ke gambar sebelumnya
+ */
 const prevImage = () => {
   currentPreviewIndex.value =
-    currentPreviewIndex.value > 0 ? currentPreviewIndex.value - 1 : editableImages.value.length - 1;
+    currentPreviewIndex.value > 0 
+      ? currentPreviewIndex.value - 1 
+      : editableImages.value.length - 1;
 };
 
+/**
+ * Menangani swipe gesture untuk navigasi gambar
+ */
 const handleTouchStart = (e) => {
   touchStartX.value = e.touches[0].clientX;
 };
@@ -201,13 +249,62 @@ const handleTouchEnd = () => {
   touchEndX.value = 0;
 };
 
+/**
+ * Menyimpan gambar (hanya jika tidak sedang uploading)
+ */
 const saveImages = () => {
-  emit('saveImages', editableImages.value);
-  emit('close'); // langsung keluar setelah simpan
+  if (!props.isUploading) {
+    emit('saveImages', editableImages.value);
+    // Tidak langsung close, tunggu sampai upload selesai
+  }
 };
 
+/**
+ * Membatalkan preview dan menutup modal
+ */
 const cancelPreview = () => {
-  emit('close');
+  if (!props.isUploading) {
+    emit('close');
+  }
+};
+
+/**
+ * Menghapus gambar yang sedang dilihat
+ */
+const removeCurrentImage = () => {
+  if (currentImage.value && !props.isUploading) {
+    const imageToRemove = currentImage.value;
+    
+    // Hapus dari editableImages
+    editableImages.value = editableImages.value.filter((img, index) => {
+      if (index === currentPreviewIndex.value) {
+        return false;
+      }
+      return true;
+    });
+
+    // Adjust current index setelah penghapusan
+    if (currentPreviewIndex.value >= editableImages.value.length) {
+      currentPreviewIndex.value = Math.max(0, editableImages.value.length - 1);
+    }
+
+    // Emit event untuk menghapus gambar
+    emit('removePreviewImage', currentPreviewIndex.value);
+
+    // Jika tidak ada gambar lagi, tutup modal
+    if (editableImages.value.length === 0) {
+      emit('close');
+    }
+  }
+};
+
+/**
+ * Memicu penambahan foto baru
+ */
+const triggerAddMorePhotos = () => {
+  if (!props.isUploading) {
+    emit('triggerAddMorePhotos');
+  }
 };
 </script>
 
@@ -230,5 +327,14 @@ const cancelPreview = () => {
   40% {
     opacity: 1;
   }
+}
+
+/* Smooth transitions untuk semua elemen */
+button {
+  transition: all 0.2s ease-in-out;
+}
+
+img {
+  transition: transform 0.3s ease-in-out;
 }
 </style>

@@ -22,6 +22,7 @@
           Foto wajib diupload
         </p>
       </div>
+      
       <!-- Radio Options di dalam Modal -->
       <div class="grid grid-cols-2 gap-2">
         <label
@@ -34,7 +35,7 @@
             :name="name"
             :value="option.value"
             :checked="selectedValue === option.value"
-            @change="$emit('update:selectedValue', option.value)"
+            @change="$emit('update:selectedValue', $event.target.value)"
             class="hidden peer"
           />
           <div
@@ -89,44 +90,43 @@
       </div>
     </div>
     
-<template #footer>
-  <!-- Tombol Hapus Data (hanya muncul jika ada selectedPoint) -->
-  <button 
-    v-if="selectedPoint" 
-    @click="hapusPoint(pointId)"
-    class="flex items-center justify-center text-red-600 hover:text-red-800 mb-3"
-  >
-    <svg xmlns="http://www.w3.org/2000/svg" 
-         class="h-5 w-5 mr-1" 
-         fill="none" 
-         viewBox="0 0 24 24" 
-         stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2-3H7m5 0v3" />
-    </svg>
-    Hapus Data
-  </button>
+    <template #footer>
+      <!-- Tombol Hapus Data (hanya muncul jika ada selectedPoint) -->
+      <button 
+        v-if="selectedPoint" 
+        @click="hapusPoint(pointId)"
+        class="flex items-center justify-center text-red-600 hover:text-red-800 mb-3"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" 
+             class="h-5 w-5 mr-1" 
+             fill="none" 
+             viewBox="0 0 24 24" 
+             stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m2-3H7m5 0v3" />
+        </svg>
+        Hapus Data
+      </button>
 
-  <!-- Tombol Batal & Simpan -->
-  <div class="flex gap-2">
-    <button
-      type="button"
-      @click="$emit('close')"
-      class="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-    >
-      Batal
-    </button>
-    <button
-      type="button"
-      @click="$emit('save')"
-      :disabled="!isFormValid"
-      class="flex-1 px-4 py-2 bg-indigo-600 border border-transparent rounded-md shadow-sm text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
-    >
-      Simpan
-    </button>
-  </div>
-</template>
-
+      <!-- Tombol Batal & Simpan -->
+      <div class="flex gap-2">
+        <button
+          type="button"
+          @click="$emit('close')"
+          class="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          Batal
+        </button>
+        <button
+          type="button"
+          @click="$emit('save')"
+          :disabled="!isFormValid"
+          class="flex-1 px-4 py-2 bg-indigo-600 border border-transparent rounded-md shadow-sm text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
+        >
+          Simpan
+        </button>
+      </div>
+    </template>
   </BottomSheetModal>
 </template>
 
@@ -161,7 +161,6 @@ const props = defineProps({
     type: Boolean,
     default: true
   },
-
   selectedPoint: Object,
   point: Object
 });
@@ -178,28 +177,56 @@ const emit = defineEmits([
 ]);
 
 const hapusPoint = (pointId) => {
-    emit("hapus", pointId);
+  emit("hapus", pointId);
 };
 
 const selectedOption = computed(() =>
   props.options.find(opt => opt.value === props.selectedValue)
 );
 
-// Validasi form
+// Validasi form yang dinamis berdasarkan kondisi
 const isFormValid = computed(() => {
+  // Validasi dasar: harus memilih opsi radio
   if (!props.selectedValue) return false;
   
   const option = selectedOption.value;
   if (!option || !option.settings) return true;
   
-  // Validasi textarea jika required
-  if (option.settings.show_textarea && option.settings.required && !props.notesValue) {
-    return false;
+  // Validasi untuk input_type 'imageTOradio'
+  if (props.point.input_type === 'imageTOradio') {
+    if (props.point.settings?.required && props.imagesValue.length === 0) {
+      return false;
+    }
+    return true;
   }
   
-  // Validasi image jika required
-  if (option.settings.show_image_upload && option.settings.required && props.imagesValue.length === 0) {
-    return false;
+  // Validasi textarea jika diaktifkan dan required
+  if (option.settings.show_textarea ) {
+    if (!props.notesValue || props.notesValue.trim() === '') {
+      return false;
+    }
+    
+    // Validasi min length jika diatur
+    if (option.settings.min_length && props.notesValue.length < option.settings.min_length) {
+      return false;
+    }
+    
+    // Validasi max length jika diatur
+    if (option.settings.max_length && props.notesValue.length > option.settings.max_length) {
+      return false;
+    }
+  }
+  
+  // Validasi image upload jika diaktifkan dan required
+  if (option.settings.show_image_upload ) {
+    if (props.imagesValue.length === 0) {
+      return false;
+    }
+    
+    // Validasi max files jika diatur
+    if (option.settings.max_files && props.imagesValue.length > option.settings.max_files) {
+      return false;
+    }
   }
   
   return true;

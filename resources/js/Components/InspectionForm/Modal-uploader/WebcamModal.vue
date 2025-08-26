@@ -11,11 +11,14 @@
         </button>
       </div>
 
-      <!-- Video -->
-      <div class="webcam-video-container" @click="triggerFocus">
+      <!-- Video Container dengan aspect ratio -->
+      <div class="webcam-video-container" :style="videoContainerStyle" @click="triggerFocus">
         <video ref="webcamVideo" autoplay playsinline class="webcam-video"></video>
         <canvas ref="webcamCanvas" class="hidden"></canvas>
         <div v-if="showScreenFlash" class="screen-flash-overlay"></div>
+        
+        <!-- Aspect ratio guide overlay -->
+        <div class="aspect-ratio-guide" :style="aspectRatioGuideStyle"></div>
       </div>
 
       <!-- Footer controls -->
@@ -27,24 +30,26 @@
             :disabled="!isFlashSupported" 
             class="control-button"
             :class="{'active': isFlashOn, 'disabled': !isFlashSupported}">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </button>
 
-          <!-- Capture -->
+          <!-- Capture Button dengan icon kamera yang jelas -->
           <button @click="capturePhoto" class="capture-button">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 4l2 2h4a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2h4l2-2z" />
-            </svg>
+            <div class="camera-icon-container">
+              <div class="camera-body">
+                <div class="camera-lens"></div>
+                <div class="camera-flash"></div>
+              </div>
+            </div>
           </button>
 
           <!-- Switch Camera -->
           <button v-if="settings.enable_camera_switch && hasMultipleCameras" 
             @click="switchCamera" 
             class="control-button">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                 d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
             </svg>
@@ -56,7 +61,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onBeforeUnmount } from 'vue';
 
 const props = defineProps({
   show: Boolean,
@@ -80,30 +85,67 @@ const isFlashOn = ref(false);
 const showScreenFlash = ref(false);
 const currentInspectionPoint = ref(props.inspectionPoint || 'Camera');
 
+// Computed property untuk style video container berdasarkan aspect ratio
+const videoContainerStyle = computed(() => {
+  if (!props.aspectRatio) return {};
+  
+  return {
+    aspectRatio: `${props.aspectRatio} / 1`,
+    maxWidth: '100%',
+    maxHeight: '70vh',
+    margin: '0 auto'
+  };
+});
+
+// Computed property untuk aspect ratio guide
+const aspectRatioGuideStyle = computed(() => {
+  if (!props.aspectRatio) return {};
+  
+  const ratio = props.aspectRatio;
+  const width = ratio > 1 ? 80 : 60; // Lebar guide berdasarkan ratio
+  const height = ratio > 1 ? 80 / ratio : 60 * ratio;
+  
+  return {
+    width: `${width}%`,
+    height: `${height}%`
+  };
+});
+
+// Computed property untuk max size dari settings
+const maxSizeKB = computed(() => {
+  return props.settings?.max_size || 2048; // Default 2MB jika tidak ada setting
+});
+
 const initializeWebcam = async () => {
   if (mediaStream) {
     mediaStream.getTracks().forEach(track => track.stop());
   }
   isFlashOn.value = false;
+  
   try {
     const videoConstraints = {
       facingMode: currentFacingMode.value,
-      width: { ideal: 1280 },
-      height: { ideal: 960 },
-      aspectRatio: { exact: props.aspectRatio }
+      width: { ideal: 1920 },
+      height: { ideal: 1080 },
+      aspectRatio: { ideal: props.aspectRatio || 4/3 }
     };
+    
     if (currentFacingMode.value === 'environment') {
       videoConstraints.advanced = [{ focusMode: "continuous" }];
     }
-    mediaStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints });
+    
+    mediaStream = await navigator.mediaDevices.getUserMedia({ 
+      video: videoConstraints,
+      audio: false 
+    });
+    
     videoTrack = mediaStream.getVideoTracks()[0];
     webcamVideo.value.srcObject = mediaStream;
+    
     webcamVideo.value.onloadedmetadata = async () => {
-      webcamVideo.value.style.width = '100%';
-      webcamVideo.value.style.height = 'auto';
-      webcamVideo.value.style.objectFit = 'cover';
       await checkCameraCapabilities();
     };
+    
   } catch (err) {
     console.error("Error accessing camera: ", err);
     alert('Failed to access camera. Please allow camera permission.');
@@ -120,21 +162,34 @@ const closeModal = () => {
 
 const checkCameraCapabilities = async () => {
   if (!videoTrack) return;
-  const devices = await navigator.mediaDevices.enumerateDevices();
-  hasMultipleCameras.value = devices.filter(d => d.kind === 'videoinput').length > 1;
-  const capabilities = videoTrack.getCapabilities();
-  isFlashSupported.value = capabilities.torch || (capabilities.fillLightMode && capabilities.fillLightMode.includes('torch'));
+  
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    hasMultipleCameras.value = devices.filter(d => d.kind === 'videoinput').length > 1;
+    
+    const capabilities = videoTrack.getCapabilities();
+    isFlashSupported.value = capabilities.torch || 
+                            (capabilities.fillLightMode && capabilities.fillLightMode.includes('torch'));
+  } catch (error) {
+    console.error("Error checking camera capabilities:", error);
+  }
 };
 
 const toggleFlash = async () => {
   if (!videoTrack || !props.settings.enable_flash) return;
+  
   if (currentFacingMode.value === 'user') {
+    // Untuk kamera depan, gunakan screen flash
     isFlashOn.value = !isFlashOn.value;
+    showScreenFlash.value = isFlashOn.value;
     return;
   }
+  
   try {
     if (videoTrack.getCapabilities().torch) {
-      await videoTrack.applyConstraints({ advanced: [{ torch: !isFlashOn.value }] });
+      await videoTrack.applyConstraints({ 
+        advanced: [{ torch: !isFlashOn.value }] 
+      });
       isFlashOn.value = !isFlashOn.value;
     }
   } catch (err) {
@@ -144,13 +199,16 @@ const toggleFlash = async () => {
 
 const switchCamera = async () => {
   if (!hasMultipleCameras.value) return;
+  
   currentFacingMode.value = currentFacingMode.value === 'environment' ? 'user' : 'environment';
-  currentInspectionPoint.value = `${props.inspectionPoint} (${currentFacingMode.value === 'environment' ? 'Rear' : 'Front'})`;
+  currentInspectionPoint.value = `${props.inspectionPoint || 'Camera'} (${currentFacingMode.value === 'environment' ? 'Rear' : 'Front'})`;
+  
   await initializeWebcam();
 };
 
 const triggerFocus = async () => {
   if (!videoTrack) return;
+  
   const caps = videoTrack.getCapabilities();
   if (caps.focusMode && caps.focusMode.includes('continuous')) {
     try {
@@ -161,84 +219,352 @@ const triggerFocus = async () => {
   }
 };
 
+// Fungsi untuk mengompres gambar sesuai max_size
+const compressImage = async (blob) => {
+  return new Promise((resolve) => {
+    const MAX_SIZE = maxSizeKB.value * 1024; // Convert KB to bytes
+    
+    if (blob.size <= MAX_SIZE) {
+      resolve(blob);
+      return;
+    }
+
+    const img = new Image();
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Pertahankan aspect ratio asli
+        const scaleFactor = Math.sqrt(MAX_SIZE / blob.size);
+        canvas.width = img.width * scaleFactor;
+        canvas.height = img.height * scaleFactor;
+        
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        let quality = 0.9;
+        
+        const compressRecursive = () => {
+          canvas.toBlob((compressedBlob) => {
+            if (compressedBlob.size > MAX_SIZE && quality > 0.1) {
+              quality -= 0.1;
+              compressRecursive();
+            } else {
+              resolve(compressedBlob);
+            }
+          }, 'image/png', quality);
+        };
+        
+        compressRecursive();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(blob);
+  });
+};
+
 const capturePhoto = async () => {
   const video = webcamVideo.value;
   const canvas = webcamCanvas.value;
-  if (!video || !canvas) return;
-  const ctx = canvas.getContext('2d');
-  const vw = video.videoWidth, vh = video.videoHeight;
-  let dw = vw, dh = vh, ox = 0, oy = 0;
-  if (vw / vh > props.aspectRatio) {
-    dw = vh * props.aspectRatio; ox = (vw - dw) / 2;
-  } else if (vw / vh < props.aspectRatio) {
-    dh = vw / props.aspectRatio; oy = (vh - dh) / 2;
-  }
-  canvas.width = dw; canvas.height = dh;
-  ctx.drawImage(video, ox, oy, dw, dh, 0, 0, dw, dh);
-  canvas.toBlob(blob => {
-    if (blob) {
-      const file = new File([blob], `captured_${Date.now()}.png`, { type: 'image/png' });
-      emit('photoCaptured', file);
+  
+  if (!video || !canvas || video.readyState !== 4) return;
+  
+  try {
+    const ctx = canvas.getContext('2d');
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    
+    // Hitung crop area berdasarkan aspect ratio yang diinginkan
+    let sw, sh, sx, sy;
+    
+    if (vw / vh > props.aspectRatio) {
+      // Video lebih lebar dari aspect ratio yang diinginkan
+      sh = vh;
+      sw = vh * props.aspectRatio;
+      sx = (vw - sw) / 2;
+      sy = 0;
+    } else {
+      // Video lebih tinggi dari aspect ratio yang diinginkan
+      sw = vw;
+      sh = vw / props.aspectRatio;
+      sx = 0;
+      sy = (vh - sh) / 2;
     }
-  }, 'image/png');
+    
+    // Set canvas size sesuai aspect ratio yang diinginkan
+    canvas.width = sw;
+    canvas.height = sh;
+    
+    // Draw image dengan crop yang tepat
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+    
+    // Dapatkan blob asli
+    const originalBlob = await new Promise(resolve => {
+      canvas.toBlob(resolve, 'image/png', 1.0);
+    });
+    
+    // Kompres gambar jika diperlukan
+    const compressedBlob = await compressImage(originalBlob);
+    
+    if (compressedBlob) {
+      const file = new File([compressedBlob], `capture_${Date.now()}.png`, { 
+        type: 'image/png',
+        lastModified: Date.now()
+      });
+      
+      emit('photoCaptured', file);
+      
+      // Screen flash effect
+      showScreenFlash.value = true;
+      setTimeout(() => {
+        showScreenFlash.value = false;
+      }, 100);
+    }
+    
+  } catch (error) {
+    console.error("Error capturing photo:", error);
+    alert("Failed to capture photo. Please try again.");
+  }
 };
 
-watch(() => props.show, (v) => { v ? initializeWebcam() : closeModal(); });
-watch(() => props.inspectionPoint, (v) => { currentInspectionPoint.value = v || 'Camera'; });
+// Watch untuk perubahan props
+watch(() => props.show, (v) => { 
+  if (v) {
+    initializeWebcam();
+  } else {
+    closeModal();
+  }
+});
 
-onBeforeUnmount(() => { if (mediaStream) mediaStream.getTracks().forEach(t => t.stop()); });
+watch(() => props.inspectionPoint, (v) => { 
+  currentInspectionPoint.value = v || 'Camera'; 
+});
+
+watch(() => props.aspectRatio, () => {
+  if (props.show) {
+    initializeWebcam();
+  }
+});
+
+onBeforeUnmount(() => { 
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(t => t.stop());
+  }
+});
 </script>
 
 <style scoped>
 .webcam-modal-container {
-  background-color: rgba(0,0,0,0.9);
+  background-color: rgba(0, 0, 0, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
 .webcam-content-box {
-  background: black;
-  width: 100%; height: 100%;
-  display: flex; flex-direction: column;
+  background: #000;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  max-height: 100vh;
 }
+
 .webcam-header {
-  background: rgba(0,0,0,0.7);
+  background: rgba(0, 0, 0, 0.8);
   color: white;
   padding: 1rem;
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
 }
-.inspection-point-name { flex-grow:1; text-align:center; font-weight:bold; }
+
+.inspection-point-name {
+  flex-grow: 1;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
 .webcam-video-container {
-  flex-grow: 1; position: relative;
-  display: flex; justify-content:center; align-items:center;
-  background:black;
+  position: relative;
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000;
+  overflow: hidden;
+  margin: 0 auto;
 }
+
 .webcam-video {
-  width:100%; height:100%; object-fit:cover; position:absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
+
+.aspect-ratio-guide {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px dashed rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+  z-index: 10;
+}
+
 .webcam-footer {
-  background: rgba(0,0,0,0.7);
-  padding: 1rem; display:flex; justify-content:center; align-items:center;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 1.5rem 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
 }
+
 .camera-controls {
-  display:flex; justify-content:space-around; align-items:center;
-  width: 100%; max-width: 300px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  width: 100%;
+  max-width: 320px;
 }
-.control-button, .capture-button {
-  background:white; border:none;
-  width:60px; height:60px;
-  border-radius:50%;
-  display:flex; justify-content:center; align-items:center;
-  box-shadow:0 4px 10px rgba(0,0,0,0.3);
-  cursor:pointer;
-  transition:0.2s;
+
+.control-button {
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
-.control-button svg, .capture-button svg { stroke:black; }
-.control-button:hover, .capture-button:hover { transform: scale(1.05); }
+
+.control-button:hover {
+  transform: scale(1.08);
+  background: rgba(255, 255, 255, 1);
+}
+
+.control-button.active {
+  background: #ffeb3b;
+}
+
+.control-button.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.control-button svg {
+  stroke: #000;
+  width: 24px;
+  height: 24px;
+}
+
 .capture-button {
-  width:75px; height:75px;
+  background: #fff;
+  border: none;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
-.control-button.disabled { opacity:0.4; cursor:not-allowed; }
-.control-button.active { background:yellow; }
+
+.capture-button:hover {
+  transform: scale(1.05);
+  background: #f0f0f0;
+}
+
+.camera-icon-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.camera-body {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  background: #333;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.camera-lens {
+  width: 20px;
+  height: 20px;
+  background: #666;
+  border-radius: 50%;
+  border: 2px solid #999;
+}
+
+.camera-flash {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background: #ccc;
+  border-radius: 50%;
+}
+
 .screen-flash-overlay {
-  position:absolute; top:0; left:0; width:100%; height:100%;
-  background:white; z-index:20;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.8);
+  z-index: 20;
+  animation: flash 0.3s ease-out;
+}
+
+@keyframes flash {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Responsive design */
+@media (max-width: 640px) {
+  .control-button {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .capture-button {
+    width: 65px;
+    height: 65px;
+  }
+  
+  .control-button svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .camera-body {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .camera-lens {
+    width: 18px;
+    height: 18px;
+  }
 }
 </style>

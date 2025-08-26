@@ -225,7 +225,7 @@ Forms\Components\Fieldset::make('Settings Configuration')
             $schema[] = 
             Forms\Components\Section::make('Image Configuration')
                 ->schema([
-                    Forms\Components\Grid::make(3)
+                    Forms\Components\Grid::make(2)
                         ->schema([
                             Forms\Components\TextInput::make('settings.max_files')
                                 ->numeric()
