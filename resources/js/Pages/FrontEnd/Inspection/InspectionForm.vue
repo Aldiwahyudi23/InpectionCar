@@ -11,7 +11,7 @@
             'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== 'vehicle'
           }"
         >
-          Detail Kendaraan
+          Detail Kendaraan 
         </button>
 
         <!-- Menu Inspeksi -->
@@ -43,7 +43,7 @@
             'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== 'conclusion'
           }"
         >
-          Kesimpulan
+          Kesimpulan {{ CarDetail }}
           <span 
             v-if="conclusionStatus.isComplete"
             class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs rounded-full bg-green-500 text-white"
@@ -222,7 +222,7 @@ const props = defineProps({
   appMenu: Array,
   existingResults: Array,
   existingImages: Object,
-  CarDetail: Object,
+  CarDetail: Array,
   components: Array,
   damagePoints: Array,
 });

@@ -15,7 +15,7 @@
           </svg>
         </button>
         <div class="text-lg font-semibold">
-          {{ point?.name || Camera }} ({{ currentPreviewIndex + 1 }}/{{ editableImages.length }})
+          {{ point?.name || 'Preview' }}/{{ editableImages.length }})
         </div>
         <button
           @click="rotateImage"
@@ -75,14 +75,14 @@
       <!-- Action Buttons -->
       <div class="flex flex-col gap-3 p-4 bg-black bg-opacity-70 shadow-inner">
         <!-- Tombol Hapus untuk gambar yang sudah tersimpan -->
-        <button
+        <!-- <button
           v-if="currentImage && !currentImage.isNew"
           @click="removeCurrentImage"
           class="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
           :disabled="isUploading"
         >
           Hapus Gambar
-        </button>
+        </button> -->
 
         <!-- Tombol Tambah Gambar jika masih bisa menambah -->
         <button
@@ -141,7 +141,7 @@ const props = defineProps({
   maxFiles: Number,
   isUploading: Boolean,
   aspectRatio: Number,
-  point: Object,
+  point: Object
 });
 
 const emit = defineEmits(['close', 'saveImages', 'removePreviewImage', 'triggerAddMorePhotos']);
@@ -269,27 +269,30 @@ const cancelPreview = () => {
   }
 };
 
-
-
 /**
  * Menghapus gambar yang sedang dilihat
  */
 const removeCurrentImage = () => {
   if (currentImage.value && !props.isUploading) {
     const imageToRemove = currentImage.value;
+    
+    // Hapus dari editableImages
+    editableImages.value = editableImages.value.filter((img, index) => {
+      if (index === currentPreviewIndex.value) {
+        return false;
+      }
+      return true;
+    });
 
-    // Emit gambar yang akan dihapus (bukan index)
-    emit('removePreviewImage', imageToRemove);
-
-    // Hapus dari daftar lokal
-    editableImages.value.splice(currentPreviewIndex.value, 1);
-
-    // Adjust index setelah hapus
+    // Adjust current index setelah penghapusan
     if (currentPreviewIndex.value >= editableImages.value.length) {
       currentPreviewIndex.value = Math.max(0, editableImages.value.length - 1);
     }
 
-    // Tutup modal kalau sudah tidak ada gambar
+    // Emit event untuk menghapus gambar
+    emit('removePreviewImage', currentPreviewIndex.value);
+
+    // Jika tidak ada gambar lagi, tutup modal
     if (editableImages.value.length === 0) {
       emit('close');
     }

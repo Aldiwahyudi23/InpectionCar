@@ -60,7 +60,6 @@
 
           <!-- Tombol hapus hanya untuk single upload -->
           <button
-            v-if="!allowMultiple"
             @click.stop="removeImage(image)" 
             type="button"
             class="absolute top-1 right-1 bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs shadow-sm hover:bg-red-600 transition-colors z-10"
@@ -117,7 +116,7 @@
       :aspect-ratio="aspectRatio"
       @close="closePreviewModal"
       @save-images="triggerUploadAndSave"
-      @remove-preview-image="handleRemovePreviewImage"
+      @removePreviewImage="handleRemovePreviewImage"
       @trigger-add-more-photos="openSourceOptions"
     />
   </div>
@@ -657,6 +656,9 @@ const triggerUploadAndSave = async (imagesToSaveFromPreview) => {
 /**
  * Menangani penghapusan gambar dari preview
  */
+/**
+ * Menangani penghapusan gambar dari preview
+ */
 const handleRemovePreviewImage = (imageToRemove) => {
   if (!imageToRemove) return;
 
@@ -664,30 +666,42 @@ const handleRemovePreviewImage = (imageToRemove) => {
     // gambar lama → hapus dari server
     removeImage(imageToRemove);
   } else {
-    // gambar baru (belum tersimpan)
-    const originalIndexInPreviewImages = previewImages.value.findIndex(
-      img => (img.preview && img.preview === imageToRemove.preview && img.isNew) ||
-             (img.id && img.id === imageToRemove.id)
+    // gambar baru (belum tersimpan ke server) → hapus lokal
+    const idx = previewImages.value.findIndex(
+      img =>
+        (img.preview && img.preview === imageToRemove.preview && img.isNew) ||
+        (img.id && img.id === imageToRemove.id)
     );
 
-    if (originalIndexInPreviewImages !== -1) {
-      const removed = previewImages.value.splice(originalIndexInPreviewImages, 1)[0];
-      if (removed.preview && removed.preview.startsWith('blob:')) {
+    if (idx !== -1) {
+      const removed = previewImages.value.splice(idx, 1)[0];
+      if (removed.preview && removed.preview.startsWith("blob:")) {
         URL.revokeObjectURL(removed.preview);
       }
     }
+
+    // emit biar parent juga update modelValue
+    emit(
+      "update:modelValue",
+      props.modelValue.filter(
+        (img) =>
+          !(img.id && img.id === imageToRemove.id) &&
+          !(img.preview && img.preview === imageToRemove.preview)
+      )
+    );
   }
 
-  // Hapus juga dari allImages
-  allImages.value = allImages.value.filter(img => img !== imageToRemove);
-
-  // Adjust currentPreviewIndex
+  // Adjust index setelah hapus
   if (currentPreviewIndex.value >= allImages.value.length) {
     currentPreviewIndex.value = Math.max(0, allImages.value.length - 1);
   }
 
-  if (allImages.value.length === 0) closePreviewModal();
+  // Tutup modal kalau tidak ada gambar
+  if (allImages.value.length === 0) {
+    closePreviewModal();
+  }
 };
+
 
 
 /**

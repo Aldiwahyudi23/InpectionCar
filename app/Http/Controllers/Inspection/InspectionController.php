@@ -261,7 +261,7 @@ public function updateConclusion(Request $request, Inspection $inspection)
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to save result: ' . $e->getMessage(),
-            ], 500);
+            ], 200);
         }
     }
 
