@@ -105,7 +105,6 @@
 
     <!-- Tombol Simpan Final (hanya tampil di kesimpulan) -->
     <div v-if="activeCategory === 'conclusion'" class="flex justify-end gap-4 mt-8 p-6 bg-white rounded-xl shadow-md">
-
       <button
         type="button"
         @click="submitAll"
@@ -314,8 +313,6 @@ const selectPoint = (point) => {
   showSearchModal.value = false;
   showRadioModal.value = true;
 };
-
-
 
 // Handle save data dari modal
 const saveAllData = (data) => {

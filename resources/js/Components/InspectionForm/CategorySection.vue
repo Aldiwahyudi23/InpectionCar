@@ -132,6 +132,7 @@
           :error="form.errors[`results.${point.id}.images`]"
           :inspection-id="inspectionId"   
           :point-id="point.id"  
+          :point = "point"
           :point-name="point.name"
           :settings="point.settings"         
           @update:modelValue="updateResult(point.id, $event)"

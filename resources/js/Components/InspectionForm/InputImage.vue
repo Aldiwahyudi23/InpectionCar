@@ -101,6 +101,7 @@
       :show="showWebcamModal"
       :aspect-ratio="aspectRatio"
       :settings="settings"
+      :point="point"
       @close="closeWebcam"
       @photo-captured="handlePhotoCaptured"
     />
@@ -108,6 +109,7 @@
     <PreviewModal
       :show="showPreviewModal"
       :images="allImages" 
+      :point="point"
       :initial-index="currentPreviewIndex"
       :allow-multiple="allowMultiple"
       :max-files="settings.max_files"
@@ -144,7 +146,8 @@ const props = defineProps({
       enable_camera_switch: true,
       max_size: 2048 // Default 2MB dalam KB
     })
-  }
+  },
+  point: Object
 });
 
 // Define events yang bisa dipancarkan komponen
@@ -654,17 +657,19 @@ const triggerUploadAndSave = async (imagesToSaveFromPreview) => {
 /**
  * Menangani penghapusan gambar dari preview
  */
-const handleRemovePreviewImage = (indexToRemove) => {
-  const imageToRemove = allImages.value[indexToRemove];
+const handleRemovePreviewImage = (imageToRemove) => {
   if (!imageToRemove) return;
 
   if (imageToRemove.id && !imageToRemove.isNew) {
+    // gambar lama → hapus dari server
     removeImage(imageToRemove);
   } else {
+    // gambar baru (belum tersimpan)
     const originalIndexInPreviewImages = previewImages.value.findIndex(
-      img => (img.preview === imageToRemove.preview && img.isNew) || (img.id && img.id === imageToRemove.id)
+      img => (img.preview && img.preview === imageToRemove.preview && img.isNew) ||
+             (img.id && img.id === imageToRemove.id)
     );
-    
+
     if (originalIndexInPreviewImages !== -1) {
       const removed = previewImages.value.splice(originalIndexInPreviewImages, 1)[0];
       if (removed.preview && removed.preview.startsWith('blob:')) {
@@ -672,13 +677,18 @@ const handleRemovePreviewImage = (indexToRemove) => {
       }
     }
   }
-  
+
+  // Hapus juga dari allImages
+  allImages.value = allImages.value.filter(img => img !== imageToRemove);
+
+  // Adjust currentPreviewIndex
   if (currentPreviewIndex.value >= allImages.value.length) {
     currentPreviewIndex.value = Math.max(0, allImages.value.length - 1);
   }
-  
+
   if (allImages.value.length === 0) closePreviewModal();
 };
+
 
 /**
  * Menghapus gambar dari server dan state

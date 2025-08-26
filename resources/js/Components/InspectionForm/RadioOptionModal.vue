@@ -6,6 +6,7 @@
     @close="$emit('close')"
   >
     <div class="space-y-4">
+      <!-- imageTOradio -->
       <div v-if="point.input_type === 'imageTOradio'" class="mt-2">
         <h4 class="text-sm font-medium text-gray-700 mb-2">
           <span v-if="point.settings?.required" class="text-red-500">*</span>
@@ -13,6 +14,7 @@
         <InputImage
           :model-value="imagesValue"
           :point-id="pointId"
+          :point="point"
           :inspection-id="inspectionId"
           :settings="point.settings"
           @update:modelValue="$emit('update:imagesValue', $event)"
@@ -22,9 +24,9 @@
           Foto wajib diupload
         </p>
       </div>
-      
-      <!-- Radio Options di dalam Modal -->
-      <div class="grid grid-cols-2 gap-2">
+
+      <!-- Radio Options -->
+      <div v-if="options.length" class="grid grid-cols-2 gap-2">
         <label
           v-for="(option, index) in options"
           :key="index"
@@ -50,7 +52,7 @@
         </label>
       </div>
 
-      <!-- Textarea Section -->
+      <!-- Textarea -->
       <div v-if="showTextarea && selectedOption?.settings?.show_textarea" class="space-y-2">
         <span v-if="selectedOption.settings?.required" class="text-red-500">*</span>
         <Textarea
@@ -70,7 +72,7 @@
         </p>
       </div>
 
-      <!-- Image Upload Section -->
+      <!-- Image Upload -->
       <div v-if="showImageUpload && selectedOption?.settings?.show_image_upload" class="mt-4">
         <h4 class="text-sm font-medium text-gray-700 mb-2">
           Upload Foto
@@ -79,6 +81,7 @@
         <InputImage
           :model-value="imagesValue"
           :point-id="pointId"
+          :point="point"
           :inspection-id="inspectionId"
           :settings="selectedOption.settings"
           @update:modelValue="$emit('update:imagesValue', $event)"
@@ -91,7 +94,7 @@
     </div>
     
     <template #footer>
-      <!-- Tombol Hapus Data (hanya muncul jika ada selectedPoint) -->
+      <!-- Tombol Hapus -->
       <button 
         v-if="selectedPoint" 
         @click="hapusPoint(pointId)"
@@ -113,7 +116,7 @@
         <button
           type="button"
           @click="$emit('close')"
-          class="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          class="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
         >
           Batal
         </button>
@@ -121,7 +124,7 @@
           type="button"
           @click="$emit('save')"
           :disabled="!isFormValid"
-          class="flex-1 px-4 py-2 bg-indigo-600 border border-transparent rounded-md shadow-sm text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          class="flex-1 px-4 py-2 bg-indigo-600 border border-transparent rounded-md shadow-sm text-white hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
           Simpan
         </button>
@@ -141,26 +144,14 @@ const props = defineProps({
   title: String,
   subtitle: String,
   name: String,
-  options: {
-    type: Array,
-    default: () => []
-  },
+  options: { type: Array, default: () => [] },
   selectedValue: String,
   notesValue: String,
-  imagesValue: {
-    type: Array,
-    default: () => []
-  },
+  imagesValue: { type: Array, default: () => [] },
   pointId: [String, Number],
   inspectionId: [String, Number],
-  showTextarea: {
-    type: Boolean,
-    default: true
-  },
-  showImageUpload: {
-    type: Boolean,
-    default: true
-  },
+  showTextarea: { type: Boolean, default: true },
+  showImageUpload: { type: Boolean, default: true },
   selectedPoint: Object,
   point: Object
 });
@@ -176,64 +167,37 @@ const emit = defineEmits([
   'saveImage'
 ]);
 
-const hapusPoint = (pointId) => {
-  emit("hapus", pointId);
-};
+const hapusPoint = (pointId) => emit("hapus", pointId);
 
 const selectedOption = computed(() =>
   props.options.find(opt => opt.value === props.selectedValue)
 );
 
-// Validasi form yang dinamis berdasarkan kondisi
+// ✅ Validasi hanya input yang tampil (aktif)
 const isFormValid = computed(() => {
-  // Validasi dasar: harus memilih opsi radio
-  if (!props.selectedValue) return false;
-  
-  const option = selectedOption.value;
-  if (!option || !option.settings) return true;
-  
-  // Validasi untuk input_type 'imageTOradio'
+  // Jika ada imageTOradio aktif
   if (props.point.input_type === 'imageTOradio') {
-    if (props.point.settings?.required && props.imagesValue.length === 0) {
-      return false;
-    }
-        // Validasi max files jika diatur
-    if (props.point.settings.max_files && props.imagesValue.length > props.point.settings.max_files) {
-      return false;
-    }
+    if (props.imagesValue.length === 0) return false;
+  }
 
-    return true;
+  // Jika ada radio
+  if (props.options.length && !props.selectedValue) return false;
+
+  const option = selectedOption.value;
+
+  // Jika textarea aktif
+  if (props.showTextarea && option?.settings?.show_textarea) {
+    if (!props.notesValue?.trim()) return false;
+    if (option.settings.min_length && props.notesValue.length < option.settings.min_length) return false;
+    if (option.settings.max_length && props.notesValue.length > option.settings.max_length) return false;
   }
-  
-  // Validasi textarea jika diaktifkan dan required
-  if (option.settings.show_textarea ) {
-    if (!props.notesValue || props.notesValue.trim() === '') {
-      return false;
-    }
-    
-    // Validasi min length jika diatur
-    if (option.settings.min_length && props.notesValue.length < option.settings.min_length) {
-      return false;
-    }
-    
-    // Validasi max length jika diatur
-    if (option.settings.max_length && props.notesValue.length > option.settings.max_length) {
-      return false;
-    }
+
+  // Jika image upload aktif
+  if (props.showImageUpload && option?.settings?.show_image_upload) {
+    if (props.imagesValue.length === 0) return false;
+    if (option.settings.max_files && props.imagesValue.length > option.settings.max_files) return false;
   }
-  
-  // Validasi image upload jika diaktifkan dan required
-  if (option.settings.show_image_upload ) {
-    if (props.imagesValue.length === 0) {
-      return false;
-    }
-    
-    // Validasi max files jika diatur
-    if (option.settings.max_files && props.imagesValue.length > option.settings.max_files) {
-      return false;
-    }
-  }
-  
+
   return true;
 });
 </script>

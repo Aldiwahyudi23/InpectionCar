@@ -3,30 +3,30 @@
     <div class="webcam-content-box">
       <!-- Header -->
       <div class="webcam-header">
-        <div class="inspection-point-name">{{ currentInspectionPoint }}</div>
-                <!-- Additional controls -->
-        <div class="advanced-controls">
+        <div class="inspection-point-name">{{ point?.name || 'Camera' }}</div>
+                <!-- Additional controls
+        <div class="advanced-controls"> -->
           <!-- Focus Mode Selector -->
-          <select v-model="focusMode" class="focus-selector" @change="changeFocusMode">
+          <!-- <select v-model="focusMode" class="focus-selector" @change="changeFocusMode">
             <option value="continuous">Auto Focus</option>
             <option value="manual">Manual Focus</option>
             <option value="single-shot">Single Focus</option>
-          </select>
+          </select> -->
           
           <!-- Quality Selector -->
-          <select v-model="qualityLevel" class="quality-selector" @change="changeQuality">
+          <!-- <select v-model="qualityLevel" class="quality-selector" @change="changeQuality">
             <option value="high">High Quality</option>
             <option value="medium">Medium Quality</option>
             <option value="low">Low Quality</option>
           </select>
-        </div>
+        </div> -->
 
         <button @click="closeModal" class="p-2 rounded-full text-white hover:bg-gray-700 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-        
+
       </div>
 
       <!-- Video Container dengan aspect ratio -->
@@ -101,6 +101,7 @@ const props = defineProps({
   aspectRatio: Number,
   settings: Object,
   inspectionPoint: String,
+  point: Object,
   pointname: String
 });
 const emit = defineEmits(['close', 'photoCaptured']);
