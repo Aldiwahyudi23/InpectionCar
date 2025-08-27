@@ -7,7 +7,7 @@
           @click="changeCategory('vehicle')"
           class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200"
           :class="{
-            'bg-indigo-600 text-white': activeCategory === 'vehicle',
+            'bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white': activeCategory === 'vehicle',
             'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== 'vehicle'
           }"
         >
@@ -21,7 +21,7 @@
           @click="changeCategory(menu.id)"
           class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200"
           :class="{
-            'bg-indigo-600 text-white': activeCategory === menu.id,
+            'bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white': activeCategory === menu.id,
             'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== menu.id
           }"
         >
@@ -39,7 +39,7 @@
           @click="changeCategory('conclusion')"
           class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200"
           :class="{
-            'bg-indigo-600 text-white': activeCategory === 'conclusion',
+            'bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white': activeCategory === 'conclusion',
             'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== 'conclusion'
           }"
         >
@@ -110,7 +110,7 @@
         type="button"
         @click="submitAll"
         :disabled="!allMenusComplete || form.processing"
-        class="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+        class="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <svg v-if="form.processing" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -125,7 +125,7 @@
     <button
       v-if="!showSearchModal && !showRadioModal"
       @click="showSearchModal = true"
-      class="fixed bottom-4 right-4 z-20 p-4 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
+      class="fixed bottom-4 right-4 z-20 p-4 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
     >
       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />

@@ -15,6 +15,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use PhpParser\Node\Stmt\Label;
 
 class InspectionResource extends Resource
 {
@@ -56,7 +57,7 @@ class InspectionResource extends Resource
                         ]))
                     ->searchable()
                     ->nullable(),
-
+              
                 Forms\Components\Select::make('status')
                     ->options([
                         'draft' => 'Draft',
@@ -116,19 +117,21 @@ class InspectionResource extends Resource
                     ->sortable()
                     ->searchable(),
                     
-                Tables\Columns\TextColumn::make('carDisplay')
-                    ->label('Mobil')
-                    ->formatStateUsing(function (Inspection $record) {
-                        if (!$record->car) return '-';
-                        return "{$record->car->brand->name} {$record->car->model->name} ({$record->car->year})";
-                    })
-                    ->searchable(query: function (Builder $query, string $search): Builder {
-                        return $query->whereHas('car', function($q) use ($search) {
-                            $q->whereHas('brand', fn($q) => $q->where('name', 'like', "%{$search}%"))
-                              ->orWhereHas('model', fn($q) => $q->where('name', 'like', "%{$search}%"));
-                        });
-                    }),
-                    
+                Tables\Columns\TextColumn::make('car_id')
+                    ->label('Mobil'),
+                    // ->formatStateUsing(function (Inspection $record) {
+                    //     if (!$record->car) return '-';
+                    //     return "{$record->car->brand->name} {$record->car->model->name} ({$record->car->year})";
+                    // })
+                    // ->searchable(query: function (Builder $query, string $search): Builder {
+                    //     return $query->whereHas('car', function($q) use ($search) {
+                    //         $q->whereHas('brand', fn($q) => $q->where('name', 'like', "%{$search}%"))
+                    //           ->orWhereHas('model', fn($q) => $q->where('name', 'like', "%{$search}%"));
+                    //     });
+                    // }),
+                
+                Tables\Columns\TextColumn::make('car_name')
+                 ->label('Name'),
                     
                Tables\Columns\TextColumn::make('status')
                     ->badge()

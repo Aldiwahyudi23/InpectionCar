@@ -53,7 +53,7 @@
           >
           <!-- Indicator untuk gambar baru atau rotated -->
           <div v-if="image.isNew || image.rotation !== 0"
-               class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center text-white text-xs font-bold">
+                class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center text-white text-xs font-bold">
               <span v-if="image.isNew">BARU</span>
               <span v-if="image.rotation !== 0" class="ml-1">ROTASI</span>
           </div>
@@ -183,19 +183,27 @@ const aspectRatio = computed(() => {
   return 4 / 3;
 });
 
-// Computed property untuk menggabungkan gambar existing dan gambar baru
+// =========================================================================
+// PERBAIKAN UTAMA: Filter gambar yang ada berdasarkan inspectionId
+// =========================================================================
 const allImages = computed(() => {
   const finalImages = [];
   const processedIds = new Set();
-
+  
   // Tambahkan gambar baru dari previewImages
   for (const pImg of previewImages.value) {
     if (pImg.id) processedIds.add(pImg.id);
     finalImages.push(pImg);
   }
 
-  // Tambahkan gambar existing dari modelValue yang belum ada di finalImages
+  // Tambahkan gambar existing dari modelValue yang *belum* ada di finalImages dan
+  // pastikan inspection_id cocok dengan prop
   for (const mImg of props.modelValue) {
+    // Pastikan gambar memiliki inspection_id yang cocok sebelum menambahkannya
+    if (mImg.inspection_id && String(mImg.inspection_id) !== String(props.inspectionId)) {
+        continue;
+    }
+    
     if (!processedIds.has(mImg.id)) {
       finalImages.push({
         ...mImg,
@@ -653,9 +661,6 @@ const triggerUploadAndSave = async (imagesToSaveFromPreview) => {
   }
 };
 
-/**
- * Menangani penghapusan gambar dari preview
- */
 /**
  * Menangani penghapusan gambar dari preview
  */

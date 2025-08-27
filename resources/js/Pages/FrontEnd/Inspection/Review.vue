@@ -37,7 +37,7 @@ const statusLabel = (status) => {
 
     <div class="py-6 md:py-10">
       <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6 text-center">
+        <h1 class="text-2xl md:text-3xl font-bold text-indigo-900 mb-6 text-center">
           Review Pemeriksaan
         </h1>
 
@@ -116,7 +116,7 @@ const statusLabel = (status) => {
           <div class="p-4">
             <Link
               :href="route('inspections.review.pdf', inspection.id)"
-              class="inline-flex items-center justify-center w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md text-sm transition-colors"
+              class="inline-flex items-center justify-center w-full px-3 py-2 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white font-medium rounded-md text-sm transition-colors"
             >
               Lihat Laporan PDF
             </Link>

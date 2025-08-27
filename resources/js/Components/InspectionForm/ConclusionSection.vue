@@ -1,9 +1,10 @@
 <template>
-  <div class="bg-white rounded-xl shadow-md p-4">
-    <h4 class="text-2xl font-semibold text-gray-800 mb-4">Kesimpulan Inspeksi</h4>
-
+  <div class="bg-gray-50 shadow-lg rounded-xl overflow-hidden border border-gray-100">
+    <div class="bg-indigo-50 px-6 py-2 border-b border-indigo-100">
+      <h2 class="text-xl font-semibold text-indigo-700">Kesimpulan Inspeksi </h2>
+    </div>
     <!-- Banjir -->
-    <div class="mb-6">
+    <div class="p-4 space-y-4-6">
       <label class="block text-sm font-medium text-gray-700 mb-3">
         Apakah kendaraan pernah terkena banjir?
       </label>
@@ -33,7 +34,7 @@
     </div>
 
     <!-- Tabrakan -->
-    <div class="mb-6">
+    <div class="p-4 space-y-4-6">
       <label class="block text-sm font-medium text-gray-700 mb-3">
         Apakah kendaraan pernah mengalami tabrakan?
       </label>
@@ -62,7 +63,7 @@
       </div>
 
       <!-- Tingkat Kerusakan -->
-      <div v-if="form.collision === 'yes'" class="mt-4">
+      <div v-if="form.collision === 'yes'" class="p-4 space-y-4-6">
         <label class="block text-sm font-medium text-gray-700 mb-3">Tingkat kerusakan:</label>
         <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 w-full">
           <label
@@ -91,7 +92,7 @@
     </div>
 
     <!-- Catatan -->
-    <div>
+    <div class="p-4 space-y-4-6">
       <label class="block text-sm font-medium text-gray-700 mb-2">Catatan Kesimpulan</label>
       <textarea
         v-model="form.conclusion_note"

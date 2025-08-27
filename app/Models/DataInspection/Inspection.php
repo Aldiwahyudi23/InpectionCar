@@ -20,6 +20,7 @@ class Inspection extends Model
         'user_id',
         'plate_number',
         'car_id',
+        'car_name',
         'category_id',
         'inspection_date',
         'status',

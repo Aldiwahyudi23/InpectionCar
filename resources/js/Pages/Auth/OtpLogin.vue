@@ -129,15 +129,15 @@
 
         <!-- Tautan ke Login Email -->
         <div class="text-center mt-8 pt-6 border-t border-gray-200">
-          <Link
-            href="/login"
+          <a
+            :href="route('login')"
             class="text-sm text-blue-600 hover:text-blue-500 transition-colors duration-200 font-medium flex items-center justify-center"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
             Masuk Menggunakan Email
-          </Link>
+          </a>
         </div>
 
         <!-- Footer -->

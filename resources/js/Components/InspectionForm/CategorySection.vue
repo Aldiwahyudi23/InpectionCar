@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-100">
+  <div class="bg-gray-50 shadow-lg rounded-xl overflow-hidden border border-gray-100">
     <div class="bg-indigo-50 px-6 py-2 border-b border-indigo-100">
       <h2 class="text-xl font-semibold text-indigo-700">{{ category.name }} </h2>
     </div>
@@ -126,18 +126,14 @@
         />
 
         
-        <input-image
-          v-if="point.input_type === 'image'"
+       <input-image
           v-model="form.results[point.id].images"
           :error="form.errors[`results.${point.id}.images`]"
-          :inspection-id="inspectionId"   
-          :point-id="point.id"  
-          :point = "point"
+          :inspection-id="inspectionId"
+          :point-id="point.id"
+          :point="point"
           :point-name="point.name"
-          :settings="point.settings"         
-          @update:modelValue="updateResult(point.id, $event)"
-          @save="saveResult(point.id)"
-          @removeImage="removeImage(point.id, $event)"
+          :settings="point.settings"
           @update:notes="val => form.results[point.id].note = val"
           @update:status="val => form.results[point.id].status = val"
         />
@@ -171,7 +167,7 @@ import { Ham } from 'lucide-vue-next';
 const props = defineProps({
   category: Object,
   form: Object,
-  inspectionId: [String, Number],
+  inspectionId: String,
   selectedPoint: Object,
 });
 

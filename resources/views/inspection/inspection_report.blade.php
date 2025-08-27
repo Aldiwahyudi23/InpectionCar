@@ -210,14 +210,13 @@
                 </div>
             @endif
 
-            <div>
-                <h2 style="margin: 0;">{{ strtoupper($inspection->car->brand->name.' '.$inspection->car->model->name.' '.$inspection->car->type->name) }}</h2>
-                <h3 style="margin: 5px 0 0 0; font-weight: normal;">{{ $inspection->car->year }} {{ $inspection->car->cc }} CC {{ $inspection->car->transmission }} {{ $inspection->car->fuel_type }} ({{ $inspection->car->production_period ?? '' }})</h3>
+            <div v-if="{{ $inspection->car_name }}">
+                <h2 style="margin: 0;">{{ $inspection->car_name }}</h2>
             </div>
         </div>
 
      {{-- Tabel info mobil --}}
-        <div class="car-info">
+        <div v-if="{{ $inspection->car_id }}" class="car-info">
             <table>
                 <tr><td>Nomor Polisi</td><td>{{ $inspection->plate_number }}</td></tr>
                 <tr><td>Merek</td><td>{{ $inspection->car->brand->name }}</td></tr>
