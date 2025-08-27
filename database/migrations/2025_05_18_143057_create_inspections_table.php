@@ -38,6 +38,7 @@ return new class extends Migration
     $table->json('settings')->nullable(); // Kolom untuk menyimpan konfigurasi dinamis
     $table->text('notes')->nullable();
     $table->text('file')->nullable();
+    $table->string('code')->nullable();
     $table->timestamps();
     $table->softDeletes();
 });

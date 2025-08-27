@@ -1,121 +1,72 @@
 <template>
-  <div
-    v-if="show"
-    class="fixed inset-0 bg-black bg-opacity-95 z-50 flex flex-col items-center justify-center"
-  >
+  <div v-if="show" class="fixed inset-0 bg-black bg-opacity-95 z-50 flex flex-col items-center justify-center">
     <div class="w-full h-full flex flex-col">
-      <!-- Header -->
       <div class="flex justify-between items-center p-4 bg-black bg-opacity-70 text-white shadow-md">
-        <button
-          @click="cancelPreview"
-          class="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
-        >
+        <button @click="cancelPreview" class="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
         <div class="text-lg font-semibold">
-          {{ point?.name || 'Preview' }}/{{ editableImages.length }})
+          {{ point?.name || 'Preview' }} ({{ currentPreviewIndex + 1 }}/{{ editableImages.length }})
         </div>
-        <button
-          @click="rotateImage"
-          class="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
-        </button>
+        <div class="flex items-center gap-2">
+          <button v-if="currentImage && currentImage.isNew" @click="removeCurrentImage" class="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors" aria-label="Remove new image">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+          <button @click="rotateImage" class="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      <!-- Image Viewer -->
       <div class="flex-1 flex items-center justify-center overflow-hidden relative">
-        <div
-          class="relative w-full max-w-full"
-          :style="{
-            paddingTop: aspectRatio ? (100 / aspectRatio) + '%' : '75%',
-          }"
-          @touchstart="handleTouchStart"
-          @touchmove="handleTouchMove"
-          @touchend="handleTouchEnd"
-        >
-          <img
-            v-if="currentImage"
-            :src="getImageSrc(currentImage)"
-            class="absolute inset-0 w-full h-full object-contain transition-transform duration-300 ease-in-out bg-black"
-            :style="{ transform: `rotate(${currentImage.rotation}deg)` }"
-          />
+        <div class="relative w-full max-w-full" :style="{ paddingTop: aspectRatio ? (100 / aspectRatio) + '%' : '75%' }" @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
+          <img v-if="currentImage" :src="getImageSrc(currentImage)" class="absolute inset-0 w-full h-full object-contain transition-transform duration-300 ease-in-out bg-black" :style="{ transform: `rotate(${currentImage.rotation}deg)` }" />
         </div>
 
-        <!-- Navigation Buttons -->
-        <button
-          v-if="editableImages.length > 1"
-          @click="prevImage"
-          class="absolute left-4 p-3 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
-        >
+        <button v-if="editableImages.length > 1" @click="prevImage" class="absolute left-4 p-3 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <button
-          v-if="editableImages.length > 1"
-          @click="nextImage"
-          class="absolute right-4 p-3 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
-        >
+        <button v-if="editableImages.length > 1" @click="nextImage" class="absolute right-4 p-3 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
         </button>
       </div>
 
-      <!-- Action Buttons -->
       <div class="flex flex-col gap-3 p-4 bg-black bg-opacity-70 shadow-inner">
-        <!-- Tombol Hapus untuk gambar yang sudah tersimpan -->
-        <!-- <button
-          v-if="currentImage && !currentImage.isNew"
-          @click="removeCurrentImage"
-          class="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-          :disabled="isUploading"
-        >
-          Hapus Gambar
-        </button> -->
-
-        <!-- Tombol Tambah Gambar jika masih bisa menambah -->
-        <button
-          v-if="allowMultiple && editableImages.length < maxFiles"
-          @click="triggerAddMorePhotos"
-          class="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
-          :disabled="isUploading"
-        >
-          Tambah Gambar
-        </button>
+        <div class="flex justify-between items-center w-full">
+          <button v-if="currentImage && !currentImage.isNew" @click="removeCurrentImage" class="px-3 py-2 rounded-lg text-white font-medium flex items-center gap-1 transition-colors hover:text-red-400" :disabled="isUploading">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.095 21H7.905a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Hapus Foto
+          </button>
+          <div v-else class="flex-1"></div>
+          
+          <button v-if="allowMultiple && editableImages.length < maxFiles" @click="triggerAddMorePhotos" class="px-3 py-2 rounded-lg text-white font-medium flex items-center gap-1 transition-colors hover:text-indigo-400" :disabled="isUploading">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            Tambah Foto
+          </button>
+        </div>
 
         <div class="flex gap-3 w-full">
-          <button
-            @click="cancelPreview"
-            class="flex-1 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
-            :disabled="isUploading"
-          >
+          <button @click="cancelPreview" class="flex-1 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium" :disabled="isUploading">
             Batal
           </button>
-
-          <button
-            v-if="!isUploading"
-            @click="saveImages"
-            class="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
-          >
+          <button v-if="!isUploading" @click="saveImages" class="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white transition-colors font-medium">
             Simpan
           </button>
-
-          <button
-            v-else
-            class="flex-1 px-4 py-3 bg-indigo-400 text-white rounded-lg cursor-not-allowed flex items-center justify-center font-medium"
-            disabled
-          >
+          <button v-else class="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-700 to-sky-600 rounded-lg cursor-not-allowed flex items-center justify-center font-medium" disabled>
             Menyimpan<span class="loading-dots ml-1"><span>.</span><span>.</span><span>.</span></span>
           </button>
         </div>
@@ -163,17 +114,13 @@ const currentImage = computed(() => {
 watch(
   () => props.images,
   (newImages) => {
-    // Salin images ke editableImages
+    // Salin images ke editableImages untuk manipulasi lokal
     editableImages.value = newImages.map((img) => ({ ...img }));
-
     if (props.show && newImages.length > 0) {
-      // Selalu tampilkan gambar terbaru (index terakhir)
       currentPreviewIndex.value = newImages.length - 1;
     } else {
       currentPreviewIndex.value = 0;
     }
-
-    // Jika tidak ada gambar, tutup modal
     if (newImages.length === 0 && props.show) {
       cancelPreview();
     }
@@ -186,7 +133,6 @@ watch(
   () => props.show,
   (isShowing) => {
     if (isShowing && props.images.length > 0) {
-      // Selalu tampilkan gambar terbaru saat modal dibuka
       currentPreviewIndex.value = props.images.length - 1;
     }
   }
@@ -213,9 +159,7 @@ const rotateImage = () => {
  */
 const nextImage = () => {
   currentPreviewIndex.value =
-    currentPreviewIndex.value < editableImages.value.length - 1 
-      ? currentPreviewIndex.value + 1 
-      : 0;
+    currentPreviewIndex.value < editableImages.value.length - 1 ? currentPreviewIndex.value + 1 : 0;
 };
 
 /**
@@ -223,9 +167,7 @@ const nextImage = () => {
  */
 const prevImage = () => {
   currentPreviewIndex.value =
-    currentPreviewIndex.value > 0 
-      ? currentPreviewIndex.value - 1 
-      : editableImages.value.length - 1;
+    currentPreviewIndex.value > 0 ? currentPreviewIndex.value - 1 : editableImages.value.length - 1;
 };
 
 /**
@@ -256,7 +198,6 @@ const handleTouchEnd = () => {
 const saveImages = () => {
   if (!props.isUploading) {
     emit('saveImages', editableImages.value);
-    // Tidak langsung close, tunggu sampai upload selesai
   }
 };
 
@@ -276,23 +217,24 @@ const removeCurrentImage = () => {
   if (currentImage.value && !props.isUploading) {
     const imageToRemove = currentImage.value;
     
-    // Hapus dari editableImages
-    editableImages.value = editableImages.value.filter((img, index) => {
-      if (index === currentPreviewIndex.value) {
-        return false;
-      }
-      return true;
-    });
+    // Emit event untuk menghapus gambar ke komponen parent
+    emit('removePreviewImage', imageToRemove);
 
-    // Adjust current index setelah penghapusan
+    // Hapus dari editableImages secara lokal
+    const indexToRemove = editableImages.value.findIndex(img => 
+        (img.isNew && imageToRemove.isNew && img.preview === imageToRemove.preview) || 
+        (!img.isNew && !imageToRemove.isNew && img.id === imageToRemove.id)
+    );
+    if (indexToRemove !== -1) {
+        editableImages.value.splice(indexToRemove, 1);
+    }
+
+    // Sesuaikan indeks saat ini
     if (currentPreviewIndex.value >= editableImages.value.length) {
       currentPreviewIndex.value = Math.max(0, editableImages.value.length - 1);
     }
-
-    // Emit event untuk menghapus gambar
-    emit('removePreviewImage', currentPreviewIndex.value);
-
-    // Jika tidak ada gambar lagi, tutup modal
+    
+    // Tutup modal jika tidak ada gambar lagi
     if (editableImages.value.length === 0) {
       emit('close');
     }

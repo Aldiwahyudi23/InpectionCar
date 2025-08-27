@@ -127,8 +127,9 @@
 
         
        <input-image
-          v-model="form.results[point.id].images"
-          :error="form.errors[`results.${point.id}.images`]"
+          v-if="point.input_type === 'image'"
+          v-model="form.images[point.id]"
+          :error="form.errors[`images.${point.id}`]"
           :inspection-id="inspectionId"
           :point-id="point.id"
           :point="point"

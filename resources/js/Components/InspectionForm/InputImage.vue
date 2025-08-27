@@ -12,7 +12,6 @@
 
     <canvas ref="processingCanvas" class="hidden"></canvas>
 
-    <!-- Tampilan saat belum ada gambar -->
     <label
       v-if="allImages.length === 0"
       @click="openSourceOptions"
@@ -32,45 +31,39 @@
       </div>
     </label>
 
-    <!-- Tampilan saat ada gambar - Diubah menjadi horizontal scroll -->
     <div
       v-else
-      class="block w-full border-2 border-dashed rounded-lg transition-colors duration-200 border-indigo-300 bg-indigo-50 h-auto p-2"
+      class="block w-full rounded-lg transition-colors duration-200 p-2"
+      :class="{
+        'border-2 border-dashed border-indigo-200 bg-indigo-50 h-auto p-2': settings.max_files == 1,
+        'bg-transparent': settings.max_files > 1,
+      }"
       aria-label="Image gallery"
     >
-      <!-- Container untuk horizontal scroll -->
-      <div class="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
-        <!-- Gambar yang sudah diupload -->
-        <div
-          v-for="(image, idx) in allImages"
-          :key="image.id || image.preview" 
+      <div v-if="settings.max_files === 1" class="flex items-center gap-4">
+        <div 
           class="relative flex-shrink-0 w-24 h-24 overflow-hidden rounded-md border border-gray-200 cursor-pointer"
-          @click="openPreviewModal(idx)"
+          @click="openPreviewModal(0)"
         >
           <img
-            :src="getImageSrc(image)"
+            :src="getImageSrc(allImages[0])"
             class="w-full h-full object-cover"
-          >
-          <!-- Indicator untuk gambar baru atau rotated -->
-          <div v-if="image.isNew || image.rotation !== 0"
-                class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center text-white text-xs font-bold">
-              <span v-if="image.isNew">BARU</span>
-              <span v-if="image.rotation !== 0" class="ml-1">ROTASI</span>
-          </div>
-
-          <!-- Tombol hapus hanya untuk single upload -->
-          <button
-            @click.stop="removeImage(image)" 
-            type="button"
-            class="absolute top-1 right-1 bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs shadow-sm hover:bg-red-600 transition-colors z-10"
-            aria-label="Remove image"
-            :disabled="isUploading"
-          >
-            ×
-          </button>
+          />
         </div>
+        <button
+          @click.stop="removeImage(allImages[0])"
+          type="button"
+          class="flex items-center gap-1 text-red-600 font-medium hover:text-red-800 transition-colors"
+          :disabled="isUploading"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.095 21H7.905a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          Hapus Foto
+        </button>
+      </div>
 
-        <!-- Tombol tambah gambar (hanya ditampilkan jika masih bisa menambah) -->
+      <div v-else class="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
         <div
           v-if="allowMultiple && allImages.length < settings.max_files"
           class="flex-shrink-0 flex flex-col items-center justify-center p-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-500 transition-colors w-24 h-24"
@@ -82,13 +75,28 @@
           </svg>
           <p class="mt-1 text-xs text-gray-600">Tambah</p>
         </div>
+
+        <div
+          v-for="(image, idx) in allImages"
+          :key="image.id || image.preview" 
+          class="relative flex-shrink-0 w-24 h-24 overflow-hidden rounded-md border border-gray-200 cursor-pointer"
+          @click="openPreviewModal(idx)"
+        >
+          <img
+            :src="getImageSrc(image)"
+            class="w-full h-full object-cover"
+          >
+          <div v-if="image.isNew || image.rotation !== 0"
+            class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center text-white text-xs font-bold">
+            <span v-if="image.isNew">BARU</span>
+            <span v-if="image.rotation !== 0" class="ml-1">ROTASI</span>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Error message -->
     <p v-if="error" class="mt-1 text-xs text-red-600">{{ error }}</p>
 
-    <!-- Modals -->
     <ImageSourceOptionsModal
       :show="showSourceOptionsModal"
       @close="closeSourceOptions" 
@@ -123,7 +131,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import ImageSourceOptionsModal from './Modal-uploader/ImageSourceOptionsModal.vue';
 import WebcamModal from './Modal-uploader/WebcamModal.vue';
 import PreviewModal from './Modal-uploader/PreviewModal.vue';
@@ -183,9 +191,22 @@ const aspectRatio = computed(() => {
   return 4 / 3;
 });
 
-// =========================================================================
-// PERBAIKAN UTAMA: Filter gambar yang ada berdasarkan inspectionId
-// =========================================================================
+// Mengamati perubahan pada modelValue
+watch(() => props.modelValue, (newVal) => {
+    // Sinkronisasi data dari parent ke internal state
+    if (!newVal || newVal.length === 0) {
+        previewImages.value = [];
+    } else {
+        // Ambil gambar yang sudah ada dari prop
+        const existingImages = newVal.filter(img => !img.isNew);
+
+        // Gabungkan dengan gambar yang baru di-preview
+        const newImagesInPreview = previewImages.value.filter(img => img.isNew);
+        previewImages.value = [...newImagesInPreview, ...existingImages];
+    }
+}, { immediate: true, deep: true });
+
+// Computed property untuk menampilkan semua gambar
 const allImages = computed(() => {
   const finalImages = [];
   const processedIds = new Set();
@@ -199,8 +220,7 @@ const allImages = computed(() => {
   // Tambahkan gambar existing dari modelValue yang *belum* ada di finalImages dan
   // pastikan inspection_id cocok dengan prop
   for (const mImg of props.modelValue) {
-    // Pastikan gambar memiliki inspection_id yang cocok sebelum menambahkannya
-    if (mImg.inspection_id && String(mImg.inspection_id) !== String(props.inspectionId)) {
+    if (mImg.inspection_id && String(mImg.inspection_id) == String(props.inspectionId)) {
         continue;
     }
     
@@ -706,8 +726,6 @@ const handleRemovePreviewImage = (imageToRemove) => {
     closePreviewModal();
   }
 };
-
-
 
 /**
  * Menghapus gambar dari server dan state

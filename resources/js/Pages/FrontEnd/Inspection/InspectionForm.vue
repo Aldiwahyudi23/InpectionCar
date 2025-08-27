@@ -358,33 +358,45 @@ const activeMenuData = computed(() => {
 });
 
 // Inisialisasi form
-const initializeForm = () => {
+
+function initializeForm() {
   const results = {};
+  const images = {}; // Objek terpisah untuk menyimpan data gambar
   
-  // Process semua points termasuk damage points
+  // Proses semua points termasuk damage points
   props.appMenu.forEach(menu => {
     (menu.points || []).forEach(point => {
-      const existing = Array.isArray(props.existingResults)
+      // 1. Inisialisasi data untuk inspection_result
+      const existingResult = Array.isArray(props.existingResults)
         ? props.existingResults.find(r => r.point_id === point.id)
         : null;
       
       results[point.id] = {
-        status: existing?.status || '',
-        note: existing?.note || '',
-        images: props.existingImages?.[point.id]?.map(img => ({
-          image_path: img.image_path,
-          preview: null
-        })) || []
+        status: existingResult?.status || '',
+        note: existingResult?.note || '',
       };
+      
+      // 2. Inisialisasi data untuk inspection_image
+      // Periksa apakah ada gambar yang sudah ada untuk point ini
+      const existingImagesForPoint = props.existingImages?.[point.id] || [];
+      images[point.id] = existingImagesForPoint.map(img => ({
+        id: img.id, // Pastikan ID gambar disertakan jika ada
+        image_path: img.image_path,
+        // Properti lain yang diperlukan oleh komponen anak
+        preview: `/${img.image_path}`, // Gunakan image_path untuk preview
+        rotation: img.rotation || 0,
+        isNew: false
+      }));
     });
   });
   
   return {
     inspection_id: props.inspection.id,
     results,
-    overall_note: props.inspection.overall_note || '' 
+    images, // Tambahkan objek 'images' ke dalam form
+    overall_note: props.inspection.overall_note || ''
   };
-};
+}
 
 const form = useForm(initializeForm());
 

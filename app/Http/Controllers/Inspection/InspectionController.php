@@ -122,7 +122,8 @@ public function start(Inspection $inspection)
 
     $existingImages = InspectionImage::whereIn('point_id', 
         $appMenu->flatMap->points->pluck('id')
-    )->get()
+    )->where('inspection_id', $inspection->id)
+    ->get()
     ->groupBy('point_id');
 
     $CarDetail = CarDetail::with(['brand', 'model', 'type'])
