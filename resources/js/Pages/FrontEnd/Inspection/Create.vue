@@ -71,10 +71,10 @@
                 </div>
                 
                 <!-- Info Mobil Terpilih -->
-                <div v-if="form.car_id" class="text-sm text-green-600 mt-2">
+                <div v-if="form.car_id" class="text-sm text-sky-600 mt-2">
                     ✓ Mobil terpilih: {{ carSearchQuery }}
                 </div>
-                <div v-else-if="carSearchQuery.trim()" class="text-sm text-blue-600 mt-2">
+                <div v-else-if="carSearchQuery.trim()" class="text-sm text-indigo-600 mt-2">
                     ℹ Mobil baru akan dibuat: {{ carSearchQuery }}
                 </div>
             </div>
@@ -102,7 +102,7 @@
                 <label for="schedule-toggle" class="text-sm font-medium text-gray-700">Jadwalkan Inspeksi?</label>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" v-model="form.is_scheduled" id="schedule-toggle" class="sr-only peer">
-                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-700"></div>
                 </label>
             </div>
 
@@ -141,8 +141,8 @@
                     :disabled="!isFormValid || form.processing"
                     :class="{
                         'px-6 py-3 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed': true,
-                        'bg-blue-600 border border-transparent text-white hover:bg-blue-700': !form.is_scheduled,
-                        'bg-green-600 border border-transparent text-white hover:bg-green-700': form.is_scheduled
+                        'bg-gradient-to-r from-indigo-700 to-sky-600  border border-transparent text-white hover:bg-blue-700': !form.is_scheduled,
+                        'bg-gradient-to-r from-green-700 to-indigo-600  border-transparent text-white hover:bg-green-700': form.is_scheduled
                     }"
                 >
                     {{ buttonText }}

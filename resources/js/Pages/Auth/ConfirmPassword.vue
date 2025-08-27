@@ -2,7 +2,6 @@
 import { ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AuthenticationCard from '@/Components/AuthenticationCard.vue';
-import AuthenticationCardLogo from '@/Components/AuthenticationCardLogo.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -26,20 +25,23 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Secure Area" />
+    <Head title="Area Aman" />
 
     <AuthenticationCard>
         <template #logo>
-            <AuthenticationCardLogo />
+            <div class="text-center">
+                <div class="text-4xl font-bold text-indigo-600">CekMobil</div>
+                <!-- <div class="text-lg text-gray-600 mt-2">ATURR Yukk</div> -->
+            </div>
         </template>
 
-        <div class="mb-4 text-sm text-gray-600">
-            This is a secure area of the application. Please confirm your password before continuing.
+        <div class="mb-4 text-sm text-gray-600 text-center">
+            Ini adalah area aman dari aplikasi. Silakan konfirmasi kata sandi Anda sebelum melanjutkan.
         </div>
 
         <form @submit.prevent="submit">
             <div>
-                <InputLabel for="password" value="Password" />
+                <InputLabel for="password" value="Kata Sandi" />
                 <TextInput
                     id="password"
                     ref="passwordInput"
@@ -55,7 +57,7 @@ const submit = () => {
 
             <div class="flex justify-end mt-4">
                 <PrimaryButton class="ms-4" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
-                    Confirm
+                    Konfirmasi
                 </PrimaryButton>
             </div>
         </form>

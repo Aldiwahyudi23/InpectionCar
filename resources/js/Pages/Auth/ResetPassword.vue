@@ -1,7 +1,6 @@
 <script setup>
 import { Head, useForm } from '@inertiajs/vue3';
 import AuthenticationCard from '@/Components/AuthenticationCard.vue';
-import AuthenticationCardLogo from '@/Components/AuthenticationCardLogo.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -27,11 +26,14 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Reset Password" />
+    <Head title="Atur Ulang Password" />
 
     <AuthenticationCard>
         <template #logo>
-            <AuthenticationCardLogo />
+            <div class="text-center">
+                <div class="text-4xl font-bold text-indigo-600">CekMobil</div>
+                <!-- <div class="text-lg text-gray-600 mt-2">ATURR Yukk</div> -->
+            </div>
         </template>
 
         <form @submit.prevent="submit">
@@ -50,7 +52,7 @@ const submit = () => {
             </div>
 
             <div class="mt-4">
-                <InputLabel for="password" value="Password" />
+                <InputLabel for="password" value="Password Baru" />
                 <TextInput
                     id="password"
                     v-model="form.password"
@@ -63,7 +65,7 @@ const submit = () => {
             </div>
 
             <div class="mt-4">
-                <InputLabel for="password_confirmation" value="Confirm Password" />
+                <InputLabel for="password_confirmation" value="Konfirmasi Password Baru" />
                 <TextInput
                     id="password_confirmation"
                     v-model="form.password_confirmation"
@@ -77,7 +79,7 @@ const submit = () => {
 
             <div class="flex items-center justify-end mt-4">
                 <PrimaryButton :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
-                    Reset Password
+                    Atur Ulang Password
                 </PrimaryButton>
             </div>
         </form>

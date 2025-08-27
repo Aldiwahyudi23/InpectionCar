@@ -75,6 +75,9 @@ class InspectionResource extends Resource
                     ->label('Tanggal Inspeksi')
                     ->required()
                     ->default(now()),
+
+                Forms\Components\TextInput::make('car_name')
+                    ->label('Nama Kendaraan'),
                 
                 Forms\Components\Textarea::make('notes')
                     ->label('Catatan')

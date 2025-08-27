@@ -2,7 +2,6 @@
 import { nextTick, ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AuthenticationCard from '@/Components/AuthenticationCard.vue';
-import AuthenticationCardLogo from '@/Components/AuthenticationCardLogo.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -38,26 +37,29 @@ const submit = () => {
 </script>
 
 <template>
-    <Head title="Two-factor Confirmation" />
+    <Head title="Konfirmasi Two-Factor Authentication" />
 
     <AuthenticationCard>
         <template #logo>
-            <AuthenticationCardLogo />
+            <div class="text-center">
+                <div class="text-4xl font-bold text-indigo-600">CekMobil</div>
+                <!-- <div class="text-lg text-gray-600 mt-2">ATURR Yukk</div> -->
+            </div>
         </template>
 
-        <div class="mb-4 text-sm text-gray-600">
+        <div class="mb-4 text-sm text-gray-600 text-center">
             <template v-if="! recovery">
-                Please confirm access to your account by entering the authentication code provided by your authenticator application.
+                Harap konfirmasi akses ke akun Anda dengan memasukkan kode autentikasi yang diberikan oleh aplikasi autentikator Anda.
             </template>
 
             <template v-else>
-                Please confirm access to your account by entering one of your emergency recovery codes.
+                Harap konfirmasi akses ke akun Anda dengan memasukkan salah satu kode pemulihan darurat Anda.
             </template>
         </div>
 
         <form @submit.prevent="submit">
             <div v-if="! recovery">
-                <InputLabel for="code" value="Code" />
+                <InputLabel for="code" value="Kode Autentikasi" />
                 <TextInput
                     id="code"
                     ref="codeInput"
@@ -72,7 +74,7 @@ const submit = () => {
             </div>
 
             <div v-else>
-                <InputLabel for="recovery_code" value="Recovery Code" />
+                <InputLabel for="recovery_code" value="Kode Pemulihan" />
                 <TextInput
                     id="recovery_code"
                     ref="recoveryCodeInput"
@@ -87,16 +89,16 @@ const submit = () => {
             <div class="flex items-center justify-end mt-4">
                 <button type="button" class="text-sm text-gray-600 hover:text-gray-900 underline cursor-pointer" @click.prevent="toggleRecovery">
                     <template v-if="! recovery">
-                        Use a recovery code
+                        Gunakan kode pemulihan
                     </template>
 
                     <template v-else>
-                        Use an authentication code
+                        Gunakan kode autentikasi
                     </template>
                 </button>
 
                 <PrimaryButton class="ms-4" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">
-                    Log in
+                    Masuk
                 </PrimaryButton>
             </div>
         </form>

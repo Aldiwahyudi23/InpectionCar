@@ -15,7 +15,7 @@ defineProps({
 
         <div class="py-6 md:py-10">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6 text-center">
+                <h1 class="text-2xl md:text-3xl font-bold text-indigo-900 mb-6 text-center">
                     Riwayat Inspeksi
                 </h1>
 
@@ -27,13 +27,13 @@ defineProps({
                     <div
                         v-for="task in tasks"
                         :key="task.id"
-                        class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition"
+                        class="bg-white rounded-xl shadow-md overflow-hidden border border-indigo-200 hover:shadow-lg transition"
                     >
                         <!-- Jadwal -->
                         <div class="p-4">
                             <div class="flex items-center mb-1">
                                 <CalendarDaysIcon class="h-5 w-5 text-blue-500 mr-2" />
-                                <span class="text-sm font-medium text-gray-600">Tanggal</span>
+                                <span class="text-sm font-medium text-indigo-600">Tanggal</span>
                             </div>
                             <p class="text-sm font-semibold text-blue-700 ml-7 -mt-1">
                                 {{ new Date(task.inspection_date).toLocaleDateString('id-ID', { 
@@ -44,25 +44,25 @@ defineProps({
                         </div>
 
                         <!-- Mobil -->
-                        <div v-if="task.car" class="px-4 py-3 bg-gray-50 border-t border-gray-100">
+                        <div v-if="task.car" class="px-4 py-3 bg-indigo-50 border-t border-indigo-100">
                             <div class="flex items-center">
-                                <Car class="h-5 w-5 text-gray-500 mr-2" />
-                                <div class="text-sm font-medium text-gray-800">
+                                <Car class="h-5 w-5 text-indigo-500 mr-2" />
+                                <div class="text-sm font-medium text-indigo-800">
                                     {{ `${task.car.brand.name} ${task.car.model.name} ${task.car.type.name} ${task.car.cc} ${task.car.transmission} ${task.car.year}` }}
-                                    <span class="text-gray-600">({{ task.car.fuel_type }})</span>
+                                    <span class="text-indigo-600">({{ task.car.fuel_type }})</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Kategori -->
-                        <div v-if="task.category" class="px-4 py-2 bg-white border-t border-gray-100">
-                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Kategori</p>
-                            <p class="text-sm text-gray-800">{{ task.category.name }}</p>
+                        <div v-if="task.category" class="px-4 py-2 bg-white border-t border-indigo-100">
+                            <p class="text-xs font-medium text-indigo-500 uppercase tracking-wide">Kategori</p>
+                            <p class="text-sm text-indigo-800">{{ task.category.name }}</p>
                         </div>
 
                         <!-- Status -->
-                        <div class="px-4 py-3 bg-gray-50 border-t border-gray-100">
-                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Status</p>
+                        <div class="px-4 py-3 bg-indigo-50 border-t border-indigo-100">
+                            <p class="text-xs font-medium text-indigo-500 uppercase tracking-wide">Status</p>
                             <p class="text-sm font-semibold text-green-600 capitalize">
                                 {{ task.status.replace('_', ' ') }}
                             </p>
@@ -72,7 +72,7 @@ defineProps({
                         <div class="p-4">
                             <Link
                                 :href="`/inspections/${task.id}`"
-                                class="inline-flex items-center justify-center w-full px-3 py-2 bg-gray-700 hover:bg-gray-800 text-white font-medium rounded-md text-sm transition-colors"
+                                class="inline-flex items-center justify-center w-full px-3 py-2 bg-indigo-700 hover:bg-indigo-800 text-white font-medium rounded-md text-sm transition-colors"
                             >
                                 Lihat Detail
                             </Link>
@@ -89,7 +89,7 @@ defineProps({
                 <div class="text-center mt-6">
                     <Link
                          :href="route('job.index')"
-                        class="inline-block px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50"
+                        class="inline-block px-4 py-2 text-sm font-medium text-indigo-600 border border-indigo-600 rounded-md hover:bg-indigo-50"
                     >
                         Kembali ke Tugas
                     </Link>

@@ -26,6 +26,7 @@ class UserResource extends Resource
         return $form
             ->schema([
                 Forms\Components\TextInput::make('name')->required(),
+                Forms\Components\TextInput::make('numberPhone')->label('Nomor Telepon')->tel()->nullable(),
                 Forms\Components\TextInput::make('email')->email()->required(),
                 Forms\Components\Select::make('role')
                     ->options([
@@ -42,6 +43,7 @@ class UserResource extends Resource
         return $table
             ->columns([
                  Tables\Columns\TextColumn::make('name'),
+                 Tables\Columns\TextColumn::make('numberPhone')->label('Nomor Telepon'),
                 Tables\Columns\TextColumn::make('email'),
                 Tables\Columns\TextColumn::make('role')
                     ->badge()

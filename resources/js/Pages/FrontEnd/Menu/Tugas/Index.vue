@@ -40,7 +40,7 @@ const getButtonLabel = (status) => {
     <AppLayout>
         <Head title="Tugas" />
 
-        <div class="py-6 md:py-10">
+        <div class="py-2 md:py-10">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h3 class="text-xl md:text-3xl font-bold text-gray-900 mb-6 text-center">
                     Inspeksi yang Harus Diselesaikan
@@ -91,8 +91,9 @@ const getButtonLabel = (status) => {
                         <div class="p-4">
                             <button
                                 @click="openModal(task)"
-                                class="inline-flex items-center justify-center w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md text-sm transition-colors"
+                                class="inline-flex items-center justify-center w-full px-3 py-2 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white font-medium rounded-md text-sm transition-colors"
                             >
+                            
                                 {{ getButtonLabel(task.status) }}
                                 <ArrowRightIcon class="ml-2 h-4 w-4" />
                             </button>
@@ -109,7 +110,7 @@ const getButtonLabel = (status) => {
                 <div class="text-center mt-6">
                     <Link
                         :href="route('inspections.history')"
-                        class="inline-block px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50"
+                        class="inline-block px-4 py-2 text-sm font-medium text-indigo-600 border border-indigo-600 rounded-md hover:bg-blue-50"
                     >
                         Lihat Inspeksi Lainnya
                     </Link>
@@ -121,7 +122,7 @@ const getButtonLabel = (status) => {
         <!-- Tombol Mengambang untuk Membuat Inspeksi Baru -->
         <Link
             :href="route('inspections.create.new')"
-            class="fixed bottom-16 right-6 z-40 p-4 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors duration-200 animate-bounce"
+            class="fixed bottom-16 right-6 z-40 p-4 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white rounded-full transition-colors duration-200 animate-bounce"
             title="Buat Inspeksi Baru"
         >
             <PlusIcon class="h-6 w-6" />
@@ -173,7 +174,7 @@ const getButtonLabel = (status) => {
                         <Link
                             :href="`/inspections/${selectedTask?.id}/start`"
                             method="get"
-                            class="px-4 py-2 bg-blue-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-blue-700"
+                            class="px-4 py-2 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white border border-transparent rounded-md text-sm font-medium hover:bg-blue-700"
                         >
                             {{ getButtonLabel(selectedTask?.status) }}
                         </Link>
