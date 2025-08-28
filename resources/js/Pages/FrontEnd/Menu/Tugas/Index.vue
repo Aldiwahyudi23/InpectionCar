@@ -71,12 +71,15 @@ const getButtonLabel = (status) => {
                         </div>
 
                         <!-- Mobil -->
-                        <div v-if="task.car" class="px-4 py-3 bg-gray-50 border-t border-gray-100">
+                        <div  class="px-4 py-3 bg-gray-50 border-t border-gray-100">
                             <div class="flex items-center">
                                 <CarIcon class="h-5 w-5 text-gray-500 mr-2" />
-                                <div class="text-sm font-medium text-gray-800">
+                                <div v-if="task.car" class="text-sm font-medium text-gray-800">
                                     {{ `${task.car.brand.name} ${task.car.model.name} ${task.car.type.name} ${task.car.cc} ${task.car.transmission} ${task.car.year}` }}
                                     <span class="text-gray-600">({{ task.car.fuel_type }})</span>
+                                </div>
+                                 <div v-else class="text-sm font-medium text-gray-800">
+                                    {{ task.car_name }}
                                 </div>
                             </div>
                         </div>
@@ -139,9 +142,9 @@ const getButtonLabel = (status) => {
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Konfirmasi</h3>
 
                     <!-- Info Mobil -->
-                    <div v-if="selectedTask?.car" class="flex items-center mb-4">
+                    <div  class="flex items-center mb-4">
                         <CarIcon class="h-8 w-8 text-blue-500 mr-3" />
-                        <div>
+                        <div v-if="selectedTask?.car">
                             <p class="font-medium text-gray-800">
                                 {{ `${selectedTask.car.brand.name} ${selectedTask.car.model.name} ${selectedTask.car.type.name}` }}
                             </p>
@@ -150,6 +153,9 @@ const getButtonLabel = (status) => {
                                 {{ selectedTask.car.year }}
                                 <span class="text-gray-500">({{ selectedTask.car.fuel_type }})</span>
                             </p>
+                        </div>
+                         <div v-else class="text-sm font-medium text-gray-800">
+                            {{ task.car_name }}
                         </div>
                     </div>
 

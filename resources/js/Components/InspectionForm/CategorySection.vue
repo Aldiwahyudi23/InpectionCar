@@ -99,7 +99,7 @@
           :error="form.errors[`results.${point.id}.status`]"
           @update:modelValue="updateResult(point.id, $event)"
           @update:notes="val => form.results[point.id].note = val"
-          @update:images="val => form.images[point.id].images = val"
+          @update:images="val => form.images[point.id] = val"
           @save="saveResult(point.id)"
           @hapus="HapusPoint(point.id)"
         />

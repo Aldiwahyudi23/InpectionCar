@@ -7,14 +7,14 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
+// Route::get('/', function () {
+//     return Inertia::render('Welcome', [
+//         'canLogin' => Route::has('login'),
+//         'canRegister' => Route::has('register'),
+//         'laravelVersion' => Application::VERSION,
+//         'phpVersion' => PHP_VERSION,
+//     ]);
+// });
 
 Route::get('/login-otp', [OtpController::class, 'showLoginForm'])->name('login-otp');
 Route::post('/check-phone', [OtpController::class, 'checkPhone'])->name('check-phone');
@@ -22,9 +22,9 @@ Route::post('/verify-otp', [OtpController::class, 'verifyOtp'])->name('verify-ot
 Route::post('/resend-otp', [OtpController::class, 'resendOtp'])->name('resend-otp');
 
 
-// Route::get('/', function () {
-//     return redirect()->route('login'); // Redirect langsung ke login
-// });
+Route::get('/', function () {
+    return redirect()->route('login'); // Redirect langsung ke login
+});
 
 Route::middleware([
     'auth:sanctum',
