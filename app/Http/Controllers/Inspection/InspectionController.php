@@ -15,6 +15,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -48,6 +49,8 @@ class InspectionController extends Controller
 
 public function start(Inspection $inspection)
 {
+   // Di controller atau blade
+    $encryptedId = Crypt::encrypt($inspection->id);
     // Validasi status yang diperbolehkan
     $allowedStatuses = ['draft', 'in_progress', 'revisi', 'jeda', 'pending_review'];
 
@@ -529,23 +532,27 @@ public function reviewPdf($id)
         'category',
     ])->findOrFail($id);
 
-    // Ambil semua points berdasarkan category
-    $inspection_points = InspectionPoint::with(['component', 'app_menu'])
-        ->whereHas('app_menu', function ($query) use ($inspection) {
-            $query->where('category_id', $inspection->category_id);
-        })->get();
-
-    // Load results dan images untuk setiap point
-    foreach ($inspection_points as $point) {
-        $point->results = InspectionResult::where('inspection_id', $inspection->id)
-            ->where('point_id', $point->id)
-            ->get();
-            
-        $point->images = InspectionImage::where('inspection_id', $inspection->id)
-            ->where('point_id', $point->id)
-            ->orderBy('created_at', 'asc')
-            ->get();
+     // cek status
+    if (in_array($inspection->status, ['draft', 'in_progress', 'jeda', 'revisi'])) {
+        return redirect()->route('job.index');
     }
+
+    $inspection_points = InspectionPoint::with([
+        'component',
+        'app_menu',
+        'results' => function ($q) use ($inspection) {
+            $q->where('inspection_id', $inspection->id);
+        },
+        'images' => function ($q) use ($inspection) {
+            $q->where('inspection_id', $inspection->id)
+              ->orderBy('created_at', 'asc');
+        }
+    ])
+    ->whereHas('app_menu', function ($query) use ($inspection) {
+        $query->where('category_id', $inspection->category_id);
+    })
+    ->get();
+
 
     $coverImage = InspectionImage::where('inspection_id', $inspection->id)
         ->whereHas('point', function ($q) {
@@ -563,7 +570,7 @@ public function reviewPdf($id)
         'coverImage' => $coverImage,
     ]);
 
-    // return view('inspection.inspection_report', compact('inspection', 'inspection_points', 'coverImage')); 
+    // return view('inspection.report.report1', compact('inspection', 'inspection_points', 'coverImage')); 
 }
 public function downloadPdf($id)
 {
@@ -575,23 +582,26 @@ public function downloadPdf($id)
         'category',
     ])->findOrFail($id);
 
-    // Ambil semua points berdasarkan category
-    $inspection_points = InspectionPoint::with(['component', 'app_menu'])
-        ->whereHas('app_menu', function ($query) use ($inspection) {
-            $query->where('category_id', $inspection->category_id);
-        })->get();
-
-    // Load results dan images untuk setiap point
-    foreach ($inspection_points as $point) {
-        $point->results = InspectionResult::where('inspection_id', $inspection->id)
-            ->where('point_id', $point->id)
-            ->get();
-            
-        $point->images = InspectionImage::where('inspection_id', $inspection->id)
-            ->where('point_id', $point->id)
-            ->orderBy('created_at', 'asc')
-            ->get();
+     // cek status
+    if (in_array($inspection->status, ['draft', 'in_progress', 'jeda', 'revisi'])) {
+        return redirect()->route('job.index');
     }
+    
+   $inspection_points = InspectionPoint::with([
+        'component',
+        'app_menu',
+        'results' => function ($q) use ($inspection) {
+            $q->where('inspection_id', $inspection->id);
+        },
+        'images' => function ($q) use ($inspection) {
+            $q->where('inspection_id', $inspection->id)
+              ->orderBy('created_at', 'asc');
+        }
+    ])
+    ->whereHas('app_menu', function ($query) use ($inspection) {
+        $query->where('category_id', $inspection->category_id);
+    })
+    ->get();
 
     $coverImage = InspectionImage::where('inspection_id', $inspection->id)
         ->whereHas('point', function ($q) {
@@ -603,13 +613,13 @@ public function downloadPdf($id)
         $coverImage = InspectionImage::where('inspection_id', $inspection->id)->first();
     }
 
-    $pdf = Pdf::loadView('inspection.inspection_report', [
+    $pdf = Pdf::loadView('inspection.report.report1', [
         'inspection' => $inspection,
         'inspection_points' => $inspection_points,
         'coverImage' => $coverImage,
     ])->setPaper('a4', 'portrait');
 
-    return $pdf->download('inspection_report_'.$inspection->car->model->name.'_('. $inspection->plate_number.').pdf');
+    return $pdf->download('inspection_report_'.$inspection->car_name.'_('. $inspection->plate_number.').pdf');
 }
 
 

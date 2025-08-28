@@ -195,13 +195,13 @@
       :options="selectedPoint?.settings?.radios || []"
       :selected-Point="selectedPoint"
       :selected-value="tempRadioValue"
-      :images-value="tempImages"
+      :images-value="form.images[selectedPoint.id]"
       :notes-value="tempNotes"
       :point="selectedPoint"
       :existing-data="getExistingPointData(selectedPoint?.id)"
       @update:selectedValue="tempRadioValue = $event"
       @update:notesValue="tempNotes = $event"
-      @update:imagesValue="tempImages = $event"
+      @update:imagesValue="form.images[selectedPoint.id] = $event"
       @save="saveAllData"
       @close="closeRadioModal"
       @hapus="hapusData"
@@ -414,6 +414,7 @@ const isMenuComplete = (menu) => {
 
   return menu.points.every(point => {
     const result = form.results[point.id];
+    const image = form.images[point.id];
     if (!result) return false;
     
     // Parse settings untuk point
@@ -435,11 +436,11 @@ const isMenuComplete = (menu) => {
         const selectedOption = settings.radios?.find(opt => opt.value === result.status);
         if (selectedOption?.settings) {
           // Validasi textarea jika required
-          if (selectedOption.settings.show_textarea && selectedOption.settings.required && !result.note?.trim()) {
+          if (selectedOption.settings.show_textarea && !result.note?.trim()) {
             return false;
           }
           // Validasi image jika required
-          if (selectedOption.settings.show_image_upload && selectedOption.settings.required && result.images?.length === 0) {
+          if (selectedOption.settings.show_image_upload && image?.length === 0) {
             return false;
           }
         }
@@ -447,7 +448,7 @@ const isMenuComplete = (menu) => {
       
       case 'imageTOradio':
         // Harus ada gambar DAN pilihan radio
-        if (result.images?.length === 0 || !result.status) return false;
+        if (image?.length === 0 || !result.status) return false;
         
         // Cek requirements tambahan dari opsi yang dipilih
         const selectedOptionImage = settings.radios?.find(opt => opt.value === result.status);
@@ -460,7 +461,7 @@ const isMenuComplete = (menu) => {
         return true;
       
       case 'image':
-        return result.images?.length > 0;
+        return image?.length > 0;
       
       default:
         return !!result.status || !!result.note?.trim();

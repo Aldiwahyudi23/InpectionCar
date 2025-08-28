@@ -87,7 +87,7 @@
           v-if="point.input_type === 'radio'"
           v-model="form.results[point.id].status"
           :notes="form.results[point.id].note"
-          :images="form.results[point.id].images"
+          :images="form.images[point.id]"
           :required="point.settings?.is_required"
           :point-id="point.id"  
           :point="point"
@@ -99,7 +99,7 @@
           :error="form.errors[`results.${point.id}.status`]"
           @update:modelValue="updateResult(point.id, $event)"
           @update:notes="val => form.results[point.id].note = val"
-          @update:images="val => form.results[point.id].images = val"
+          @update:images="val => form.images[point.id].images = val"
           @save="saveResult(point.id)"
           @hapus="HapusPoint(point.id)"
         />
@@ -108,7 +108,7 @@
           v-if="point.input_type === 'imageTOradio'"
           v-model="form.results[point.id].status"
           :notes="form.results[point.id].note"
-          :images="form.results[point.id].images"
+          :images="form.images[point.id]"
           :required="point.settings?.is_required"
           :point-id="point.id"  
           :inspection-id="inspectionId" 
@@ -120,7 +120,7 @@
           :error="form.errors[`results.${point.id}.status`]"
           @update:modelValue="updateResult(point.id, $event)"
           @update:notes="val => form.results[point.id].note = val"
-          @update:images="val => form.results[point.id].images = val"
+          @update:images="val => form.images[point.id] = val"
           @save="saveResult(point.id)"
           @hapus="HapusPoint(point.id)"
         />
@@ -182,23 +182,59 @@ const defaultRadioOptions = [
 
 const isPointComplete = (point) => {
   const result = props.form.results[point.id];
+  const image = props.form.images[point.id];
+
   if (!result) return false;
   
+
   switch(point.input_type) {
-    case 'text':
-    case 'number':
-    case 'date':
-    case 'account':
+     case 'text':
+      case 'number':
+      case 'date':
+      case 'account':
+      case 'textarea':
       return !!result.note;
+
     case 'select':
     case 'radio':
-      return !!result.status;
+      if (!result.status) return false;
+        
+        // Cek jika opsi yang dipilih memiliki requirements tambahan
+        const selectedOption = point.settings.radios?.find(opt => opt.value === result.status);
+        if (selectedOption?.settings) {
+          // Validasi textarea jika required
+          if (selectedOption.settings.show_textarea && !result.note?.trim()) {
+            return false;
+          }
+          // Validasi image jika required
+          if (selectedOption.settings.show_image_upload && image?.length === 0) {
+            return false;
+          }
+        }
+        return true;
+
+     case 'imageTOradio':
+        // Harus ada gambar DAN pilihan radio
+        if (image?.length === 0 || !result.status) return false;
+        
+        // Cek requirements tambahan dari opsi yang dipilih
+        const selectedOptionImage = point.settings.radios?.find(opt => opt.value === result.status);
+        if (selectedOptionImage?.settings) {
+          // Validasi textarea jika required
+          if (selectedOptionImage.settings.show_textarea && !result.note?.trim()) {
+            return false;
+          }
+        }
+        return true;
+
     case 'image':
-      return result.images?.length > 0;
+      return image.length > 0;
+
     default:
-      return false;
+        return !!result.status || !!result.note?.trim();
   }
 };
+
 
 const updateResult = (pointId, value) => {
   emit('updateResult', { pointId, value });

@@ -56,45 +56,11 @@ const getStatusClass = (status) => {
                     </div>
                 </template>
                 <div>
-                    <h2>{{ inspection.car.brand.name.toUpperCase() }} {{ inspection.car.model.name.toUpperCase() }} {{ inspection.car.type.name.toUpperCase() }}</h2>
-                    <h3>{{ inspection.car.year }} {{ inspection.car.engine_size }} CC {{ inspection.car.fuel_type }} ({{ inspection.car.model.period ?? '' }})</h3>
+                    <h2>{{ inspection.car_name }} 
+                        </h2>
                 </div>
             </div>
 
-            <div class="car-info">
-                <table>
-                    <tbody>
-                        <tr>
-                            <td>Nomor Polisi</td>
-                            <td>{{ inspection.plate_number }}</td>
-                        </tr>
-                        <tr>
-                            <td>Merek</td>
-                            <td>{{ inspection.car.brand.name }}</td>
-                        </tr>
-                        <tr>
-                            <td>Model</td>
-                            <td>{{ inspection.car.model.name }}</td>
-                        </tr>
-                        <tr>
-                            <td>Tipe</td>
-                            <td>{{ inspection.car.type.name }}</td>
-                        </tr>
-                        <tr>
-                            <td>Periode Model</td>
-                            <td>{{ inspection.car.model.period ?? '-' }}</td>
-                        </tr>
-                        <tr>
-                            <td>Warna</td>
-                            <td>{{ inspection.car.color }}</td>
-                        </tr>
-                        <tr>
-                            <td>Tahun Pembuatan</td>
-                            <td>{{ inspection.car.year }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
         </div>
 
         <h2 class="results-title">Hasil Inspeksi</h2>

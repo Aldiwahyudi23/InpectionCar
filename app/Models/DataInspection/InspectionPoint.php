@@ -77,13 +77,23 @@ class InspectionPoint extends Model
 
     public function results()
     {
-        return $this->hasMany(InspectionResult::class, 'inspection_id', 'id');
+        return $this->hasMany(InspectionResult::class, 'point_id', 'id');
     }
 
     public function images()
     {
         return $this->hasMany(InspectionImage::class, 'point_id', 'id');
     }
+
+    public function getShowImageUploadAttribute()
+{
+    return $this->settings['show_image_upload'] ?? false;
+}
+
+public function getShowTextareaAttribute()
+{
+    return $this->settings['show_textarea'] ?? false;
+}
 
 
 }
