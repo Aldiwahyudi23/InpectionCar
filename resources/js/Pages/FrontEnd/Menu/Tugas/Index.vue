@@ -155,7 +155,7 @@ const getButtonLabel = (status) => {
                             </p>
                         </div>
                          <div v-else class="text-sm font-medium text-gray-800">
-                            {{ task.car_name }}
+                            {{ selectedTask?.car_name }}
                         </div>
                     </div>
 

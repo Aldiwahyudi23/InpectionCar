@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Hash;
 
 class UserResource extends Resource
 {
@@ -24,35 +25,58 @@ class UserResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
-                Forms\Components\TextInput::make('name')->required(),
-                Forms\Components\TextInput::make('numberPhone')->label('Nomor Telepon')->tel()->nullable(),
-                Forms\Components\TextInput::make('email')->email()->required(),
-                Forms\Components\Select::make('role')
-                    ->options([
-                        'admin' => 'Admin',
-                        'inspektor' => 'Inspektor',
-                        'user' => 'User',
-                    ])
-                    ->required(),
-            ]);
+        ->schema([
+            Forms\Components\TextInput::make('name')
+                ->required(),
+            Forms\Components\TextInput::make('numberPhone')
+                ->label('Nomor Telepon')
+                ->tel()
+                ->nullable(),
+            Forms\Components\TextInput::make('email')
+                ->email()
+                ->required()
+                ->unique(ignoreRecord: true), // Pastikan email unik saat create
+            Forms\Components\TextInput::make('password')
+                ->password()
+                ->dehydrateStateUsing(fn (string $state): string => Hash::make($state))
+                ->dehydrated(fn (string | null $state): bool => filled($state))
+                ->required(fn (string $operation): bool => $operation === 'create')
+                ->default('cekMobilcusss'), // Mengatur nilai default
+            Forms\Components\Select::make('roles')
+                ->relationship('roles', 'name')
+                ->preload()
+                ->required(),
+        ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->columns([
-                 Tables\Columns\TextColumn::make('name'),
-                 Tables\Columns\TextColumn::make('numberPhone')->label('Nomor Telepon'),
-                Tables\Columns\TextColumn::make('email'),
-                Tables\Columns\TextColumn::make('role')
-                    ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'admin' => 'danger',
-                        'inspektor' => 'warning',
-                        'user' => 'success',
-                    }),
-            ])
+           ->columns([
+            Tables\Columns\TextColumn::make('name')
+                ->searchable()
+                ->sortable(),
+            Tables\Columns\TextColumn::make('email')
+                ->searchable()
+                ->sortable(),
+            Tables\Columns\TextColumn::make('roles.name')
+                ->label('Roles')
+                ->badge()
+                ->sortable(),
+            Tables\Columns\TextColumn::make('numberPhone')
+                ->label('Nomor Telepon')
+                ->searchable(),
+            Tables\Columns\IconColumn::make('email_verified_at')
+                ->label('Email Terverifikasi')
+                ->icon(fn ($record): string => $record->email_verified_at ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')
+                ->color(fn ($record): string => $record->email_verified_at ? 'success' : 'danger')
+                ->tooltip(fn ($record): string => $record->email_verified_at ? 'Terverifikasi' : 'Belum Terverifikasi'),
+            Tables\Columns\TextColumn::make('created_at')
+                ->label('Dibuat Pada')
+                ->dateTime()
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
+        ])
             ->filters([
                 // Tables\Filters\TrashedFilter::make(),
             ])

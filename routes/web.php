@@ -16,6 +16,10 @@ use Inertia\Inertia;
 //     ]);
 // });
 
+// Panggil dengan parameter role yang diinginkan
+// ->middleware(['auth', CheckSpatieRole::class . ':admin']);
+// ->middleware(['auth', CheckSpatieRole::class . ':inspektor']);
+
 Route::get('/login-otp', [OtpController::class, 'showLoginForm'])->name('login-otp');
 Route::post('/check-phone', [OtpController::class, 'checkPhone'])->name('check-phone');
 Route::post('/verify-otp', [OtpController::class, 'verifyOtp'])->name('verify-otp');
@@ -77,38 +81,4 @@ Route::middleware([
     Route::get('/inspections/{id}/download-pdf', [InspectionController::class, 'downloadPdf'])
         ->name('inspections.download.pdf');
 });
-
-     
-    // Store inspection results
-Route::post('/inspections/{inspection}/store-results', [InspectionController::class, 'storeResults'])
-        ->name('inspections.store-results');
-
-// routes/web.php
-Route::post('/inspections/save-result', [InspectionController::class, 'saveResult'])->name('inspections.save-result');
-Route::post('/inspections/delete-result-image', [InspectionController::class, 'deleteResultImage'])->name('inspections.delete-result');
-// Di web.php
-Route::post('/inspections/{inspection}/vehicle-details', [InspectionController::class, 'updateVehicleDetails'])
-    ->name('inspections.updateVehicleDetails');
-
-Route::post('/inspections/{inspection}/conclusion', [InspectionController::class, 'updateConclusion'])
-    ->name('inspections.updateConclusion');
-    
-Route::post('/inspections/upload-image', [InspectionController::class, 'uploadImage'])->name('inspections.upload-image');
-Route::delete('/inspections/delete-image', [InspectionController::class, 'deleteImage'])->name('inspections.delete-image');
-// Final submit
-Route::post('/inspections/{id}/final-submit', [InspectionController::class, 'finalSubmit'])
-    ->name('inspections.final-submit');
-
-// Review page
-Route::get('/inspections/{id}/review', [InspectionController::class, 'review'])
-    ->name('inspections.review');
-
-Route::get('/inspections/{id}/review-pdf', [InspectionController::class, 'reviewPdf'])
-    ->name('inspections.review.pdf');
-
-    // Generate PDF
-Route::get('/inspections/{id}/download-pdf', [InspectionController::class, 'downloadPdf'])
-    ->name('inspections.download.pdf');
-
-
 

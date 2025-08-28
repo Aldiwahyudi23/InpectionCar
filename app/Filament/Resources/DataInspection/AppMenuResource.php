@@ -38,7 +38,7 @@ class AppMenuResource extends Resource
                         'menu' => 'Menu',
                         'damage' => 'Kerusakan',
                     ])
-                    ->default('damage')
+                    ->default('menu')
                     ->required(),
 
                 Forms\Components\Toggle::make('is_active')
