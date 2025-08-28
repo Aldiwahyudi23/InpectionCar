@@ -211,7 +211,7 @@ const toggleProfileDropdown = () => {
             </nav>
 
             <!-- Mobile Bottom Navigation -->
-            <nav class="md:hidden fixed bottom-0 w-full bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg z-100 rounded-t-3xl">
+            <nav class="md:hidden fixed bottom-0 w-full bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg z-50 rounded-t-3xl">
                 <div class="flex justify-around items-center py-3">
                     <!-- Home -->
                     <Link

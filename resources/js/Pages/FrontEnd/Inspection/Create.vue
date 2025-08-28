@@ -64,9 +64,7 @@
                                 <div class="font-medium text-gray-900">
                                     {{ formatCarName(car) }}
                                 </div>
-                                <div class="text-sm text-gray-500">
-                                    {{ car.year }} • {{ car.cc }}cc • {{ car.transmission }} • {{ car.fuel_type }}
-                                </div>
+                               
                             </div>
                         </div>
                         <!-- Pesan jika tidak ada hasil -->
@@ -149,25 +147,27 @@
                     {{ buttonText }}
                 </button>
             </div>
-                      <!-- Bagian ini hanya tampil jika car_id ada -->
+
+            <!-- Bagian ini hanya tampil jika car_id ada -->
             <div v-if="form.car_id && selectedCar" class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <div v-if="selectedCar.description" class="mb-4">
                     <h3 class="text-sm font-medium text-gray-700 mb-2">Deskripsi:</h3>
-                    <p class="text-gray-600 text-sm">{{ selectedCar.description }}</p>
+                    <div class="prose prose-sm max-w-none text-gray-600" v-html="selectedCar.description"></div>
                 </div>
 
                 <div v-if="carImages.length > 0">
                     <h3 class="text-sm font-medium text-gray-700 mb-3">Gambar Mobil:</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                         <div 
-                            v-for="image in carImages" 
-                            :key="image.id"
-                            class="relative group"
+                            v-for="(image, index) in carImages" 
+                            :key="image.id || index"
+                            class="relative group cursor-pointer"
+                            @click="openLightbox(index)"
                         >
                             <img 
-                                :src="image.file_path" 
+                                :src="getImageSrc(image)" 
                                 :alt="image.name || 'Car Image'"
-                                class="w-full h-24 object-cover rounded-lg border border-gray-200"
+                                class="w-full h-24 object-cover rounded-lg border border-gray-200 transition-transform duration-200 group-hover:scale-105"
                             >
                             <div 
                                 v-if="image.note"
@@ -183,12 +183,65 @@
                 </div>
             </div>
             
+            <!-- Lightbox Modal -->
+            <div v-if="showLightbox" class="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4" @click="closeLightbox">
+                <div class="relative max-w-4xl max-h-full w-full h-full flex items-center justify-center">
+                    <!-- Close Button -->
+                    <button 
+                        @click="closeLightbox" 
+                        class="absolute top-4 right-4 z-10 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-70 transition-colors"
+                    >
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+
+                    <!-- Navigation Arrows -->
+                    <button 
+                        v-if="carImages.length > 1"
+                        @click.stop="prevImage" 
+                        class="absolute left-4 z-10 text-white bg-black bg-opacity-50 rounded-full p-3 hover:bg-opacity-70 transition-colors"
+                    >
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+
+                    <button 
+                        v-if="carImages.length > 1"
+                        @click.stop="nextImage" 
+                        class="absolute right-4 z-10 text-white bg-black bg-opacity-50 rounded-full p-3 hover:bg-opacity-70 transition-colors"
+                    >
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+
+                    <!-- Image Display -->
+                    <img 
+                        :src="getImageSrc(carImages[currentImageIndex])" 
+                        :alt="'Car Image ' + (currentImageIndex + 1)"
+                        class="max-w-full max-h-full object-contain"
+                        @click.stop
+                    >
+
+                    <!-- Image Counter -->
+                    <div v-if="carImages.length > 1" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white bg-black bg-opacity-50 px-3 py-1 rounded-full text-sm">
+                        {{ currentImageIndex + 1 }} / {{ carImages.length }}
+                    </div>
+
+                    <!-- Image Note -->
+                    <div v-if="carImages[currentImageIndex]?.note" class="absolute bottom-4 left-4 text-white bg-black bg-opacity-50 px-3 py-1 rounded text-sm max-w-md">
+                        {{ carImages[currentImageIndex].note }}
+                    </div>
+                </div>
+            </div>
         </div>
     </AppLayout>
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
 import { useForm, Head } from '@inertiajs/vue3';
 import { debounce } from 'lodash';
 import AppLayout from '@/Layouts/AppLayout.vue';
@@ -216,6 +269,10 @@ const isSearching = ref(false);
 const filteredCars = ref([]);
 const selectedCar = ref(null);
 const carImages = ref([]);
+
+// State untuk lightbox
+const showLightbox = ref(false);
+const currentImageIndex = ref(0);
 
 // computed properties untuk validasi dan teks tombol
 const isFormValid = computed(() => {
@@ -245,6 +302,11 @@ const formatCarName = (car) => {
     if (car.brand?.name) parts.push(car.brand.name);
     if (car.model?.name) parts.push(car.model.name);
     if (car.type?.name) parts.push(car.type.name);
+    if (car.cc) parts.push(`${car.cc}cc`);
+    if (car.transmission) parts.push(car.transmission);
+    if (car.fuel_type) parts.push(car.fuel_type);
+    if (car.year) parts.push(car.year.toString());
+    if (car.production_period) parts.push(`(${car.production_period})`);
     return parts.join(' ');
 };
 
@@ -287,14 +349,67 @@ const loadCarImages = async (carId) => {
     try {
         const response = await fetch(`/api/cars/${carId}/images`);
         if (response.ok) {
-            carImages.value = await response.json();
+            const data = await response.json();
+            carImages.value = Array.isArray(data) ? data : [];
         } else {
             carImages.value = [];
         }
-    } catch {
+    } catch (error) {
+        console.error('Error loading car images:', error);
         carImages.value = [];
     }
 };
+
+const getImageSrc = (image) => {
+    if (!image || !image.file_path) return '';
+    return `/storage/${image.file_path}`;
+};
+
+// Lightbox functions
+const openLightbox = (index) => {
+    currentImageIndex.value = index;
+    showLightbox.value = true;
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+};
+
+const closeLightbox = () => {
+    showLightbox.value = false;
+    document.body.style.overflow = ''; // Re-enable scrolling
+};
+
+const nextImage = () => {
+    currentImageIndex.value = (currentImageIndex.value + 1) % carImages.value.length;
+};
+
+const prevImage = () => {
+    currentImageIndex.value = (currentImageIndex.value - 1 + carImages.value.length) % carImages.value.length;
+};
+
+// Keyboard navigation for lightbox
+const handleKeydown = (event) => {
+    if (!showLightbox.value) return;
+    
+    switch (event.key) {
+        case 'Escape':
+            closeLightbox();
+            break;
+        case 'ArrowRight':
+            nextImage();
+            break;
+        case 'ArrowLeft':
+            prevImage();
+            break;
+    }
+};
+
+// Add event listener for keyboard navigation
+onMounted(() => {
+    window.addEventListener('keydown', handleKeydown);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeydown);
+});
 
 // Lacak perubahan pada carSearchQuery untuk mereset car_id
 watch(carSearchQuery, (newValue) => {
@@ -347,3 +462,31 @@ const submitInspection = () => {
     });
 };
 </script>
+
+<style scoped>
+/* Custom styles for lightbox */
+.fixed {
+    position: fixed;
+}
+.inset-0 {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+.z-50 {
+    z-index: 50;
+}
+.object-contain {
+    object-fit: contain;
+}
+.transition-transform {
+    transition-property: transform;
+}
+.duration-200 {
+    transition-duration: 200ms;
+}
+.group-hover\:scale-105:hover {
+    transform: scale(1.05);
+}
+</style>

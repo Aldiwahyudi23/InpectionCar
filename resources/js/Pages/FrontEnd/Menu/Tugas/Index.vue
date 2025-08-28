@@ -125,7 +125,7 @@ const getButtonLabel = (status) => {
         <!-- Tombol Mengambang untuk Membuat Inspeksi Baru -->
         <Link
             :href="route('inspections.create.new')"
-            class="fixed bottom-16 right-6 z-40 p-4 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white rounded-full transition-colors duration-200 animate-bounce"
+            class="fixed bottom-24 right-6 z-40 p-4 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white rounded-full transition-colors duration-200 animate-bounce"
             title="Buat Inspeksi Baru"
         >
             <PlusIcon class="h-6 w-6" />

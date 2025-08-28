@@ -46,6 +46,14 @@ return [
             'throw' => false,
             'report' => false,
         ],
+        
+        'car_images' => [
+                'driver' => 'local',
+                'root' => storage_path('app/public/car-images'), // BENAR
+                'url' => env('APP_URL').'/storage/car-images', // BENAR
+                'visibility' => 'public',
+            
+            ],
 
         's3' => [
             'driver' => 's3',

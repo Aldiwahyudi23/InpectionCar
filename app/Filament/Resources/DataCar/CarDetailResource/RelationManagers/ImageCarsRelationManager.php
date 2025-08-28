@@ -41,7 +41,11 @@ class ImageCarsRelationManager extends RelationManager
             ->recordTitleAttribute('name')
             ->columns([
                  Tables\Columns\TextColumn::make('name')->label('Nama'),
-                Tables\Columns\ImageColumn::make('file_path')->label('Gambar'),
+               Tables\Columns\ImageColumn::make('file_path')
+                ->label('Gambar')
+                ->disk('car_images') // Gunakan disk custom
+                ->width(50)
+                ->height(50),
                 Tables\Columns\TextColumn::make('note')->label('Catatan')->limit(30),
             ])
             ->filters([

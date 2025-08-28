@@ -169,11 +169,28 @@ class CarDetailResource extends Resource
                         return $state;
                     })
                     ->columnSpanFull(),
-                Forms\Components\Textarea::make('description')
+               Forms\Components\RichEditor::make('description')
                     ->label('Deskripsi')
-                    ->rows(4)
+                    ->toolbarButtons([
+                        'attachFiles',
+                        'blockquote',
+                        'bold',
+                        'bulletList',
+                        'codeBlock',
+                        'h2',
+                        'h3',
+                        'italic',
+                        'link',
+                        'orderedList',
+                        'redo',
+                        'strike',
+                        'underline',
+                        'undo',
+                    ])
+                    ->fileAttachmentsDirectory('descriptions') // Folder untuk upload file
                     ->placeholder('Masukkan deskripsi mobil di sini...')
-                    ->helperText('Deskripsi tambahan tentang mobil.')
+                    ->helperText('Deskripsi tambahan tentang mobil. Format HTML akan dipertahankan.')
+                    ->columnSpanFull(),
             ]);
     }
 
