@@ -60,18 +60,19 @@ class InspectionResource extends Resource
               
                 Forms\Components\Select::make('status')
                     ->options([
-                        'draft' => 'Draft',
-                        'in_progress' => 'In Progress',
-                        'pending_review' => 'Pending Review',
-                        'approved' => 'Approved',
-                        'rejected' => 'Rejected',
-                        'revision_required' => 'Revision Required',
-                        'completed' => 'Completed',
-                        'cancelled' => 'Cancelled',
+                        'draft' => 'Draf',
+                        'in_progress' => 'Sedang Diproses',
+                        'pending' => 'Ditunda',
+                        'pending_review' => 'Menunggu Tinjauan',
+                        'approved' => 'Disetujui', 
+                        'rejected' => 'Ditolak',
+                        'revision' => 'Perlu Revisi',
+                        'completed' => 'Selesai',
+                        'cancelled' => 'Dibatalkan',
                     ])
                     ->default('draft')
                     ->required(),
-                    
+                                    
                 Forms\Components\DateTimePicker::make('inspection_date')
                     ->label('Tanggal Inspeksi')
                     ->required()
@@ -138,10 +139,11 @@ class InspectionResource extends Resource
                     ->color(fn (string $state): string => match ($state) {
                         'draft' => 'gray',
                         'in_progress' => 'info',
+                        'pending' => 'warning',
                         'pending_review' => 'warning',
                         'approved' => 'success',
                         'rejected' => 'danger',
-                        'revision_required' => 'orange',
+                        'revision' => 'orange',
                         'completed' => 'green',
                         'cancelled' => 'dark',
                         default => 'gray',
@@ -176,14 +178,15 @@ class InspectionResource extends Resource
                  Tables\Filters\TrashedFilter::make(),
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
-                        'draft' => 'Draft',
-                        'in_progress' => 'In Progress',
-                        'pending_review' => 'Pending Review',
-                        'approved' => 'Approved',
-                        'rejected' => 'Rejected',
-                        'revision_required' => 'Revision Required',
-                        'completed' => 'Completed',
-                        'cancelled' => 'Cancelled',
+                        'draft' => 'Draf',
+                        'in_progress' => 'Sedang Diproses',
+                        'pending' => 'Ditunda',
+                        'pending_review' => 'Menunggu Tinjauan',
+                        'approved' => 'Disetujui', 
+                        'rejected' => 'Ditolak',
+                        'revision' => 'Perlu Revisi',
+                        'completed' => 'Selesai',
+                        'cancelled' => 'Dibatalkan',
                     ]),
                 Tables\Filters\SelectFilter::make('category')
                     ->relationship('category', 'name'),
@@ -197,8 +200,8 @@ class InspectionResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    Tables\Actions\ForceDeleteBulkAction::make(),
-                    Tables\Actions\RestoreBulkAction::make(),
+                    // Tables\Actions\ForceDeleteBulkAction::make(),
+                    // Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ]);
     }
@@ -220,11 +223,11 @@ class InspectionResource extends Resource
         ];
     }
 
-    public static function getEloquentQuery(): Builder
-    {
-        return parent::getEloquentQuery()
-            ->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]);
-    }
+    // public static function getEloquentQuery(): Builder
+    // {
+    //     return parent::getEloquentQuery()
+    //         ->withoutGlobalScopes([
+    //             SoftDeletingScope::class,
+    //         ]);
+    // }
 }

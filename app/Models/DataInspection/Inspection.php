@@ -27,6 +27,7 @@ class Inspection extends Model
         'settings',
         'notes',
         'file',
+        'code',
     ];
 
     protected $casts = [

@@ -53,6 +53,10 @@ Route::middleware([
     Route::get('/inspections/create/new', [InspectionController::class, 'create'])
             ->name('inspections.create.new');
     Route::post('/inspections', [InspectionController::class, 'store'])->name('inspections.store');
+    Route::post('/inspections/{inspection}/cancel', [InspectionController::class, 'cancel'])
+    ->name('inspections.cancel');
+
+
      // Store inspection results
     Route::post('/inspections/{inspection}/store-results', [InspectionController::class, 'storeResults'])
             ->name('inspections.store-results');

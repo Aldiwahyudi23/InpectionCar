@@ -12,6 +12,7 @@ use App\Models\DataInspection\InspectionImage;
 use App\Models\DataInspection\InspectionPoint;
 use App\Models\DataInspection\InspectionResult;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
@@ -55,7 +56,7 @@ public function start($inspection)
 
         $inspection = Inspection::find($id);
         // Validasi status yang diperbolehkan
-        $allowedStatuses = ['draft', 'in_progress', 'revisi', 'jeda', 'pending_review'];
+        $allowedStatuses = ['draft', 'in_progress', 'revision', 'pending'];
 
         if (! in_array($inspection->status, $allowedStatuses)) {
             return redirect()->route('job.index')
@@ -326,129 +327,229 @@ public function store(Request $request)
         return back()->with('success', 'Kesimpulan diperbarui');
     }
     // Di InspectionController.php
-public function updateVehicleDetails(Request $request, Inspection $inspection)
-{
-    // 1. Validasi data yang masuk, termasuk `car_id` sebagai opsional
-    $validated = $request->validate([
-        'plate_number' => 'required|string|max:20',
-        'car_id' => 'nullable',
-        'car_name' => 'nullable|string|max:100',
-    ]);
-
-    // 2. Gunakan Route Model Binding untuk memperbarui data
-    //    Tidak perlu Inspection::find() lagi
-    $inspection->update([
-        'plate_number' => $validated['plate_number'],
-        'car_id' => $validated['car_id'],
-        'car_name' => $validated['car_name'],
-    ]);
-
-    // 3. Kembalikan respons yang sesuai dengan Inertia.js
-    //    Redirect ke halaman sebelumnya dengan pesan flash
-    return redirect()->back()->with('success', 'Data kendaraan berhasil diperbarui.');
-}
-
-public function uploadImage(Request $request)
+    public function updateVehicleDetails(Request $request, Inspection $inspection)
     {
-        // Debug 1: Periksa semua data yang masuk
-        // dd($request->all());
-
-        $request->validate([
-            'point_id' => 'required',
-            'image' => 'required|image|max:2048', // Validasi tetap penting
+        // 1. Validasi data yang masuk, termasuk `car_id` sebagai opsional
+        $validated = $request->validate([
+            'plate_number' => 'required|string|max:20',
+            'car_id' => 'nullable',
+            'car_name' => 'nullable|string|max:100',
         ]);
 
-        // Debug 2: Pastikan file 'image' ada dan merupakan instance UploadedFile
-        if (!$request->hasFile('image')) {
-            return response()->json(['message' => 'No image file found in request.'], 400);
-        }
-        $uploadedFile = $request->file('image');
-        // dd($uploadedFile); // Ini harus menampilkan objek UploadedFile
+        // 2. Gunakan Route Model Binding untuk memperbarui data
+        //    Tidak perlu Inspection::find() lagi
+        $inspection->update([
+            'plate_number' => $validated['plate_number'],
+            'car_id' => $validated['car_id'],
+            'car_name' => $validated['car_name'],
+        ]);
 
-        // Tentukan nama file unik dan folder tujuan
-        $filename = 'inspection-image-' . time() . '.' . $uploadedFile->getClientOriginalExtension();
-        $destinationPath = public_path('/storage/inspection-image'); // Folder tujuan di dalam public
+        // 3. Kembalikan respons yang sesuai dengan Inertia.js
+        //    Redirect ke halaman sebelumnya dengan pesan flash
+        return redirect()->back()->with('success', 'Data kendaraan berhasil diperbarui.');
+    }
 
-        // Debug 3: Coba simpan file menggunakan move()
-        try {
-            $uploadedFile->move($destinationPath, $filename);
-        } catch (\Exception $e) {
-            // Debug 4: Tangkap error jika penyimpanan gagal
-            Log::error('File upload failed: ' . $e->getMessage());
-            return response()->json(['message' => 'Failed to move image: ' . $e->getMessage()], 500);
-        }
+// public function uploadImage(Request $request)
+//     {
+//         // Debug 1: Periksa semua data yang masuk
+//         // dd($request->all());
 
-        // Path yang akan disimpan ke database (relatif ke folder public)
-        $publicPathForDb = 'storage/inspection-image/' . $filename; 
+//         $request->validate([
+//             'point_id' => 'required',
+//             'image' => 'required|image|max:2048', // Validasi tetap penting
+//         ]);
+
+//         // Debug 2: Pastikan file 'image' ada dan merupakan instance UploadedFile
+//         if (!$request->hasFile('image')) {
+//             return response()->json(['message' => 'No image file found in request.'], 400);
+//         }
+//         $uploadedFile = $request->file('image');
+//         // dd($uploadedFile); // Ini harus menampilkan objek UploadedFile
+
+//         // Tentukan nama file unik dan folder tujuan
+//         $filename = 'inspection-image-' . time() . '.' . $uploadedFile->getClientOriginalExtension();
+//         $destinationPath = public_path('/storage/inspection-image'); // Folder tujuan di dalam public
+
+//         // Debug 3: Coba simpan file menggunakan move()
+//         try {
+//             $uploadedFile->move($destinationPath, $filename);
+//         } catch (\Exception $e) {
+//             // Debug 4: Tangkap error jika penyimpanan gagal
+//             Log::error('File upload failed: ' . $e->getMessage());
+//             return response()->json(['message' => 'Failed to move image: ' . $e->getMessage()], 500);
+//         }
+
+//         // Path yang akan disimpan ke database (relatif ke folder public)
+//         $publicPathForDb = 'storage/inspection-image/' . $filename; 
         
-        // URL yang akan digunakan di frontend
-        // Ini akan otomatis disajikan oleh web server
-        $publicUrl = asset($publicPathForDb); 
+//         // URL yang akan digunakan di frontend
+//         // Ini akan otomatis disajikan oleh web server
+//         $publicUrl = asset($publicPathForDb); 
 
-        // Debug 5: Periksa publicPathForDb dan publicUrl sebelum disimpan ke DB
-        // dd(['path_for_db' => $publicPathForDb, 'public_url' => $publicUrl]);
+//         // Debug 5: Periksa publicPathForDb dan publicUrl sebelum disimpan ke DB
+//         // dd(['path_for_db' => $publicPathForDb, 'public_url' => $publicUrl]);
 
-        $image = InspectionImage::create([
-            'inspection_id' => $request->inspection_id,
-            'point_id' => $request->point_id,
-            'image_path' => $publicPathForDb, // Simpan path relatif ini ke database
+//         $image = InspectionImage::create([
+//             'inspection_id' => $request->inspection_id,
+//             'point_id' => $request->point_id,
+//             'image_path' => $publicPathForDb, // Simpan path relatif ini ke database
+//         ]);
+
+//         return response()->json([
+//             'path' => $publicPathForDb, // Path yang disimpan di database
+//             'public_url' => $publicUrl, // URL lengkap untuk ditampilkan di frontend
+//             'image' => $image, // Mengandung image_path yang disimpan di DB
+//         ]);
+//     }
+
+
+
+
+//  public function deleteImage(Request $request)
+//     {
+//         $request->validate([
+//             'image_path' => 'required|string', // image_path adalah path relatif dari public (misal: 'inspection_uploads/images/nama.jpg')
+//             // Anda bisa tambahkan 'image_id' jika ingin menghapus berdasarkan ID juga
+//             // 'image_id' => 'sometimes|integer|exists:inspection_images,id',
+//         ]);
+
+//         $imagePathFromRequest = $request->image_path;
+
+//         // 1. Hapus file dari penyimpanan fisik (folder public)
+//         // Kita tahu file disimpan di public/inspection_uploads/images/
+//         // Jadi, kita perlu path absolut ke file tersebut.
+//         $fullPathToDelete = public_path($imagePathFromRequest);
+
+//         // Debugging: Pastikan path yang akan dihapus itu benar
+//         // dd($fullPathToDelete, file_exists($fullPathToDelete)); 
+
+//         if (file_exists($fullPathToDelete)) {
+//             try {
+//                 unlink($fullPathToDelete); // Gunakan unlink() untuk menghapus file fisik
+//                 // Atau, jika Anda ingin tetap menggunakan Storage Facade (meskipun tidak untuk upload):
+//                 // Storage::disk('your_public_disk_name')->delete($imagePathFromRequest);
+//                 // *your_public_disk_name* adalah nama disk yang menunjuk ke public/inspection_uploads, 
+//                 // ini bisa sedikit rumit jika tidak dikonfigurasi dengan benar.
+//                 // unlink() adalah cara yang lebih langsung dan dijamin bekerja untuk kasus ini.
+//             } catch (\Exception $e) {
+//                 // Log error jika gagal menghapus file
+//                 Log::error("Failed to delete image file: {$fullPathToDelete}. Error: {$e->getMessage()}");
+//                 return response()->json(['message' => 'Failed to delete image file.'], 500);
+//             }
+//         } else {
+//             // Log jika file tidak ditemukan (mungkin sudah dihapus sebelumnya atau path salah)
+//             Log::warning("Image file not found at: {$fullPathToDelete}. Skipping file deletion.");
+//         }
+
+//         // 2. Hapus dari database
+//         // Anda bisa hapus berdasarkan image_path atau image_id (jika dikirim)
+//         $deletedCount = InspectionImage::where('image_path', $imagePathFromRequest)->delete();
+
+//         if ($deletedCount > 0) {
+//             return response()->json(['success' => true, 'message' => 'Image and record deleted successfully.']);
+//         } else {
+//             // Ini terjadi jika record tidak ditemukan di DB (mungkin sudah dihapus)
+//             return response()->json(['success' => false, 'message' => 'Image record not found in database.'], 404);
+//         }
+//     }
+
+
+    /**
+     * Handle the upload of multiple images for an inspection point.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function uploadImage(Request $request)
+    {
+        // 1. Validate the request for multiple files
+        $request->validate([
+            'point_id' => 'required|integer',
+            'inspection_id' => 'required|integer', 
+            'images' => 'required|array', // Make sure 'images' is an array
+            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048', // Validate each file in the array
         ]);
 
+        $pointId = $request->input('point_id');
+        $inspectionId = $request->input('inspection_id');
+        $uploadedImages = [];
+
+        // 2. Loop through each uploaded file
+        foreach ($request->file('images') as $uploadedFile) {
+            // Generate a unique filename and destination path for each image
+            $filename = 'inspection-image-' . time() . '-' . uniqid() . '.' . $uploadedFile->getClientOriginalExtension();
+            $destinationPath = public_path('storage/inspection-image');
+
+            try {
+                // Move the file to the public storage directory
+                $uploadedFile->move($destinationPath, $filename);
+            } catch (\Exception $e) {
+                // Handle file move failure
+                Log::error('File upload failed: ' . $e->getMessage());
+                return response()->json(['message' => 'Failed to move image: ' . $e->getMessage()], 500);
+            }
+
+            // Create a path relative to the public directory for the database
+            $publicPathForDb = 'storage/inspection-image/' . $filename;
+            
+            // 3. Save the image information to the database
+            $image = InspectionImage::create([
+                'inspection_id' => $inspectionId,
+                'point_id' => $pointId,
+                'image_path' => $publicPathForDb,
+            ]);
+            
+            // Collect data for the response
+            $uploadedImages[] = [
+                'path' => $publicPathForDb,
+                'public_url' => asset($publicPathForDb),
+                'image_id' => $image->id,
+            ];
+        }
+
+        // 4. Return a successful JSON response with all uploaded image data
         return response()->json([
-            'path' => $publicPathForDb, // Path yang disimpan di database
-            'public_url' => $publicUrl, // URL lengkap untuk ditampilkan di frontend
-            'image' => $image, // Mengandung image_path yang disimpan di DB
+            'message' => 'Images uploaded successfully.',
+            'images' => $uploadedImages,
         ]);
     }
 
-
- public function deleteImage(Request $request)
+    /**
+     * Handle the deletion of an image.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function deleteImage(Request $request)
     {
         $request->validate([
-            'image_path' => 'required|string', // image_path adalah path relatif dari public (misal: 'inspection_uploads/images/nama.jpg')
-            // Anda bisa tambahkan 'image_id' jika ingin menghapus berdasarkan ID juga
-            // 'image_id' => 'sometimes|integer|exists:inspection_images,id',
+            'image_id' => 'required_without:image_path',
+            'image_path' => 'required_without:image_id',
         ]);
 
-        $imagePathFromRequest = $request->image_path;
-
-        // 1. Hapus file dari penyimpanan fisik (folder public)
-        // Kita tahu file disimpan di public/inspection_uploads/images/
-        // Jadi, kita perlu path absolut ke file tersebut.
-        $fullPathToDelete = public_path($imagePathFromRequest);
-
-        // Debugging: Pastikan path yang akan dihapus itu benar
-        // dd($fullPathToDelete, file_exists($fullPathToDelete)); 
-
-        if (file_exists($fullPathToDelete)) {
-            try {
-                unlink($fullPathToDelete); // Gunakan unlink() untuk menghapus file fisik
-                // Atau, jika Anda ingin tetap menggunakan Storage Facade (meskipun tidak untuk upload):
-                // Storage::disk('your_public_disk_name')->delete($imagePathFromRequest);
-                // *your_public_disk_name* adalah nama disk yang menunjuk ke public/inspection_uploads, 
-                // ini bisa sedikit rumit jika tidak dikonfigurasi dengan benar.
-                // unlink() adalah cara yang lebih langsung dan dijamin bekerja untuk kasus ini.
-            } catch (\Exception $e) {
-                // Log error jika gagal menghapus file
-                Log::error("Failed to delete image file: {$fullPathToDelete}. Error: {$e->getMessage()}");
-                return response()->json(['message' => 'Failed to delete image file.'], 500);
-            }
-        } else {
-            // Log jika file tidak ditemukan (mungkin sudah dihapus sebelumnya atau path salah)
-            Log::warning("Image file not found at: {$fullPathToDelete}. Skipping file deletion.");
+        $image = null;
+        if ($request->has('image_id')) {
+            $image = InspectionImage::find($request->image_id);
+        } elseif ($request->has('image_path')) {
+            $image = InspectionImage::where('image_path', $request->image_path)->first();
         }
 
-        // 2. Hapus dari database
-        // Anda bisa hapus berdasarkan image_path atau image_id (jika dikirim)
-        $deletedCount = InspectionImage::where('image_path', $imagePathFromRequest)->delete();
-
-        if ($deletedCount > 0) {
-            return response()->json(['success' => true, 'message' => 'Image and record deleted successfully.']);
-        } else {
-            // Ini terjadi jika record tidak ditemukan di DB (mungkin sudah dihapus)
-            return response()->json(['success' => false, 'message' => 'Image record not found in database.'], 404);
+        if (!$image) {
+            return response()->json(['message' => 'Image not found.'], 404);
         }
+
+        // Delete file from storage
+        $path = public_path($image->image_path);
+        if (file_exists($path)) {
+            unlink($path);
+        }
+
+        // Delete record from database
+        $image->delete();
+
+        return response()->json(['message' => 'Image deleted successfully.']);
     }
+
 
  public function deleteResultImage(Request $request)
 {
@@ -523,7 +624,16 @@ public function review($id)
     ])->findOrFail($id);
 
     // cek status
-    if (in_array($inspection->status, ['draft', 'in_progress', 'jeda', 'revisi'])) {
+    if (in_array($inspection->status, [
+        'draft', 
+        'in_progress', 
+        'pending', 
+        'revision',        
+        // 'rejected',
+        // 'revision',
+        // 'completed',
+        // 'cancelled'
+        ])) {
         return redirect()->route('job.index');
     }
 
@@ -548,7 +658,16 @@ public function reviewPdf($id)
     ])->findOrFail($id);
 
      // cek status
-    if (in_array($inspection->status, ['draft', 'in_progress', 'jeda', 'revisi'])) {
+    if (in_array($inspection->status, [
+        'draft', 
+        'in_progress', 
+        'pending', 
+        'revision',        
+        'rejected',
+        'revision',
+        'completed',
+        'cancelled'
+        ])) {
         return redirect()->route('job.index');
     }
 
@@ -602,7 +721,16 @@ public function downloadPdf($id)
     ])->findOrFail($id);
 
      // cek status
-    if (in_array($inspection->status, ['draft', 'in_progress', 'jeda', 'revisi'])) {
+    if (in_array($inspection->status, [
+        'draft', 
+        'in_progress', 
+        'pending', 
+        'revision',        
+        'rejected',
+        'revision',
+        'completed',
+        'cancelled'
+        ])) {
         return redirect()->route('job.index');
     }
     
@@ -664,6 +792,25 @@ public function approve(Request $request, Inspection $inspection)
     // $pdfPath = "inspections/{$inspection->id}.pdf";
     // Storage::put($pdfPath, $pdf->output());
     // $inspection->update(['pdf_path' => $pdfPath]);
+}
+
+public function cancel($inspection, Request $request)
+{
+    try {
+        $id = Crypt::decrypt($inspection);
+        $task = Inspection::findOrFail($id);
+        
+        // Update status dan simpan alasan
+        $task->update([
+            'status' => 'cancelled',
+            'notes' => $request->reason
+        ]);
+        
+        return redirect()->back()->with('success', 'Inspeksi berhasil dibatalkan');
+        
+    } catch (DecryptException $e) {
+        abort(404);
+    }
 }
 
 }

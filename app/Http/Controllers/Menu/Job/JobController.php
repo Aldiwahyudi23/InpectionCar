@@ -39,7 +39,9 @@ class JobController extends Controller
     public function history()
     {
         $tasks = Inspection::where('user_id', Auth::id())
-            ->whereNotIn('status', ['draft', 'in_progress', 'pending_review'])
+            ->whereNotIn('status', ['
+            draft', 'in_progress', 'pending_review'
+            ])
             ->with([
                 'car',
                 'car.brand',

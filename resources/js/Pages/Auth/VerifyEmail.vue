@@ -43,7 +43,7 @@ const verificationLinkSent = computed(() => props.status === 'verification-link-
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                     </svg>
-                    Tautan verifikasi baru telah dikirim ke alamat email Anda.
+                    Tautan verifikasi baru telah dikirim ke alamat email Anda. <br> Jika dipesan Email tidak muncul cek di SPAM di dalam menu email
                 </div>
 
                 <!-- Form -->

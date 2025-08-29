@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('inspections', function (Blueprint $table) {
+        Schema::create('inspection_histories', function (Blueprint $table) {
         $table->id();
         $table->foreignId('user_id')->constrained('users');
         $table->foreignId('category_id')->constrained('categories');
@@ -41,7 +41,8 @@ return new class extends Migration
         $table->text('file')->nullable();
         $table->string('code')->nullable();
         $table->timestamps();
-});
+        $table->softDeletes();
+        });
     }
 
     /**
@@ -49,6 +50,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('inspections');
+        Schema::dropIfExists('inspection_histories');
     }
 };

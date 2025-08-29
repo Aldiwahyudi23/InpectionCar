@@ -1,25 +1,52 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
-import { CalendarDaysIcon, ArrowRightIcon, PlusIcon } from '@heroicons/vue/24/outline';
-import { CarIcon } from 'lucide-vue-next'; // citycar icon
+import { Head, Link, useForm } from '@inertiajs/vue3';
+import { CalendarDaysIcon, ArrowRightIcon, PlusIcon, XMarkIcon } from '@heroicons/vue/24/outline';
+import { CarIcon } from 'lucide-vue-next';
 import { ref } from 'vue';
 
-defineProps({
+const props = defineProps({
     tasks: Array,
     encryptedIds: Object
 });
 
 const showModal = ref(false);
+const showCancelModal = ref(false);
 const selectedTask = ref(null);
+const cancelReason = ref('');
 
 const openModal = (task) => {
     selectedTask.value = task;
     showModal.value = true;
 };
 
+const openCancelModal = (task) => {
+    selectedTask.value = task;
+    showCancelModal.value = true;
+};
+
 const closeModal = () => {
     showModal.value = false;
+    showCancelModal.value = false;
+    cancelReason.value = '';
+};
+
+const cancelForm = useForm({
+    reason: ''
+});
+
+const submitCancel = () => {
+    if (!selectedTask.value) return;
+    
+    cancelForm.reason = cancelReason.value;
+    cancelForm.post(route('inspections.cancel', { 
+        inspection: props.encryptedIds[selectedTask.value.id] 
+    }), {
+        onSuccess: () => {
+            closeModal();
+            cancelReason.value = '';
+        }
+    });
 };
 
 // mapping button text berdasarkan status
@@ -98,11 +125,20 @@ const getButtonLabel = (status) => {
                             <p class="text-sm text-gray-800">{{ task.category.name }}</p>
                         </div>
 
-                        <!-- Button -->
-                        <div class="p-4">
+                        <!-- Buttons Container -->
+                        <div class="p-4 flex space-x-2">
+                            <!-- Tombol Batal -->
+                            <button
+                                @click="openCancelModal(task)"
+                                class="flex-6 px-3 py-2 bg-gray-200 text-gray-700 font-medium rounded-md text-sm hover:bg-gray-300 transition-colors"
+                            >
+                                Batal
+                            </button>
+
+                            <!-- Tombol Mulai/Lanjutkan -->
                             <button
                                 @click="openModal(task)"
-                                class="inline-flex items-center justify-center w-full px-3 py-2 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white font-medium rounded-md text-sm transition-colors"
+                                class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white font-medium rounded-md text-sm transition-colors"
                             >
                                 {{ getButtonLabel(task.status) }}
                                 <ArrowRightIcon class="ml-2 h-4 w-4" />
@@ -138,8 +174,7 @@ const getButtonLabel = (status) => {
             <PlusIcon class="h-6 w-6" />
         </Link>
 
-
-        <!-- Confirmation Modal -->
+        <!-- Modal Konfirmasi Mulai Inspeksi -->
         <div
             v-if="showModal"
             class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50"
@@ -198,6 +233,89 @@ const getButtonLabel = (status) => {
                         >
                             {{ getButtonLabel(selectedTask?.status) }}
                         </Link>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Batalkan Inspeksi -->
+        <div
+            v-if="showCancelModal"
+            class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50"
+        >
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+                <div class="p-6">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">Batalkan Inspeksi</h3>
+                        <button
+                            @click="closeModal"
+                            class="text-gray-400 hover:text-gray-600"
+                        >
+                            <XMarkIcon class="h-6 w-6" />
+                        </button>
+                    </div>
+
+                    <!-- Info Mobil -->
+                    <div class="flex items-start mb-4">
+                        <CarIcon class="h-8 w-8 text-red-500 mr-3 mt-1" />
+                        <div>
+                            <div v-if="selectedTask?.car">
+                                <p class="font-medium text-gray-800">
+                                    {{ `${selectedTask.car.brand.name} ${selectedTask.car.model.name} ${selectedTask.car.type.name}` }}
+                                </p>
+                                <p class="text-sm text-gray-600">
+                                    {{ selectedTask.car.cc }} • {{ selectedTask.car.transmission }} •
+                                    {{ selectedTask.car.year }}
+                                    <span class="text-gray-500">({{ selectedTask.car.fuel_type }})</span>
+                                </p>
+                            </div>
+                            <div v-else class="text-sm font-medium text-gray-800">
+                                {{ selectedTask?.car_name }}
+                            </div>
+                            <!-- Nomor Plat Mobil -->
+                            <div class="flex items-center mt-2">
+                                <span class="text-sm font-semibold uppercase tracking-wide text-gray-500 mr-2">no polisi:</span>
+                                <span class="text-base font-bold text-gray-900">{{ selectedTask?.plate_number }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Alasan -->
+                    <div class="mb-6">
+                        <label for="cancelReason" class="block text-sm font-medium text-gray-700 mb-2">
+                            Alasan Pembatalan *
+                        </label>
+                        <textarea
+                            id="cancelReason"
+                            v-model="cancelReason"
+                            rows="4"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Masukkan alasan pembatalan inspeksi..."
+                            required
+                        ></textarea>
+                        <p v-if="cancelForm.errors.reason" class="text-red-500 text-sm mt-1">
+                            {{ cancelForm.errors.reason }}
+                        </p>
+                    </div>
+
+                    <!-- Tombol -->
+                    <div class="flex justify-end space-x-3">
+                        <button
+                            @click="closeModal"
+                            type="button"
+                            class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                            Tutup
+                        </button>
+                        <button
+                            @click="submitCancel"
+                            :disabled="!cancelReason.trim() || cancelForm.processing"
+                            class="px-4 py-2 bg-red-600 text-white border border-transparent rounded-md text-sm font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <span v-if="cancelForm.processing">Memproses...</span>
+                            <span v-else>Batalkan Inspeksi</span>
+                        </button>
                     </div>
                 </div>
             </div>

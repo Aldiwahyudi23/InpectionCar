@@ -1,84 +1,57 @@
 <template>
   <div v-if="show" class="fixed inset-0 z-40 p-0 webcam-modal-container">
     <div class="webcam-content-box">
-      <!-- Header -->
       <div class="webcam-header">
         <div class="inspection-point-name">{{ point?.name || 'Camera' }}</div>
-                <!-- Additional controls
-        <div class="advanced-controls"> -->
-          <!-- Focus Mode Selector -->
-          <!-- <select v-model="focusMode" class="focus-selector" @change="changeFocusMode">
-            <option value="continuous">Auto Focus</option>
-            <option value="manual">Manual Focus</option>
-            <option value="single-shot">Single Focus</option>
-          </select> -->
-          
-          <!-- Quality Selector -->
-          <!-- <select v-model="qualityLevel" class="quality-selector" @change="changeQuality">
-            <option value="high">High Quality</option>
-            <option value="medium">Medium Quality</option>
-            <option value="low">Low Quality</option>
-          </select>
-        </div> -->
-
         <button @click="closeModal" class="p-2 rounded-full text-white hover:bg-gray-700 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-
       </div>
 
-      <!-- Video Container dengan aspect ratio -->
-      <div class="webcam-video-container" :style="videoContainerStyle" @click="triggerFocus">
+      <div 
+        class="webcam-video-container" 
+        :style="videoContainerStyle" 
+        @click="handleTapToFocus"
+        @touchstart="handleTapToFocus"
+      >
         <video ref="webcamVideo" autoplay playsinline class="webcam-video"></video>
         <canvas ref="webcamCanvas" class="hidden"></canvas>
         <div v-if="showScreenFlash" class="screen-flash-overlay"></div>
         
-        <!-- Aspect ratio guide overlay -->
         <div class="aspect-ratio-guide" :style="aspectRatioGuideStyle"></div>
 
-         <!-- Focus indicator -->
         <div v-if="showFocusIndicator" class="focus-indicator" :style="focusIndicatorStyle">
           <div class="focus-ring"></div>
         </div>
         
-        <!-- HD Badge -->
         <div class="hd-badge">
           <span class="hd-text">HD</span>
         </div>
-        
-        <!-- Focus status -->
-        <div v-if="focusStatus" class="focus-status">
-          {{ focusStatus }}
-        </div>
       </div>
 
-      <!-- Footer controls -->
       <div class="webcam-footer">
         <div class="camera-controls">
-          <!-- Flash -->
-          <button v-if="settings.enable_flash" 
+          <button v-if="settings.enable_flash && isFlashSupported" 
             @click="toggleFlash" 
-            :disabled="!isFlashSupported" 
             class="control-button"
             :class="{'active': isFlashOn, 'disabled': !isFlashSupported}">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </button>
-
-          <!-- Capture Button dengan icon kamera yang jelas -->
-          <button @click="capturePhoto" class="capture-button">
+          
+          <button @click="capturePhoto" class="capture-button" :disabled="isTakingPhoto">
             <div class="camera-icon-container">
-              <div class="camera-body">
+              <div v-if="isTakingPhoto" class="camera-spinner"></div>
+              <div v-else class="camera-body">
                 <div class="camera-lens"></div>
                 <div class="camera-flash"></div>
               </div>
             </div>
           </button>
 
-          <!-- Switch Camera -->
           <button v-if="settings.enable_camera_switch && hasMultipleCameras" 
             @click="switchCamera" 
             class="control-button">
@@ -94,15 +67,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
   show: Boolean,
   aspectRatio: Number,
   settings: Object,
-  inspectionPoint: String,
-  point: Object,
-  pointname: String
+  point: Object
 });
 const emit = defineEmits(['close', 'photoCaptured']);
 
@@ -117,25 +88,12 @@ const hasMultipleCameras = ref(false);
 const isFlashSupported = ref(false);
 const isFlashOn = ref(false);
 const showScreenFlash = ref(false);
-const currentInspectionPoint = ref(props.inspectionPoint || 'Camera');
 const showFocusIndicator = ref(false);
 const focusIndicatorStyle = ref({});
-const focusStatus = ref('');
-const focusMode = ref('continuous');
-const qualityLevel = ref('high');
+const isTakingPhoto = ref(false);
 
-// Computed property untuk resolusi berdasarkan quality level
-const resolutionSettings = computed(() => {
-  switch (qualityLevel.value) {
-    case 'high':
-      return { width: 1920, height: 1080 }; // Full HD
-    case 'medium':
-      return { width: 1280, height: 720 };  // HD
-    case 'low':
-      return { width: 640, height: 480 };   // VGA
-    default:
-      return { width: 1920, height: 1080 };
-  }
+const maxSizeKB = computed(() => {
+  return props.settings?.max_size || 2048; // Default 2MB jika tidak ada setting
 });
 
 // Computed property untuk style video container berdasarkan aspect ratio
@@ -155,7 +113,7 @@ const aspectRatioGuideStyle = computed(() => {
   if (!props.aspectRatio) return {};
   
   const ratio = props.aspectRatio;
-  const width = ratio > 1 ? 80 : 60; // Lebar guide berdasarkan ratio
+  const width = ratio > 1 ? 80 : 60;
   const height = ratio > 1 ? 80 / ratio : 60 * ratio;
   
   return {
@@ -164,44 +122,20 @@ const aspectRatioGuideStyle = computed(() => {
   };
 });
 
-// Computed property untuk max size dari settings
-const maxSizeKB = computed(() => {
-  return props.settings?.max_size || 2048; // Default 2MB jika tidak ada setting
-});
-
 const initializeWebcam = async () => {
   if (mediaStream) {
     mediaStream.getTracks().forEach(track => track.stop());
   }
-  isFlashOn.value = false;
-  showFocusIndicator.value = false;
-  focusStatus.value = '';
   
   try {
     const videoConstraints = {
       facingMode: currentFacingMode.value,
-      width: { ideal: resolutionSettings.value.width },
-      height: { ideal: resolutionSettings.value.height },
+      width: { ideal: 1920, max: 3840 },
+      height: { ideal: 1080, max: 2160 },
       aspectRatio: { ideal: props.aspectRatio || 4/3 },
-      frameRate: { ideal: 30 }
+      frameRate: { ideal: 30 },
+      advanced: [{ focusMode: 'manual' }]
     };
-    
-    // Tambahkan constraints untuk kualitas tinggi
-    if (qualityLevel.value === 'high') {
-      videoConstraints.width = { ideal: 1920, max: 3840 };
-      videoConstraints.height = { ideal: 1080, max: 2160 };
-      videoConstraints.frameRate = { ideal: 30, max: 60 };
-    }
-    
-    // Set focus mode berdasarkan pilihan
-    if (focusMode.value !== 'manual') {
-      videoConstraints.advanced = [{ focusMode: focusMode.value }];
-    }
-    
-    if (currentFacingMode.value === 'environment') {
-      if (!videoConstraints.advanced) videoConstraints.advanced = [];
-      videoConstraints.advanced.push({ focusMode: focusMode.value });
-    }
     
     mediaStream = await navigator.mediaDevices.getUserMedia({ 
       video: videoConstraints,
@@ -213,10 +147,8 @@ const initializeWebcam = async () => {
     
     webcamVideo.value.onloadedmetadata = async () => {
       await checkCameraCapabilities();
-      // Auto focus saat pertama kali
-      if (focusMode.value === 'continuous' || focusMode.value === 'single-shot') {
-        await triggerAutoFocus();
-      }
+      // Auto-play the video
+      await webcamVideo.value.play();
     };
     
   } catch (err) {
@@ -242,136 +174,61 @@ const checkCameraCapabilities = async () => {
     
     const capabilities = videoTrack.getCapabilities();
     isFlashSupported.value = capabilities.torch || 
-                            (capabilities.fillLightMode && capabilities.fillLightMode.includes('torch'));
-    
-    // Check focus capabilities
-    const focusCapabilities = capabilities.focusDistance || {};
-    console.log('Camera capabilities:', capabilities);
-    
+      (capabilities.fillLightMode && capabilities.fillLightMode.includes('torch'));
   } catch (error) {
     console.error("Error checking camera capabilities:", error);
   }
 };
 
 const handleTapToFocus = async (event) => {
-  if (!videoTrack || focusMode.value === 'continuous') return;
+  if (!videoTrack) return;
   
   const rect = webcamVideo.value.getBoundingClientRect();
-  const x = ((event.clientX - rect.left) / rect.width) * 100;
-  const y = ((event.clientY - rect.top) / rect.height) * 100;
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
   
   // Show focus indicator
   showFocusIndicator.value = true;
   focusIndicatorStyle.value = {
-    left: `${x}%`,
-    top: `${y}%`,
+    left: `${x}px`,
+    top: `${y}px`,
     transform: 'translate(-50%, -50%)'
   };
-  
-  focusStatus.value = 'Focusing...';
-  
-  try {
-    if (focusMode.value === 'single-shot') {
-      await triggerSingleFocus(x, y);
-    } else if (focusMode.value === 'manual') {
-      await triggerManualFocus(x, y);
-    }
-    
-    setTimeout(() => {
-      showFocusIndicator.value = false;
-      focusStatus.value = 'Focused';
-      setTimeout(() => { focusStatus.value = ''; }, 2000);
-    }, 1000);
-    
-  } catch (error) {
-    console.error("Focus failed:", error);
-    focusStatus.value = 'Focus failed';
-    setTimeout(() => { focusStatus.value = ''; }, 2000);
-  }
-};
 
-const triggerAutoFocus = async () => {
-  if (!videoTrack) return;
-  
-  try {
-    const capabilities = videoTrack.getCapabilities();
-    if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-      await videoTrack.applyConstraints({
-        advanced: [{ focusMode: 'continuous' }]
-      });
-      focusStatus.value = 'Auto Focus Enabled';
-      setTimeout(() => { focusStatus.value = ''; }, 2000);
-    }
-  } catch (error) {
-    console.warn("Auto focus not supported:", error);
-  }
-};
-
-const triggerSingleFocus = async (x, y) => {
-  if (!videoTrack) return;
-  
-  try {
-    // Untuk single focus, kita gunakan point of interest jika supported
-    const capabilities = videoTrack.getCapabilities();
-    if (capabilities.pointsOfInterest) {
-      await videoTrack.applyConstraints({
-        advanced: [{
-          pointsOfInterest: [{ x: x/100, y: y/100 }],
-          focusMode: 'single-shot'
-        }]
-      });
-    } else if (capabilities.focusMode && capabilities.focusMode.includes('single-shot')) {
-      await videoTrack.applyConstraints({
-        advanced: [{ focusMode: 'single-shot' }]
-      });
-    }
-  } catch (error) {
-    console.warn("Single focus not supported:", error);
-  }
-};
-
-const triggerManualFocus = async (x, y) => {
-  if (!videoTrack) return;
-  
   try {
     const capabilities = videoTrack.getCapabilities();
     if (capabilities.pointsOfInterest) {
+      const focusX = x / rect.width;
+      const focusY = y / rect.height;
+      
       await videoTrack.applyConstraints({
         advanced: [{
-          pointsOfInterest: [{ x: x/100, y: y/100 }],
-          focusMode: 'manual'
+          focusMode: 'manual',
+          pointsOfInterest: [{ x: focusX, y: focusY }]
         }]
       });
+    } else {
+      console.warn("Manual focus with point of interest is not supported.");
     }
   } catch (error) {
-    console.warn("Manual focus not supported:", error);
+    console.warn("Manual focus failed:", error);
   }
-};
-
-const changeFocusMode = async () => {
-  if (props.show) {
-    await initializeWebcam();
-  }
-};
-
-const changeQuality = async () => {
-  if (props.show) {
-    await initializeWebcam();
-  }
+  
+  setTimeout(() => {
+    showFocusIndicator.value = false;
+  }, 1000);
 };
 
 const toggleFlash = async () => {
-  if (!videoTrack || !props.settings.enable_flash) return;
-  
-  if (currentFacingMode.value === 'user') {
-    // Untuk kamera depan, gunakan screen flash
-    isFlashOn.value = !isFlashOn.value;
-    showScreenFlash.value = isFlashOn.value;
-    return;
-  }
+  if (!videoTrack || !isFlashSupported.value) return;
   
   try {
-    if (videoTrack.getCapabilities().torch) {
+    // For front camera, use screen flash effect
+    if (currentFacingMode.value === 'user') {
+      isFlashOn.value = !isFlashOn.value;
+      showScreenFlash.value = isFlashOn.value;
+    } else {
+      // For rear camera, toggle torch mode
       await videoTrack.applyConstraints({ 
         advanced: [{ torch: !isFlashOn.value }] 
       });
@@ -386,28 +243,19 @@ const switchCamera = async () => {
   if (!hasMultipleCameras.value) return;
   
   currentFacingMode.value = currentFacingMode.value === 'environment' ? 'user' : 'environment';
-  currentInspectionPoint.value = `${props.inspectionPoint || 'Camera'} (${currentFacingMode.value === 'environment' ? 'Rear' : 'Front'})`;
   
+  // Stop existing stream
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(track => track.stop());
+  }
+  
+  // Restart webcam with new facing mode
   await initializeWebcam();
 };
 
-const triggerFocus = async () => {
-  if (!videoTrack) return;
-  
-  const caps = videoTrack.getCapabilities();
-  if (caps.focusMode && caps.focusMode.includes('continuous')) {
-    try {
-      await videoTrack.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
-    } catch (e) {
-      console.warn("Focus not supported", e);
-    }
-  }
-};
-
-// Fungsi untuk mengompres gambar sesuai max_size
 const compressImage = async (blob) => {
   return new Promise((resolve) => {
-    const MAX_SIZE = maxSizeKB.value * 1024; // Convert KB to bytes
+    const MAX_SIZE = maxSizeKB.value * 1024;
     
     if (blob.size <= MAX_SIZE) {
       resolve(blob);
@@ -422,7 +270,6 @@ const compressImage = async (blob) => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Pertahankan aspect ratio asli
         const scaleFactor = Math.sqrt(MAX_SIZE / blob.size);
         canvas.width = img.width * scaleFactor;
         canvas.height = img.height * scaleFactor;
@@ -439,7 +286,7 @@ const compressImage = async (blob) => {
             } else {
               resolve(compressedBlob);
             }
-          }, 'image/png', quality);
+          }, 'image/jpeg', quality);
         };
         
         compressRecursive();
@@ -451,51 +298,46 @@ const compressImage = async (blob) => {
 };
 
 const capturePhoto = async () => {
-  const video = webcamVideo.value;
-  const canvas = webcamCanvas.value;
+  if (isTakingPhoto.value || !webcamVideo.value || !webcamCanvas.value) return;
   
-  if (!video || !canvas || video.readyState !== 4) return;
+  isTakingPhoto.value = true;
   
   try {
-    const ctx = canvas.getContext('2d');
+    const video = webcamVideo.value;
+    const canvas = webcamCanvas.value;
+    
     const vw = video.videoWidth;
     const vh = video.videoHeight;
     
-    // Hitung crop area berdasarkan aspect ratio yang diinginkan
     let sw, sh, sx, sy;
     
     if (vw / vh > props.aspectRatio) {
-      // Video lebih lebar dari aspect ratio yang diinginkan
       sh = vh;
       sw = vh * props.aspectRatio;
       sx = (vw - sw) / 2;
       sy = 0;
     } else {
-      // Video lebih tinggi dari aspect ratio yang diinginkan
       sw = vw;
       sh = vw / props.aspectRatio;
       sx = 0;
       sy = (vh - sh) / 2;
     }
     
-    // Set canvas size sesuai aspect ratio yang diinginkan
     canvas.width = sw;
     canvas.height = sh;
     
-    // Draw image dengan crop yang tepat
+    const ctx = canvas.getContext('2d');
     ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
     
-    // Dapatkan blob asli
     const originalBlob = await new Promise(resolve => {
-      canvas.toBlob(resolve, 'image/png', 1.0);
+      canvas.toBlob(resolve, 'image/jpeg', 1.0);
     });
     
-    // Kompres gambar jika diperlukan
     const compressedBlob = await compressImage(originalBlob);
     
     if (compressedBlob) {
-      const file = new File([compressedBlob], `capture_${Date.now()}.png`, { 
-        type: 'image/png',
+      const file = new File([compressedBlob], `capture_${Date.now()}.jpeg`, { 
+        type: 'image/jpeg',
         lastModified: Date.now()
       });
       
@@ -511,10 +353,12 @@ const capturePhoto = async () => {
   } catch (error) {
     console.error("Error capturing photo:", error);
     alert("Failed to capture photo. Please try again.");
+  } finally {
+    isTakingPhoto.value = false;
   }
 };
 
-// Watch untuk perubahan props
+// Watch for prop changes
 watch(() => props.show, (v) => { 
   if (v) {
     initializeWebcam();
@@ -523,17 +367,7 @@ watch(() => props.show, (v) => {
   }
 });
 
-watch(() => props.inspectionPoint, (v) => { 
-  currentInspectionPoint.value = v || 'Camera'; 
-});
-
-watch(() => props.aspectRatio, () => {
-  if (props.show) {
-    initializeWebcam();
-  }
-});
-
-onBeforeUnmount(() => { 
+onUnmounted(() => { 
   if (mediaStream) {
     mediaStream.getTracks().forEach(t => t.stop());
   }
@@ -590,6 +424,7 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  filter: brightness(1.05) contrast(1.05);
 }
 
 .aspect-ratio-guide {
@@ -672,6 +507,11 @@ onBeforeUnmount(() => {
   background: #f0f0f0;
 }
 
+.capture-button:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
 .camera-icon-container {
   display: flex;
   justify-content: center;
@@ -709,6 +549,19 @@ onBeforeUnmount(() => {
   border-radius: 50%;
 }
 
+.camera-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .screen-flash-overlay {
   position: absolute;
   top: 0;
@@ -723,34 +576,6 @@ onBeforeUnmount(() => {
 @keyframes flash {
   0% { opacity: 1; }
   100% { opacity: 0; }
-}
-
-/* Responsive design */
-@media (max-width: 640px) {
-  .control-button {
-    width: 45px;
-    height: 45px;
-  }
-  
-  .capture-button {
-    width: 65px;
-    height: 65px;
-  }
-  
-  .control-button svg {
-    width: 20px;
-    height: 20px;
-  }
-  
-  .camera-body {
-    width: 28px;
-    height: 28px;
-  }
-  
-  .camera-lens {
-    width: 18px;
-    height: 18px;
-  }
 }
 
 .focus-indicator {
@@ -802,48 +627,5 @@ onBeforeUnmount(() => {
   border-radius: 20px;
   font-size: 14px;
   z-index: 15;
-}
-
-.advanced-controls {
-  display: flex;
-  gap: 10px;
-  margin-top: 15px;
-  justify-content: center;
-}
-
-.focus-selector,
-.quality-selector {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #ccc;
-  border-radius: 20px;
-  padding: 8px 16px;
-  font-size: 12px;
-  color: #333;
-  cursor: pointer;
-}
-
-.focus-selector:hover,
-.quality-selector:hover {
-  background: rgba(255, 255, 255, 1);
-}
-
-/* Improved video quality */
-.webcam-video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: brightness(1.05) contrast(1.05);
-}
-
-/* Enhanced capture button */
-.capture-button {
-  background: linear-gradient(145deg, #ffffff, #e6e6e6);
-  border: 2px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.capture-button:active {
-  transform: scale(0.95);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 </style>
