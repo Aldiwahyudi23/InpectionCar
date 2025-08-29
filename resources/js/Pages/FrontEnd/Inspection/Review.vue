@@ -9,7 +9,8 @@ defineProps({
   inspection: {
     type: Object,
     required: true
-  }
+  },
+   encryptedIds: Object
 })
 
 // Mapping status ke label bahasa Indonesia
@@ -64,31 +65,34 @@ const statusLabel = (status) => {
             </p>
           </div>
 
-          <!-- Mobil -->
-          <div
-            v-if="inspection.car"
-            class="px-4 py-3 bg-gray-50 border-t border-gray-100"
-          >
-            <div class="flex items-center">
-              <CarIcon class="h-5 w-5 text-gray-500 mr-2" />
-              <div class="text-sm font-medium text-gray-800">
-                {{
-                  `${inspection.car.brand?.name} ${inspection.car.model?.name} ${inspection.car.type?.name} ${inspection.car.cc} ${inspection.car.transmission} ${inspection.car.year}`
-                }}
-                <span class="text-gray-600">
-                  ({{ inspection.car.fuel_type }})
-                </span>
-              </div>
-            </div>
-          </div>
+                                  <!-- Mobil -->
+                        <div  class="px-4 py-3 bg-gray-50 border-t border-gray-100">
+                            <div class="flex items-center">
+                                <CarIcon class="h-5 w-5 text-gray-500 mr-2" />
+                                <div class="text-sm font-medium text-gray-800">
+                                     <div v-if="inspection.car">
+                                        {{ `${inspection.car.brand.name} ${inspection.car.model.name} ${inspection.car.type.name} ${inspection.car.cc} ${inspection.car.transmission} ${inspection.car.year}` }}
+                                        <span class="text-gray-600">({{ inspection.car.fuel_type }})</span>
+                                    </div>
+                                    <div v-else>
+                                        {{ inspection.car_name }}
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Nomor Plat Mobil -->
+                            <div class="flex items-center mt-2">
+                                <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 mr-2">NO POLISI:</span>
+                                <span class="text-sm font-bold text-gray-900">{{ inspection.plate_number }}</span>
+                            </div>
+                        </div>
 
           <!-- Kategori -->
           <div
             v-if="inspection.category"
             class="px-4 py-2 bg-white border-t border-gray-100"
           >
-            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">
-              Kategori
+            <p class="text-xs font-medium text-gray-500  tracking-wide">
+              Kategori Inspeksi
             </p>
             <p class="text-sm text-gray-800">{{ inspection.category.name }}</p>
           </div>
@@ -115,7 +119,7 @@ const statusLabel = (status) => {
           <!-- Tombol PDF -->
           <div class="p-4">
             <Link
-              :href="route('inspections.review.pdf', inspection.id)"
+              :href="route('inspections.review.pdf', encryptedIds)"
               class="inline-flex items-center justify-center w-full px-3 py-2 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white font-medium rounded-md text-sm transition-colors"
             >
               Lihat Laporan PDF

@@ -5,6 +5,7 @@ const props = defineProps({
     inspection: Object,
     inspection_points: Array,
     coverImage: Object,
+    encryptedIds: Object,
 });
 
 // Mengelompokkan point berdasarkan nama komponen
@@ -39,7 +40,7 @@ const getStatusClass = (status) => {
           <!-- Tombol Download PDF -->
             <div class="mt-6">
               <a
-                :href="route('inspections.download.pdf', inspection.id)"
+                :href="route('inspections.download.pdf', encryptedIds)"
                 class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700"
               >
                 Download PDF

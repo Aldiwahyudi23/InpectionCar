@@ -129,9 +129,26 @@ public function form(Form $form): Form
                                     ->label('Panjang Maksimum')
                                     ->numeric()
                                     ->default(255),
-                                Forms\Components\TextInput::make('settings.pattern')
-                                    ->label('Pattern Regex')
-                                    ->default('^[a-zA-Z0-9\s]+$'),
+                                // Forms\Components\TextInput::make('settings.pattern')
+                                //     ->label('Pattern Regex')
+                                //     ->default('^[a-zA-Z0-9\s]+$'),
+                               Forms\Components\Select::make('settings.text_transform')
+                                    ->label('Format Text')
+                                    ->options([
+                                        'none' => 'Biasa',
+                                        'uppercase' => 'Huruf Besar Semua',
+                                        'lowercase' => 'Huruf Kecil Semua',
+                                        'capitalize' => 'Awal Kata Besar',
+                                    ])
+                                    ->default('none')
+                                    ->required(),
+
+
+                                Forms\Components\Toggle::make('settings.allow_space')
+                                    ->label('Boleh Pakai Spasi')
+                                    ->default(true),
+
+
                                 Forms\Components\TextInput::make('settings.placeholder')
                                     ->label('Placeholder')
                                     ->default('Masukkan teks di sini'),
@@ -723,7 +740,8 @@ protected function getDefaultSettings(string $inputType): array
         case 'text':
             $defaults['min_length'] = 0;
             $defaults['max_length'] = 255;
-            $defaults['pattern'] = '^[a-zA-Z0-9\s]+$';
+            $defaults['text_transform'] = 'none';
+            $defaults['allow_space'] = true;
             $defaults['placeholder'] = 'Masukkan teks di sini';
             break;
             

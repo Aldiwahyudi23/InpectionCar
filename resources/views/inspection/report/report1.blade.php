@@ -272,6 +272,11 @@
                             ($inputType === 'imageTOradio') ||
                             ($inputType === 'radio' && $showImageUpload)
                         ) && $hasImage;
+
+                        $symbol = $settings['currency_symbol'] ?? 'Rp';
+                        $thousand = $settings['thousands_separator'] ?? '.';
+                        $decimal = $settings['decimal_separator'] ?? ',';
+
                 @endphp
 
                 {{-- Skip point kalau tidak ada result dan tidak ada image --}}
@@ -306,8 +311,16 @@
                                 
                                 {{-- TAMPILKAN NOTE/TEXT --}}
                                 {{-- Untuk input_type text, number, account, date, textarea, tampilkan note --}}
-                                @if(in_array($inputType, ['text', 'number', 'account', 'date', 'textarea']) && $hasNote)
+                                @if(in_array($inputType, ['text', 'number', 'date', 'textarea']) && $hasNote)
                                     <div class="point-note">{{ $result->note }}</div>
+                                @endif
+
+                                {{-- TAMPILKAN NOTE/TEXT --}}
+                                {{-- Untuk input_type text, number, account, date, textarea, tampilkan note --}}
+                                @if(in_array($inputType, ['account']) && $hasNote)
+                                    <div class="point-note">
+                                        {{ $symbol . ' ' . number_format($result->note, 0, $decimal, $thousand) }}
+                                    </div>
                                 @endif
                                       
                             @endif

@@ -7,6 +7,9 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+# Buat symbolic link manual
+// ln -s /home/u516139464/domains/cekmobil.online/public_html/storage/app/public /home/u516139464/domains/cekmobil.online/public_html/public/storage
+
 // Route::get('/', function () {
 //     return Inertia::render('Welcome', [
 //         'canLogin' => Route::has('login'),

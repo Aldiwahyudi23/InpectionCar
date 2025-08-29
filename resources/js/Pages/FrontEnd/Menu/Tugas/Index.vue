@@ -7,6 +7,7 @@ import { ref } from 'vue';
 
 defineProps({
     tasks: Array,
+    encryptedIds: Object
 });
 
 const showModal = ref(false);
@@ -74,19 +75,26 @@ const getButtonLabel = (status) => {
                         <div  class="px-4 py-3 bg-gray-50 border-t border-gray-100">
                             <div class="flex items-center">
                                 <CarIcon class="h-5 w-5 text-gray-500 mr-2" />
-                                <div v-if="task.car" class="text-sm font-medium text-gray-800">
-                                    {{ `${task.car.brand.name} ${task.car.model.name} ${task.car.type.name} ${task.car.cc} ${task.car.transmission} ${task.car.year}` }}
-                                    <span class="text-gray-600">({{ task.car.fuel_type }})</span>
+                                <div class="text-sm font-medium text-gray-800">
+                                     <div v-if="task.car">
+                                        {{ `${task.car.brand.name} ${task.car.model.name} ${task.car.type.name} ${task.car.cc} ${task.car.transmission} ${task.car.year}` }}
+                                        <span class="text-gray-600">({{ task.car.fuel_type }})</span>
+                                    </div>
+                                    <div v-else>
+                                        {{ task.car_name }}
+                                    </div>
                                 </div>
-                                 <div v-else class="text-sm font-medium text-gray-800">
-                                    {{ task.car_name }}
-                                </div>
+                            </div>
+                            <!-- Nomor Plat Mobil -->
+                            <div class="flex items-center mt-2">
+                                <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 mr-2">NO POLISI:</span>
+                                <span class="text-sm font-bold text-gray-900">{{ task.plate_number }}</span>
                             </div>
                         </div>
 
                         <!-- Kategori -->
                         <div v-if="task.category" class="px-4 py-2 bg-white border-t border-gray-100">
-                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Kategori</p>
+                            <p class="text-xs font-medium text-gray-500  tracking-wide">Kategori Inspek</p>
                             <p class="text-sm text-gray-800">{{ task.category.name }}</p>
                         </div>
 
@@ -96,7 +104,6 @@ const getButtonLabel = (status) => {
                                 @click="openModal(task)"
                                 class="inline-flex items-center justify-center w-full px-3 py-2 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white font-medium rounded-md text-sm transition-colors"
                             >
-                            
                                 {{ getButtonLabel(task.status) }}
                                 <ArrowRightIcon class="ml-2 h-4 w-4" />
                             </button>
@@ -142,20 +149,27 @@ const getButtonLabel = (status) => {
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Konfirmasi</h3>
 
                     <!-- Info Mobil -->
-                    <div  class="flex items-center mb-4">
-                        <CarIcon class="h-8 w-8 text-blue-500 mr-3" />
-                        <div v-if="selectedTask?.car">
-                            <p class="font-medium text-gray-800">
-                                {{ `${selectedTask.car.brand.name} ${selectedTask.car.model.name} ${selectedTask.car.type.name}` }}
-                            </p>
-                            <p class="text-sm text-gray-600">
-                                {{ selectedTask.car.cc }} • {{ selectedTask.car.transmission }} •
-                                {{ selectedTask.car.year }}
-                                <span class="text-gray-500">({{ selectedTask.car.fuel_type }})</span>
-                            </p>
-                        </div>
-                         <div v-else class="text-sm font-medium text-gray-800">
-                            {{ selectedTask?.car_name }}
+                    <div  class="flex items-start mb-4">
+                        <CarIcon class="h-8 w-8 text-blue-500 mr-3 mt-1" />
+                        <div>
+                            <div v-if="selectedTask?.car">
+                                <p class="font-medium text-gray-800">
+                                    {{ `${selectedTask.car.brand.name} ${selectedTask.car.model.name} ${selectedTask.car.type.name}` }}
+                                </p>
+                                <p class="text-sm text-gray-600">
+                                    {{ selectedTask.car.cc }} • {{ selectedTask.car.transmission }} •
+                                    {{ selectedTask.car.year }}
+                                    <span class="text-gray-500">({{ selectedTask.car.fuel_type }})</span>
+                                </p>
+                            </div>
+                            <div v-else class="text-sm font-medium text-gray-800">
+                                {{ selectedTask?.car_name }}
+                            </div>
+                            <!-- Nomor Plat Mobil di Modal -->
+                             <div class="flex items-center mt-2">
+                                <span class="text-sm font-semibold uppercase tracking-wide text-gray-500 mr-2">no polisi:</span>
+                                <span class="text-base font-bold text-gray-900">{{ selectedTask?.plate_number }}</span>
+                            </div>
                         </div>
                     </div>
 
@@ -178,7 +192,7 @@ const getButtonLabel = (status) => {
                             Batal
                         </button>
                         <Link
-                            :href="`/inspections/${selectedTask?.id}/start`"
+                            :href="route('inspections.start', { inspection: encryptedIds[selectedTask?.id] })"
                             method="get"
                             class="px-4 py-2 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white border border-transparent rounded-md text-sm font-medium hover:bg-blue-700"
                         >

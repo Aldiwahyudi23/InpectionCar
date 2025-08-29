@@ -6,6 +6,7 @@ import { Car } from 'lucide-vue-next';
 
 defineProps({
     tasks: Array,
+     encryptedIds: Object
 });
 </script>
 
