@@ -171,12 +171,6 @@ watch(
   (newImages) => {
     // Salin images ke editableImages untuk manipulasi lokal
     editableImages.value = newImages.map((img) => ({ ...img }));
-    if (props.show && newImages.length > 0) {
-      // Selalu tampilkan gambar terbaru (index terakhir)
-      currentPreviewIndex.value = newImages.length - 1;
-    } else {
-      currentPreviewIndex.value = 0;
-    }
     // Jika tidak ada gambar, tutup modal
     if (newImages.length === 0 && props.show) {
       cancelPreview();
@@ -190,7 +184,8 @@ watch(
   () => props.show,
   (isShowing) => {
     if (isShowing && props.images.length > 0) {
-      currentPreviewIndex.value = props.images.length - 1;
+      // Atur indeks ke nilai initialIndex yang dikirim dari parent
+      currentPreviewIndex.value = props.initialIndex;
     }
   }
 );
@@ -283,11 +278,11 @@ const removeCurrentImage = () => {
 
     // Hapus dari editableImages secara lokal
     const indexToRemove = editableImages.value.findIndex(img => 
-        (img.isNew && imageToRemove.isNew && img.preview === imageToRemove.preview) || 
-        (!img.isNew && !imageToRemove.isNew && img.id === imageToRemove.id)
+      (img.isNew && imageToRemove.isNew && img.preview === imageToRemove.preview) || 
+      (!img.isNew && !imageToRemove.isNew && img.id === imageToRemove.id)
     );
     if (indexToRemove !== -1) {
-        editableImages.value.splice(indexToRemove, 1);
+      editableImages.value.splice(indexToRemove, 1);
     }
 
     // Sesuaikan indeks saat ini
@@ -301,7 +296,6 @@ const removeCurrentImage = () => {
     }
   }
 };
-
 
 /**
  * Memicu penambahan foto baru

@@ -81,11 +81,20 @@ Route::middleware([
     Route::get('/inspections/{id}/review', [InspectionController::class, 'review'])
         ->name('inspections.review');
 
+    Route::post('/inspections/{id}/revisi', [InspectionController::class, 'revisi'])
+        ->name('inspections.revisi');
+
     Route::get('/inspections/{id}/review-pdf', [InspectionController::class, 'reviewPdf'])
         ->name('inspections.review.pdf');
 
         // Generate PDF
     Route::get('/inspections/{id}/download-pdf', [InspectionController::class, 'downloadPdf'])
         ->name('inspections.download.pdf');
+
+    Route::get('/inspections/{id}/download-approve-pdf', [InspectionController::class, 'downloadApprovePdf'])
+        ->name('inspections.download.approved.pdf');
+
+    Route::post('/inspections/{encryptedIds}/send-email', [InspectionController::class, 'sendEmail'])
+    ->name('inspections.send.email');
 });
 

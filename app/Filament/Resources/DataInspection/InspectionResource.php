@@ -80,6 +80,9 @@ class InspectionResource extends Resource
 
                 Forms\Components\TextInput::make('car_name')
                     ->label('Nama Kendaraan'),
+
+                Forms\Components\TextInput::make('file')
+                    ->label('File'),
                 
                 Forms\Components\Textarea::make('notes')
                     ->label('Catatan')
@@ -150,10 +153,7 @@ class InspectionResource extends Resource
                     }),
                     
                 Tables\Columns\IconColumn::make('file')
-                    ->label('File')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-paper-clip')
-                    ->falseIcon('heroicon-o-minus'),
+                    ->label('File'),
                     
                 Tables\Columns\TextColumn::make('notes')
                     ->label('Notes')
@@ -200,8 +200,8 @@ class InspectionResource extends Resource
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    // Tables\Actions\ForceDeleteBulkAction::make(),
-                    // Tables\Actions\RestoreBulkAction::make(),
+                    Tables\Actions\ForceDeleteBulkAction::make(),
+                    Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ]);
     }
@@ -223,11 +223,11 @@ class InspectionResource extends Resource
         ];
     }
 
-    // public static function getEloquentQuery(): Builder
-    // {
-    //     return parent::getEloquentQuery()
-    //         ->withoutGlobalScopes([
-    //             SoftDeletingScope::class,
-    //         ]);
-    // }
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
+    }
 }

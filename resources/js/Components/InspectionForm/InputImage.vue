@@ -183,7 +183,7 @@ const aspectRatio = computed(() => {
       return width / height;
     }
   }
-  return 4 / 3;
+  return 3 / 4;
 });
 
 const allImages = computed(() => {

@@ -14,20 +14,31 @@
         class="webcam-video-container" 
         :style="videoContainerStyle" 
         @click="handleTapToFocus"
-        @touchstart="handleTapToFocus"
+        @touchstart="handleTouchStart"
+        @touchmove="handleTouchMove"
+        @touchend="handleTouchEnd"
       >
-        <video ref="webcamVideo" autoplay playsinline class="webcam-video"></video>
+        <video 
+          ref="webcamVideo" 
+          autoplay 
+          playsinline 
+          class="webcam-video" 
+          :style="{ transform: `scale(${zoomLevel})` }"
+        ></video>
         <canvas ref="webcamCanvas" class="hidden"></canvas>
         <div v-if="showScreenFlash" class="screen-flash-overlay"></div>
         
-        <div class="aspect-ratio-guide" :style="aspectRatioGuideStyle"></div>
-
         <div v-if="showFocusIndicator" class="focus-indicator" :style="focusIndicatorStyle">
           <div class="focus-ring"></div>
         </div>
         
-        <div class="hd-badge">
-          <span class="hd-text">HD</span>
+        <div class="absolute top-4 right-4 z-10 flex flex-col items-end gap-2 text-white">
+          <div class="hd-badge">
+            <span class="hd-text">HD</span>
+          </div>
+          <div v-if="isZoomSupported" class="px-2 py-1 bg-black bg-opacity-50 rounded-lg text-xs">
+            Zoom: {{ (zoomLevel * 100).toFixed(0) }}%
+          </div>
         </div>
       </div>
 
@@ -36,7 +47,7 @@
           <button v-if="settings.enable_flash && isFlashSupported" 
             @click="toggleFlash" 
             class="control-button"
-            :class="{'active': isFlashOn, 'disabled': !isFlashSupported}">
+            :class="{'active': isFlashOn}">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
@@ -47,7 +58,6 @@
               <div v-if="isTakingPhoto" class="camera-spinner"></div>
               <div v-else class="camera-body">
                 <div class="camera-lens"></div>
-                <div class="camera-flash"></div>
               </div>
             </div>
           </button>
@@ -67,7 +77,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onUnmounted } from 'vue';
 
 const props = defineProps({
   show: Boolean,
@@ -92,33 +102,28 @@ const showFocusIndicator = ref(false);
 const focusIndicatorStyle = ref({});
 const isTakingPhoto = ref(false);
 
+const isZoomSupported = ref(false);
+const zoomLevel = ref(1);
+const touchStartDistance = ref(0);
+
 const maxSizeKB = computed(() => {
   return props.settings?.max_size || 2048; // Default 2MB jika tidak ada setting
 });
 
-// Computed property untuk style video container berdasarkan aspect ratio
+// Computed property untuk style video container
 const videoContainerStyle = computed(() => {
-  if (!props.aspectRatio) return {};
-  
   return {
     aspectRatio: `${props.aspectRatio} / 1`,
+    position: 'relative',
+    width: '100%',
+    height: 'auto',
     maxWidth: '100%',
-    maxHeight: '70vh',
-    margin: '0 auto'
-  };
-});
-
-// Computed property untuk aspect ratio guide
-const aspectRatioGuideStyle = computed(() => {
-  if (!props.aspectRatio) return {};
-  
-  const ratio = props.aspectRatio;
-  const width = ratio > 1 ? 80 : 60;
-  const height = ratio > 1 ? 80 / ratio : 60 * ratio;
-  
-  return {
-    width: `${width}%`,
-    height: `${height}%`
+    maxHeight: '100vh',
+    margin: '0 auto',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden'
   };
 });
 
@@ -132,7 +137,7 @@ const initializeWebcam = async () => {
       facingMode: currentFacingMode.value,
       width: { ideal: 1920, max: 3840 },
       height: { ideal: 1080, max: 2160 },
-      aspectRatio: { ideal: props.aspectRatio || 4/3 },
+      aspectRatio: { exact: props.aspectRatio || 4/3 },
       frameRate: { ideal: 30 },
       advanced: [{ focusMode: 'manual' }]
     };
@@ -146,9 +151,8 @@ const initializeWebcam = async () => {
     webcamVideo.value.srcObject = mediaStream;
     
     webcamVideo.value.onloadedmetadata = async () => {
-      await checkCameraCapabilities();
-      // Auto-play the video
       await webcamVideo.value.play();
+      await checkCameraCapabilities();
     };
     
   } catch (err) {
@@ -175,6 +179,15 @@ const checkCameraCapabilities = async () => {
     const capabilities = videoTrack.getCapabilities();
     isFlashSupported.value = capabilities.torch || 
       (capabilities.fillLightMode && capabilities.fillLightMode.includes('torch'));
+    isZoomSupported.value = !!capabilities.zoom;
+    
+    if (isZoomSupported.value) {
+      zoomLevel.value = capabilities.zoom.min || 1;
+      videoTrack.applyConstraints({
+        advanced: [{ zoom: zoomLevel.value }]
+      });
+    }
+
   } catch (error) {
     console.error("Error checking camera capabilities:", error);
   }
@@ -187,7 +200,6 @@ const handleTapToFocus = async (event) => {
   const x = event.clientX - rect.left;
   const y = event.clientY - rect.top;
   
-  // Show focus indicator
   showFocusIndicator.value = true;
   focusIndicatorStyle.value = {
     left: `${x}px`,
@@ -219,16 +231,48 @@ const handleTapToFocus = async (event) => {
   }, 1000);
 };
 
+const getDistance = (touches) => {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+};
+
+const handleTouchStart = (event) => {
+  if (event.touches.length === 2 && isZoomSupported.value) {
+    touchStartDistance.value = getDistance(event.touches);
+  } else if (event.touches.length === 1) {
+    handleTapToFocus(event.touches[0]);
+  }
+};
+
+const handleTouchMove = (event) => {
+  if (event.touches.length === 2 && touchStartDistance.value > 0 && isZoomSupported.value) {
+    const capabilities = videoTrack.getCapabilities();
+    const newDistance = getDistance(event.touches);
+    const zoomFactor = newDistance / touchStartDistance.value;
+    
+    const newZoom = Math.min(Math.max(capabilities.zoom.min, zoomLevel.value * zoomFactor), capabilities.zoom.max);
+    
+    zoomLevel.value = newZoom;
+    videoTrack.applyConstraints({
+      advanced: [{ zoom: newZoom }]
+    });
+    touchStartDistance.value = newDistance;
+  }
+};
+
+const handleTouchEnd = () => {
+  touchStartDistance.value = 0;
+};
+
 const toggleFlash = async () => {
   if (!videoTrack || !isFlashSupported.value) return;
   
   try {
-    // For front camera, use screen flash effect
     if (currentFacingMode.value === 'user') {
       isFlashOn.value = !isFlashOn.value;
       showScreenFlash.value = isFlashOn.value;
     } else {
-      // For rear camera, toggle torch mode
       await videoTrack.applyConstraints({ 
         advanced: [{ torch: !isFlashOn.value }] 
       });
@@ -244,19 +288,16 @@ const switchCamera = async () => {
   
   currentFacingMode.value = currentFacingMode.value === 'environment' ? 'user' : 'environment';
   
-  // Stop existing stream
   if (mediaStream) {
     mediaStream.getTracks().forEach(track => track.stop());
   }
   
-  // Restart webcam with new facing mode
   await initializeWebcam();
 };
 
 const compressImage = async (blob) => {
   return new Promise((resolve) => {
     const MAX_SIZE = maxSizeKB.value * 1024;
-    
     if (blob.size <= MAX_SIZE) {
       resolve(blob);
       return;
@@ -264,20 +305,16 @@ const compressImage = async (blob) => {
 
     const img = new Image();
     const reader = new FileReader();
-    
     reader.onload = (e) => {
       img.onload = () => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        
         const scaleFactor = Math.sqrt(MAX_SIZE / blob.size);
         canvas.width = img.width * scaleFactor;
         canvas.height = img.height * scaleFactor;
-        
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         
         let quality = 0.9;
-        
         const compressRecursive = () => {
           canvas.toBlob((compressedBlob) => {
             if (compressedBlob.size > MAX_SIZE && quality > 0.1) {
@@ -288,7 +325,6 @@ const compressImage = async (blob) => {
             }
           }, 'image/jpeg', quality);
         };
-        
         compressRecursive();
       };
       img.src = e.target.result;
@@ -299,7 +335,6 @@ const compressImage = async (blob) => {
 
 const capturePhoto = async () => {
   if (isTakingPhoto.value || !webcamVideo.value || !webcamCanvas.value) return;
-  
   isTakingPhoto.value = true;
   
   try {
@@ -310,15 +345,17 @@ const capturePhoto = async () => {
     const vh = video.videoHeight;
     
     let sw, sh, sx, sy;
-    
-    if (vw / vh > props.aspectRatio) {
+    const captureRatio = props.aspectRatio;
+
+    const videoAspectRatio = vw / vh;
+    if (videoAspectRatio > captureRatio) {
       sh = vh;
-      sw = vh * props.aspectRatio;
+      sw = vh * captureRatio;
       sx = (vw - sw) / 2;
       sy = 0;
     } else {
       sw = vw;
-      sh = vw / props.aspectRatio;
+      sh = vw / captureRatio;
       sx = 0;
       sy = (vh - sh) / 2;
     }
@@ -340,10 +377,8 @@ const capturePhoto = async () => {
         type: 'image/jpeg',
         lastModified: Date.now()
       });
-      
       emit('photoCaptured', file);
       
-      // Screen flash effect
       showScreenFlash.value = true;
       setTimeout(() => {
         showScreenFlash.value = false;
@@ -358,7 +393,6 @@ const capturePhoto = async () => {
   }
 };
 
-// Watch for prop changes
 watch(() => props.show, (v) => { 
   if (v) {
     initializeWebcam();
@@ -423,18 +457,9 @@ onUnmounted(() => {
 .webcam-video {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   filter: brightness(1.05) contrast(1.05);
-}
-
-.aspect-ratio-guide {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  border: 2px dashed rgba(255, 255, 255, 0.5);
-  pointer-events: none;
-  z-index: 10;
+  transition: transform 0.2s ease-out;
 }
 
 .webcam-footer {
@@ -539,16 +564,6 @@ onUnmounted(() => {
   border: 2px solid #999;
 }
 
-.camera-flash {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 6px;
-  height: 6px;
-  background: #ccc;
-  border-radius: 50%;
-}
-
 .camera-spinner {
   width: 40px;
   height: 40px;
@@ -601,9 +616,6 @@ onUnmounted(() => {
 }
 
 .hd-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
   background: rgba(0, 0, 0, 0.7);
   padding: 4px 8px;
   border-radius: 4px;
@@ -614,18 +626,5 @@ onUnmounted(() => {
   color: #00ff00;
   font-size: 12px;
   font-weight: bold;
-}
-
-.focus-status {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 8px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  z-index: 15;
 }
 </style>

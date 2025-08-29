@@ -173,6 +173,30 @@
             font-style: italic;
             color: #555;
         }
+
+        @media print {
+  @page {
+    margin: 0;
+  }
+  body {
+    -webkit-print-color-adjust: exact;
+  }
+  @page :left {
+    margin-left: 20mm;
+    margin-right: 20mm;
+  }
+  @page :right {
+    margin-left: 20mm;
+    margin-right: 20mm;
+  }
+  @page :first {
+    margin-top: 20mm;
+    margin-bottom: 20mm;
+  }
+  @page :blank {
+    visibility: hidden;
+  }
+}
     </style>
 </head>
 <body>

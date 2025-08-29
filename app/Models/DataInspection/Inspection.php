@@ -32,6 +32,7 @@ class Inspection extends Model
 
     protected $casts = [
         'inspection_date' => 'datetime',
+        'approved_at' => 'datetime',
     ];
 
     public function getSettingsAttribute($value)

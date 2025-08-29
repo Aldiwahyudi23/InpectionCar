@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Inspection;
 
 use App\Http\Controllers\Controller;
+use App\Mail\InspectionReportMail;
 use App\Models\DataCar\CarDetail;
 use App\Models\DataInspection\AppMenu;
 use App\Models\DataInspection\Categorie;
@@ -18,6 +19,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -707,92 +709,173 @@ public function reviewPdf($id)
         'encryptedIds' => $encryptedIds,
     ]);
 
-    // return view('inspection.report.report1', compact('inspection', 'inspection_points', 'coverImage')); 
+    // return view('inspection.report.report2', compact('inspection', 'inspection_points', 'coverImage')); 
 }
+
+// Belum di pake 
+
 public function downloadPdf($id)
 {
-     $id = Crypt::decrypt($id);
-     $inspection = Inspection::with([
-        'car',
-        'car.brand',
-        'car.model',
-        'car.type',
-        'category',
-    ])->findOrFail($id);
+    try {
+        $id = Crypt::decrypt($id);
+        $inspection = Inspection::with([
+            'car',
+            'car.brand',
+            'car.model',
+            'car.type',
+            'category',
+        ])->findOrFail($id);
 
-     // cek status
-    if (in_array($inspection->status, [
-        'draft', 
-        'in_progress', 
-        'pending', 
-        'revision',        
-        'rejected',
-        'revision',
-        'completed',
-        'cancelled'
+        // cek status
+        if (in_array($inspection->status, [
+            'draft', 
+            'in_progress', 
+            'pending', 
+            'revision',        
+            'rejected',
+            'revision',
+            'completed',
+            'cancelled'
         ])) {
-        return redirect()->route('job.index');
-    }
-    
-   $inspection_points = InspectionPoint::with([
-        'component',
-        'app_menu',
-        'results' => function ($q) use ($inspection) {
-            $q->where('inspection_id', $inspection->id);
-        },
-        'images' => function ($q) use ($inspection) {
-            $q->where('inspection_id', $inspection->id)
-              ->orderBy('created_at', 'asc');
+            return redirect()->route('job.index')->with('error', 'Status inspection tidak valid untuk download.');
         }
-    ])
-    ->whereHas('app_menu', function ($query) use ($inspection) {
-        $query->where('category_id', $inspection->category_id);
-    })
-    ->get();
+        
+        $inspection_points = InspectionPoint::with([
+            'component',
+            'app_menu',
+            'results' => function ($q) use ($inspection) {
+                $q->where('inspection_id', $inspection->id);
+            },
+            'images' => function ($q) use ($inspection) {
+                $q->where('inspection_id', $inspection->id)
+                  ->orderBy('created_at', 'asc');
+            }
+        ])
+        ->whereHas('app_menu', function ($query) use ($inspection) {
+            $query->where('category_id', $inspection->category_id);
+        })
+        ->get();
 
-    $coverImage = InspectionImage::where('inspection_id', $inspection->id)
-        ->whereHas('point', function ($q) {
-            $q->where('name', 'Depan Kanan');
-        })->first();
+        $coverImage = InspectionImage::where('inspection_id', $inspection->id)
+            ->whereHas('point', function ($q) {
+                $q->where('name', 'Depan Kanan');
+            })->first();
 
-    // Jika tidak ada cover image, coba ambil gambar pertama
-    if (!$coverImage) {
-        $coverImage = InspectionImage::where('inspection_id', $inspection->id)->first();
+        // Jika tidak ada cover image, coba ambil gambar pertama
+        if (!$coverImage) {
+            $coverImage = InspectionImage::where('inspection_id', $inspection->id)->first();
+        }
+
+        $pdf = Pdf::loadView('inspection.report.report1', [
+            'inspection' => $inspection,
+            'inspection_points' => $inspection_points,
+            'coverImage' => $coverImage,
+        ])->setPaper('a4', 'portrait');
+
+        // Generate nama file yang unik
+        $filename = 'inspection_report_' . $inspection->plate_number . '_' . time() . '.pdf';
+        $directory = 'inspection-reports/' . date('Y/m');
+        
+        // Buat directory jika belum ada
+        if (!Storage::disk('public')->exists($directory)) {
+            Storage::disk('public')->makeDirectory($directory, 0755, true);
+        }
+        
+        $filePath = $directory . '/' . $filename;
+        
+        // Simpan file ke storage
+        Storage::disk('public')->put($filePath, $pdf->output());
+        
+        // Update inspection status dan file path
+        $inspection->update([
+            'status' => 'approved',
+            'file' => $filePath,
+            'approved_at' => now(),
+        ]);
+
+        // Return download response
+        return $pdf->download('inspection_report_'.$inspection->car_name.'_('. $inspection->plate_number.').pdf');
+    //      $encryptId = Crypt::encrypt($inspection->id);
+
+    //         // Redirect ke halaman review
+    // return redirect()->route('inspections.review', ['id' => $encryptId])
+    //     ->with('success', 'Inspeksi berhasil dikirim untuk review');
+
+    } catch (\Exception $e) {
+        Log::error('Error generating PDF: ' . $e->getMessage());
+        return redirect()->back()->with('error', 'Gagal generate laporan PDF: ' . $e->getMessage());
     }
-
-    $pdf = Pdf::loadView('inspection.report.report1', [
-        'inspection' => $inspection,
-        'inspection_points' => $inspection_points,
-        'coverImage' => $coverImage,
-    ])->setPaper('a4', 'portrait');
-
-    return $pdf->download('inspection_report_'.$inspection->car_name.'_('. $inspection->plate_number.').pdf');
 }
 
-
-public function approve(Request $request, Inspection $inspection)
+public function sendEmail($encryptedIds, Request $request)
 {
-    // Validasi hanya yang statusnya pending_review bisa di-approve
-    if ($inspection->status !== 'pending_review') {
-        abort(403, 'Status inspeksi tidak valid');
-    }
-    
-    $inspection->update([
-        'status' => 'approved',
-        'approved_at' => now(),
-        'approved_by' => Auth::user()->id
+    $request->validate([
+        'email' => 'required|email'
     ]);
+
+    // Decrypt IDs dan proses pengiriman email
+    $inspection = Inspection::find(decrypt($encryptedIds));
     
-    // Generate PDF
-    $pdf = Pdf::loadView('inspections.pdf', ['inspection' => $inspection]);
-    
-    return $pdf->download("inspeksi-{$inspection->id}.pdf");
-    
-    // Atau jika ingin menyimpan PDF
-    // $pdfPath = "inspections/{$inspection->id}.pdf";
-    // Storage::put($pdfPath, $pdf->output());
-    // $inspection->update(['pdf_path' => $pdfPath]);
+    // Kirim email disini
+    Mail::to($request->email)->send(new InspectionReportMail($inspection));
+
+    return response()->json(['message' => 'Email berhasil dikirim']);
 }
+
+    public function downloadApprovedPdf($encryptedIds)
+    {
+        try {
+            // Dekripsi ID dari URL
+            $inspectionId = Crypt::decrypt($encryptedIds);
+
+            $inspection = Inspection::find($inspectionId);
+
+            // Cek apakah inspeksi dan file laporan ada
+            if (!$inspection || !$inspection->file) {
+                return back()->with('error', 'File laporan tidak ditemukan.');
+            }
+
+          // Ganti asset() dengan storage_path() untuk mendapatkan path fisik file di server
+            $filePath = public_path('app/public/' . $inspection->file);
+            
+            // Pastikan file tersebut ada sebelum diunduh
+            if (!file_exists($filePath)) {
+                return back()->with('error', 'File tidak tersedia di server.');
+            }
+
+            // Kirim file untuk diunduh
+            return response()->download($filePath, 'laporan-inspeksi-' . $inspection->plate_number . '.pdf');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Link tidak valid atau terjadi kesalahan.');
+        }
+    }
+
+     public function revisi($encryptedIds)
+    {
+        try {
+            // Dekripsi ID dari URL
+            $inspectionId = Crypt::decrypt($encryptedIds);
+
+            $inspection = Inspection::find($inspectionId);
+
+            if (!$inspection) {
+                return back()->with('error', 'Inspeksi tidak ditemukan.');
+            }
+
+            // Ubah status inspeksi menjadi 'revisi'
+            $inspection->status = 'revision';
+            $inspection->save();
+
+           // Encrypt semua ID di backend
+                $inspection = Crypt::encrypt($inspection->id);
+            // Jika mulai inspeksi sekarang, redirect ke halaman start dengan ID inspeksi
+            return redirect()->route('inspections.start', ['inspection' => $inspection]);
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan saat mengajukan revisi.');
+        }
+    }
 
 public function cancel($inspection, Request $request)
 {
