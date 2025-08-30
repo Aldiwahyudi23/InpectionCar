@@ -110,20 +110,10 @@ const maxSizeKB = computed(() => {
   return props.settings?.max_size || 2048; // Default 2MB jika tidak ada setting
 });
 
-// Computed property untuk style video container
+// Perbaikan pada computed property untuk style video container
 const videoContainerStyle = computed(() => {
   return {
-    aspectRatio: `${props.aspectRatio} / 1`,
-    position: 'relative',
-    width: '100%',
-    height: 'auto',
-    maxWidth: '100%',
-    maxHeight: '100vh',
-    margin: '0 auto',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden'
+    aspectRatio: props.aspectRatio ? `${props.aspectRatio} / 1` : '4 / 3'
   };
 });
 
@@ -137,6 +127,7 @@ const initializeWebcam = async () => {
       facingMode: currentFacingMode.value,
       width: { ideal: 1920, max: 3840 },
       height: { ideal: 1080, max: 2160 },
+      // Gunakan 'exact' untuk memastikan rasio aspek yang akurat
       aspectRatio: { exact: props.aspectRatio || 4/3 },
       frameRate: { ideal: 30 },
       advanced: [{ focusMode: 'manual' }]
@@ -457,7 +448,7 @@ onUnmounted(() => {
 .webcam-video {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover; /* Perubahan di sini */
   filter: brightness(1.05) contrast(1.05);
   transition: transform 0.2s ease-out;
 }

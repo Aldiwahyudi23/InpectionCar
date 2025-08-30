@@ -58,6 +58,10 @@ const getButtonLabel = (status) => {
             return 'Lanjutkan Inspeksi';
         case 'pending_review':
             return 'Periksa Laporan';
+        case 'revision':
+            return 'Lanjutkan Revisi';
+        case 'pending':
+            return 'Ditunda => Lanjutkan Inspeksi';
         default:
             return 'Detail';
     }
@@ -230,6 +234,7 @@ const getButtonLabel = (status) => {
                             :href="route('inspections.start', { inspection: encryptedIds[selectedTask?.id] })"
                             method="get"
                             class="px-4 py-2 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white border border-transparent rounded-md text-sm font-medium hover:bg-blue-700"
+                            :disabled="selectedTask.processing"
                         >
                             {{ getButtonLabel(selectedTask?.status) }}
                         </Link>

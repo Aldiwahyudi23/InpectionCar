@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckSpatieRole
@@ -15,9 +16,17 @@ class CheckSpatieRole
      */
     public function handle(Request $request, Closure $next,  string $role): Response
     {
-          if (!$request->user()->hasRole($role)) {
-            abort(403, 'Akses Ditolak');
+          // Cek jika user tidak authenticated
+        if (!$request->user()) {
+            return redirect()->route('login');
         }
+
+        // Cek role menggunakan Spatie permission
+        if (!$request->user()->hasRole($role)) {        
+            // Redirect ke halaman error 403
+            return redirect()->route('error.403');
+        }
+
         return $next($request);
     }
 }

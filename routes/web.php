@@ -28,6 +28,10 @@ Route::post('/check-phone', [OtpController::class, 'checkPhone'])->name('check-p
 Route::post('/verify-otp', [OtpController::class, 'verifyOtp'])->name('verify-otp');
 Route::post('/resend-otp', [OtpController::class, 'resendOtp'])->name('resend-otp');
 
+// Error routes
+Route::get('/error/403', function () {
+    return inertia('Error/403');
+})->name('error.403');
 
 Route::get('/', function () {
     return redirect()->route('login'); // Redirect langsung ke login
@@ -37,6 +41,7 @@ Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
     'verified',
+    'role_spatie:Admin,Inspektor,Kordinator',
 ])->group(function () {
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
@@ -81,7 +86,7 @@ Route::middleware([
     Route::get('/inspections/{id}/review', [InspectionController::class, 'review'])
         ->name('inspections.review');
 
-    Route::post('/inspections/{id}/revisi', [InspectionController::class, 'revisi'])
+    Route::get('/inspections/{id}/revisi', [InspectionController::class, 'revisi'])
         ->name('inspections.revisi');
 
     Route::get('/inspections/{id}/review-pdf', [InspectionController::class, 'reviewPdf'])

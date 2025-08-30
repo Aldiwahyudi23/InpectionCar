@@ -89,14 +89,14 @@
               <!-- Tombol Revisi (lebih pendek) -->
               <button 
                 @click="showRevisionModal = true"
-                class="flex-1 px-3 py-2 bg-yellow-500 text-white font-medium rounded-md text-sm transition-colors hover:bg-yellow-600"
+                class="flex-2 px-3 py-2 bg-yellow-500 text-white font-medium rounded-md text-sm transition-colors hover:bg-yellow-600"
               >
                 Revisi
               </button>
               <!-- Tombol Lihat Laporan PDF -->
               <Link
                 :href="route('inspections.review.pdf', encryptedIds)"
-                class="flex-2 inline-flex items-center justify-center px-3 py-2 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white font-medium rounded-md text-sm transition-colors hover:from-indigo-800 hover:to-sky-700"
+                class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white font-medium rounded-md text-sm transition-colors hover:from-indigo-800 hover:to-sky-700"
               >
                 Lihat Laporan PDF
               </Link>
@@ -104,14 +104,18 @@
 
             <!-- Tampilan tombol untuk status 'approved' -->
             <template v-else-if="inspection.status === 'approved' && inspection.file">
-              <!-- Tombol Download PDF -->
-             <a
-                :href="route('inspections.download.approved.pdf', encryptedIds)"
-                class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-600 text-white font-medium rounded-md text-sm transition-colors hover:bg-blue-700"
+               <!-- Tombol Download (jika sudah ada file) -->
+            <a
+              v-if="inspection.file"
+              :href="route('inspections.download.approved.pdf', encryptedIds)"
+              class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-600 text-white font-medium rounded-md text-sm transition-colors hover:bg-blue-700"
                 download
-              >
-                Download Laporan PDF
-              </a>
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Download PDF
+            </a>
               <!-- Tombol Kirim Email -->
               <button
                 @click="showEmailModal = true"
@@ -144,9 +148,10 @@
     <div v-if="showRevisionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
       <div class="bg-white p-6 rounded-lg shadow-xl w-96">
         <h3 class="text-lg font-bold mb-4">Konfirmasi Revisi</h3>
-        <p class="text-gray-700 mb-6">
-          Apakah Anda yakin ingin mengajukan revisi pada laporan ini?
+        <p class="text-gray-700 mb2">
+          Apakah Anda yakin ingin revisi pada laporan ini?
         </p>
+        <p class="text-gray-700 mb-4">Setelah ini akan masuk ke halaman Inspeksi.</p>
         <div class="flex justify-end space-x-4">
           <button @click="showRevisionModal = false" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">
             Batal
@@ -155,7 +160,7 @@
             :href="route('inspections.revisi', encryptedIds)"
             class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
           >
-            Ya, Ajukan Revisi
+            Ya, Revisi 
           </Link>
         </div>
       </div>
@@ -178,8 +183,8 @@
           <button @click="showEmailModal = false" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">
             Batal
           </button>
-          <button @click="sendEmail" class="bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600">
-            Kirim
+          <button @click="sendEmail" disabled class="bg-teal-500 text-white px-4 py-2 rounded hover:bg-teal-600">
+            Masih dalam pengembangan 
           </button>
         </div>
       </div>
@@ -233,19 +238,19 @@ const sendEmail = () => {
   if (emailAddress.value) {
     // Di sini Anda bisa memanggil route atau API untuk mengirim email
     // Contoh:
-    router.post(route('inspections.send.email', props.encryptedIds), {
-      email: emailAddress.value
-    }).then(() => {
-      showEmailModal.value = false
-      emailAddress.value = ''
-      alert('Laporan berhasil dikirim via email!')
-    })
+    // router.post(route('inspections.send.email', props.encryptedIds), {
+    //   email: emailAddress.value
+    // }).then(() => {
+    //   showEmailModal.value = false
+    //   emailAddress.value = ''
+    //   alert('Laporan berhasil dikirim via email!')
+    // })
 
-    // Untuk demo, kita tutup modal saja
-    showEmailModal.value = false
-    emailAddress.value = ''
-    // Anda bisa tambahkan notifikasi sukses di sini
-    alert('Laporan berhasil dikirim ke ' + emailAddress.value)
+    // // Untuk demo, kita tutup modal saja
+    // showEmailModal.value = false
+    // emailAddress.value = ''
+    // // Anda bisa tambahkan notifikasi sukses di sini
+    // alert('Laporan berhasil dikirim ke ' + emailAddress.value)
   }
 }
 </script>

@@ -14,7 +14,7 @@ class JobController extends Controller
    public function index()
 {
     $tasks = Inspection::where('user_id', Auth::id())
-        ->whereIn('status', ['draft', 'in_progress', 'pending_review'])
+        ->whereIn('status', ['draft', 'in_progress', 'pending_review', 'pending','revision'])
         ->with([
             'car',
             'car.brand',

@@ -19,7 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
         // 'role' => \App\Http\Middleware\CheckRole::class,
-        'role.spatie' => \App\Http\Middleware\CheckSpatieRole::class,
+        'role_spatie' => \App\Http\Middleware\CheckSpatieRole::class,
         'is_admin' => \App\Http\Middleware\EnsureIsAdmin::class,
         
     ]);
