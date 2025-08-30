@@ -79,18 +79,9 @@ const clearPhotoFileInput = () => {
 
 <template>
     <FormSection @submitted="updateProfileInformation">
-        <template #title>
-            Informasi Profil
-        </template>
-
-        <template #description>
-            Perbarui informasi profil dan alamat email akun Anda.
-        </template>
 
         <template #form>
-            <!-- Profile Photo -->
             <div v-if="$page.props.jetstream.managesProfilePhotos" class="col-span-6 sm:col-span-4">
-                <!-- Profile Photo File Input -->
                 <input
                     id="photo"
                     ref="photoInput"
@@ -101,12 +92,10 @@ const clearPhotoFileInput = () => {
 
                 <InputLabel for="photo" value="Foto Profil" class="block text-sm font-medium text-gray-700 mb-2" />
 
-                <!-- Current Profile Photo -->
                 <div v-show="! photoPreview" class="mt-2 flex items-center space-x-4">
                     <img :src="user.profile_photo_url" :alt="user.name" class="rounded-full size-20 object-cover border-2 border-gray-300">
                 </div>
 
-                <!-- New Profile Photo Preview -->
                 <div v-show="photoPreview" class="mt-2">
                     <span
                         class="block rounded-full size-20 bg-cover bg-no-repeat bg-center border-2 border-gray-300"
@@ -115,8 +104,8 @@ const clearPhotoFileInput = () => {
                 </div>
 
                 <div class="mt-4 flex flex-wrap gap-2">
-                    <SecondaryButton 
-                        type="button" 
+                    <SecondaryButton
+                        type="button"
                         @click.prevent="selectNewPhoto"
                         class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                     >
@@ -136,7 +125,6 @@ const clearPhotoFileInput = () => {
                 <InputError :message="form.errors.photo" class="mt-2 text-sm text-red-600" />
             </div>
 
-            <!-- Name -->
             <div class="col-span-6 sm:col-span-4">
                 <InputLabel for="name" value="Nama" class="block text-sm font-medium text-gray-700 mb-2" />
                 <TextInput
@@ -150,9 +138,9 @@ const clearPhotoFileInput = () => {
                 />
                 <InputError :message="form.errors.name" class="mt-2 text-sm text-red-600" />
             </div>
-            <!-- No -->
+
             <div class="col-span-6 sm:col-span-4">
-                <InputLabel for="name" value="Nama" class="block text-sm font-medium text-gray-700 mb-2" />
+                <InputLabel for="numberPhone" value="No HP" class="block text-sm font-medium text-gray-700 mb-2" />
                 <InputNumber
                     id="numberPhone"
                     v-model="form.numberPhone"
@@ -165,7 +153,6 @@ const clearPhotoFileInput = () => {
                 <InputError :message="form.errors.numberPhone" class="mt-2 text-sm text-red-600" />
             </div>
 
-            <!-- Email -->
             <div class="col-span-6 sm:col-span-4">
                 <InputLabel for="email" value="Email" class="block text-sm font-medium text-gray-700 mb-2" />
                 <TextInput

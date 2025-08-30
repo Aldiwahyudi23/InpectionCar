@@ -7,6 +7,7 @@ import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
+import PWAInstallButton from '@/Components/PWAInstallButton.vue';
 
 defineProps({
     title: String,
@@ -36,7 +37,8 @@ const toggleProfileDropdown = () => {
         <Head :title="title" />
 
         <Banner />
-
+ <!-- PWA Install Button -->
+    <PWAInstallButton />
         <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
             <!-- Header -->
             <nav class="bg-gradient-to-r from-sky-600 to-indigo-700 shadow-lg fixed w-full top-0 z-50">

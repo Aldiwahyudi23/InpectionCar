@@ -23,61 +23,62 @@ export default defineConfig({
             manifest: {
                 name: 'Car Inspection App',
                 short_name: 'CarInspect',
-                description: 'Aplikasi Inspeksi Kendaraan',
-                theme_color: '#6366f1',
+                description: 'Aplikasi Inspeksi Kendaraan Mobile',
+                theme_color: '#6366F1',
                 background_color: '#ffffff',
                 display: 'standalone',
-                orientation: 'portrait',
+                orientation: 'portrait', // Portrait untuk mobile
                 scope: '/',
                 start_url: '/',
+                categories: ['business', 'productivity'],
                 icons: [
                     {
                         src: '/icons/icon-72x72.jpg',
                         sizes: '72x72',
                         type: 'image/jpg',
-                        purpose: 'maskable any'
+                        purpose: 'any maskable'
                     },
                     {
                         src: '/icons/icon-96x96.jpg',
                         sizes: '96x96',
                         type: 'image/jpg',
-                        purpose: 'maskable any'
+                        purpose: 'any maskable'
                     },
                     {
                         src: '/icons/icon-128x128.jpg',
                         sizes: '128x128',
                         type: 'image/jpg',
-                        purpose: 'maskable any'
+                        purpose: 'any maskable'
                     },
                     {
                         src: '/icons/icon-144x144.jpg',
                         sizes: '144x144',
                         type: 'image/jpg',
-                        purpose: 'maskable any'
+                        purpose: 'any maskable'
                     },
                     {
                         src: '/icons/icon-152x152.jpg',
                         sizes: '152x152',
                         type: 'image/jpg',
-                        purpose: 'maskable any'
+                        purpose: 'any maskable'
                     },
                     {
                         src: '/icons/icon-192x192.jpg',
                         sizes: '192x192',
                         type: 'image/jpg',
-                        purpose: 'maskable any'
+                        purpose: 'any maskable'
                     },
                     {
                         src: '/icons/icon-384x384.jpg',
                         sizes: '384x384',
                         type: 'image/jpg',
-                        purpose: 'maskable any'
+                        purpose: 'any maskable'
                     },
                     {
                         src: '/icons/icon-512x512.jpg',
                         sizes: '512x512',
                         type: 'image/jpg',
-                        purpose: 'maskable any'
+                        purpose: 'any maskable'
                     }
                 ]
             },
@@ -91,21 +92,7 @@ export default defineConfig({
                             cacheName: 'google-fonts-cache',
                             expiration: {
                                 maxEntries: 10,
-                                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-                            },
-                            cacheableResponse: {
-                                statuses: [0, 200]
-                            }
-                        }
-                    },
-                    {
-                        urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-                        handler: 'CacheFirst',
-                        options: {
-                            cacheName: 'gstatic-fonts-cache',
-                            expiration: {
-                                maxEntries: 10,
-                                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+                                maxAgeSeconds: 60 * 60 * 24 * 365
                             },
                             cacheableResponse: {
                                 statuses: [0, 200]
@@ -116,6 +103,18 @@ export default defineConfig({
             }
         })
     ],
+    // Optimasi untuk mobile
+    build: {
+        chunkSizeWarningLimit: 1000, // Reduce warning size
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'vendor': ['vue', '@inertiajs/vue3'],
+                    'chartjs': ['chart.js']
+                }
+            }
+        }
+    },
     resolve: {
         alias: {
             '@': '/resources/js',

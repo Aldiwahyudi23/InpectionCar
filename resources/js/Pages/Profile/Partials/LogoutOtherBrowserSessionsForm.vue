@@ -44,20 +44,12 @@ const closeModal = () => {
 
 <template>
     <ActionSection>
-        <template #title>
-            Browser Sessions
-        </template>
-
-        <template #description>
-            Manage and log out your active sessions on other browsers and devices.
-        </template>
 
         <template #content>
             <div class="max-w-xl text-sm text-gray-600">
-                If necessary, you may log out of all of your other browser sessions across all of your devices. Some of your recent sessions are listed below; however, this list may not be exhaustive. If you feel your account has been compromised, you should also update your password.
+                Jika perlu, Anda dapat keluar dari semua sesi peramban lain di seluruh perangkat Anda. Beberapa sesi terbaru Anda tercantum di bawah ini; namun, daftar ini mungkin tidak lengkap. Jika Anda merasa akun Anda telah disusupi, Anda juga harus memperbarui kata sandi Anda.
             </div>
 
-            <!-- Other Browser Sessions -->
             <div v-if="sessions.length > 0" class="mt-5 space-y-6">
                 <div v-for="(session, i) in sessions" :key="i" class="flex items-center">
                     <div>
@@ -72,15 +64,15 @@ const closeModal = () => {
 
                     <div class="ms-3">
                         <div class="text-sm text-gray-600">
-                            {{ session.agent.platform ? session.agent.platform : 'Unknown' }} - {{ session.agent.browser ? session.agent.browser : 'Unknown' }}
+                            {{ session.agent.platform ? session.agent.platform : 'Tidak Dikenal' }} - {{ session.agent.browser ? session.agent.browser : 'Tidak Dikenal' }}
                         </div>
 
                         <div>
                             <div class="text-xs text-gray-500">
                                 {{ session.ip_address }},
 
-                                <span v-if="session.is_current_device" class="text-green-500 font-semibold">This device</span>
-                                <span v-else>Last active {{ session.last_active }}</span>
+                                <span v-if="session.is_current_device" class="text-green-500 font-semibold">Perangkat Ini</span>
+                                <span v-else>Aktif terakhir {{ session.last_active }}</span>
                             </div>
                         </div>
                     </div>
@@ -88,51 +80,79 @@ const closeModal = () => {
             </div>
 
             <div class="flex items-center mt-5">
-                <PrimaryButton @click="confirmLogout">
-                    Log Out Other Browser Sessions
+                <PrimaryButton
+                    @click="confirmLogout"
+                    :class="[
+                        'px-6 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white',
+                        'bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800',
+                        'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
+                        'transition-all duration-200 transform hover:scale-105'
+                    ]"
+                >
+                    Keluar dari Sesi Peramban Lain
                 </PrimaryButton>
 
-                <ActionMessage :on="form.recentlySuccessful" class="ms-3">
-                    Done.
+                <ActionMessage :on="form.recentlySuccessful" class="ms-3 text-sm text-green-600 font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Selesai.
                 </ActionMessage>
             </div>
 
-            <!-- Log Out Other Devices Confirmation Modal -->
             <DialogModal :show="confirmingLogout" @close="closeModal">
                 <template #title>
-                    Log Out Other Browser Sessions
+                    Keluar dari Sesi Peramban Lain
                 </template>
 
                 <template #content>
-                    Please enter your password to confirm you would like to log out of your other browser sessions across all of your devices.
+                    Harap masukkan kata sandi Anda untuk mengonfirmasi bahwa Anda ingin keluar dari sesi peramban lain di seluruh perangkat Anda.
 
                     <div class="mt-4">
                         <TextInput
                             ref="passwordInput"
                             v-model="form.password"
                             type="password"
-                            class="mt-1 block w-3/4"
-                            placeholder="Password"
+                            class="mt-1 block w-3/4 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                            placeholder="Kata Sandi"
                             autocomplete="current-password"
                             @keyup.enter="logoutOtherBrowserSessions"
                         />
 
-                        <InputError :message="form.errors.password" class="mt-2" />
+                        <InputError :message="form.errors.password" class="mt-2 text-sm text-red-600" />
                     </div>
                 </template>
 
                 <template #footer>
-                    <SecondaryButton @click="closeModal">
-                        Cancel
+                    <SecondaryButton
+                        @click="closeModal"
+                        class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
+                    >
+                        Batal
                     </SecondaryButton>
 
                     <PrimaryButton
                         class="ms-3"
-                        :class="{ 'opacity-25': form.processing }"
+                        :class="[
+                            'px-6 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white',
+                            'bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800',
+                            'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
+                            'transition-all duration-200 transform hover:scale-105',
+                            form.processing ? 'opacity-50 cursor-not-allowed' : ''
+                        ]"
                         :disabled="form.processing"
                         @click="logoutOtherBrowserSessions"
                     >
-                        Log Out Other Browser Sessions
+                        <span v-if="form.processing" class="flex items-center">
+                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Memproses...
+                        </span>
+                        <span v-else>
+                            Keluar dari Sesi Lain
+                        </span>
                     </PrimaryButton>
                 </template>
             </DialogModal>

@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 use Spatie\EloquentSortable\SortableTrait;
 
 class Inspection extends Model
@@ -53,6 +54,17 @@ class Inspection extends Model
         }
     }
     
+
+    public function addLog($action, $description = null, $userId = null)
+    {
+        return $this->logs()->create([
+            'user_id' => $userId ?? Auth::user()->id,
+            'action' => $action,
+            'description' => $description,
+        ]);
+    }
+
+
     public function categories()
     {
         return $this->belongsToMany(Categorie::class);
@@ -103,4 +115,10 @@ class Inspection extends Model
     {
         return $this->hasMany(InspectionImage::class,'inspection_id');
     }
+
+    public function logs()
+    {
+        return $this->hasMany(InspectionLog::class)->with('user')->latest();
+    }
+
 }

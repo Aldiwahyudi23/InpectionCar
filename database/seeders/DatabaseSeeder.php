@@ -24,6 +24,10 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             MasterDataSeeder::class, // Tambahkan ini
             AdminUserSeeder::class,
+            BrandSeeder::class,
+            CarModelSeeder::class,
+            CarTypeSeeder::class,
+            CarDetailSeeder::class,
         ]);
     }
 }

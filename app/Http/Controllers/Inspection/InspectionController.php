@@ -79,6 +79,7 @@ public function start($inspection)
             $inspection->update([
                 'status' => 'in_progress',
             ]);
+            $inspection->addLog('in_progress', 'Mulai Inspeksi');
         }
 
     // Ambil appMenu tanpa filter damage points (ambil semua points)
@@ -207,6 +208,8 @@ public function store(Request $request)
         // Buat entri inspeksi baru di database
         $inspection = Inspection::create($inspectionData);
 
+        $inspection->addLog('created', 'Inspection baru dibuat');
+
         // Tentukan respons berdasarkan status jadwal
         if ($validated['is_scheduled']) {
             // Jika dijadwalkan, kembali ke halaman sebelumnya dengan pesan sukses
@@ -224,10 +227,17 @@ public function store(Request $request)
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show( $inspection)
     {
-        //
+        $id = Crypt::decrypt($inspection);
+        $inspection = Inspection::find($id);
+        $inspection->load(['logs.user']); // load logs + user
+
+        return inertia('FrontEnd/Inspection/Log', [
+            'inspection' => $inspection
+        ]);
     }
+
 
     /**
      * Show the form for editing the specified resource.
@@ -609,6 +619,7 @@ public function finalSubmit(Request $request, $id)
     $inspection->update([
         'status' => 'pending_review',
     ]);
+    $inspection->addLog('finish', 'Sudah selesai Inspection');
 
     $encryptId = Crypt::encrypt($inspection->id);
     // Redirect ke halaman review
@@ -627,6 +638,7 @@ public function review($id)
         'car.type',
         'category',
     ])->findOrFail($id);
+
 
     // cek status
     if (in_array($inspection->status, [
@@ -662,6 +674,7 @@ public function reviewPdf($id)
         'category',
     ])->findOrFail($id);
 
+    
      // cek status
     if (in_array($inspection->status, [
         'draft', 
@@ -728,7 +741,7 @@ public function downloadPdf($id)
             'car.type',
             'category',
         ])->findOrFail($id);
-
+      
         // cek status
         if (in_array($inspection->status, [
             'draft', 
@@ -795,6 +808,7 @@ public function downloadPdf($id)
             'file' => $filePath,
             'approved_at' => now(),
         ]);
+        $inspection->addLog('approved', 'Laporan sudah di setujui');
 
         // Return download response
         // return $pdf->download('inspection_report_'.$inspection->car_name.'_('. $inspection->plate_number.').pdf');
@@ -819,6 +833,7 @@ public function sendEmail($id, Request $request)
     // Decrypt IDs dan proses pengiriman email
     $inspection = Inspection::find(decrypt($id));
     
+    $inspection->addLog('email', 'Report sudah di kirim via email');
     // Kirim email disini
     Mail::to($request->email)->send(new InspectionReportMail($inspection));
 
@@ -838,9 +853,10 @@ public function sendEmail($id, Request $request)
         
         $filePath = storage_path('app/public/' . $inspection->file);
         
+        $inspection->addLog('download', 'Report sudah di download');
             // Kirim file untuk diunduh
             return response()->download($filePath, 'laporan-inspeksi-' . $inspection->plate_number . '.pdf');
-
+        
         } catch (\Exception $e) {
             return back()->with('error', 'Link tidak valid atau terjadi kesalahan.');
         }
@@ -850,14 +866,16 @@ public function sendEmail($id, Request $request)
     {
         try {
             $id = Crypt::decrypt($id);
-            $task = Inspection::findOrFail($id);
+            $inspection = Inspection::findOrFail($id);
             
             // Update status dan simpan alasan
-            $task->update([
+            $inspection->update([
                 'status' => 'revision',
             ]);
+
+            $inspection->addLog('revision', 'User revisi Inspeksi ');
             
-            $inspectionID = Crypt::encrypt($task->id);
+            $inspectionID = Crypt::encrypt($inspection->id);
             return redirect()->route('inspections.start', ['inspection' => $inspectionID])->with('success', 'Inspeksi berhasil dibatalkan');
             
         } catch (DecryptException $e) {
@@ -868,13 +886,15 @@ public function sendEmail($id, Request $request)
     {
         try {
             $id = Crypt::decrypt($inspection);
-            $task = Inspection::findOrFail($id);
+            $inspection = Inspection::findOrFail($id);
             
             // Update status dan simpan alasan
-            $task->update([
+            $inspection->update([
                 'status' => 'cancelled',
                 'notes' => $request->reason
             ]);
+
+             $inspection->addLog('cancelled',description:  'Inspection di batalkan');
             
             return redirect()->back()->with('success', 'Inspeksi berhasil dibatalkan');
             

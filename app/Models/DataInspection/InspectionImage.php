@@ -4,6 +4,7 @@ namespace App\Models\DataInspection;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class InspectionImage extends Model
 {
@@ -35,5 +36,14 @@ class InspectionImage extends Model
     public function getImageUrlAttribute()
     {
         return asset('storage/' . ltrim($this->image_path, 'storage/'));
+    }
+
+    protected static function booted()
+    {
+        static::deleting(function ($image) {
+            if ($image->image_path && Storage::exists($image->image_path)) {
+                Storage::delete($image->image_path);
+            }
+        });
     }
 }

@@ -106,30 +106,23 @@ const disableTwoFactorAuthentication = () => {
 
 <template>
     <ActionSection>
-        <template #title>
-            Two Factor Authentication
-        </template>
-
-        <template #description>
-            Add additional security to your account using two factor authentication.
-        </template>
 
         <template #content>
             <h3 v-if="twoFactorEnabled && ! confirming" class="text-lg font-medium text-gray-900">
-                You have enabled two factor authentication.
+                Anda telah mengaktifkan autentikasi dua faktor.
             </h3>
 
             <h3 v-else-if="twoFactorEnabled && confirming" class="text-lg font-medium text-gray-900">
-                Finish enabling two factor authentication.
+                Selesaikan pengaktifan autentikasi dua faktor.
             </h3>
 
             <h3 v-else class="text-lg font-medium text-gray-900">
-                You have not enabled two factor authentication.
+                Anda belum mengaktifkan autentikasi dua faktor.
             </h3>
 
             <div class="mt-3 max-w-xl text-sm text-gray-600">
                 <p>
-                    When two factor authentication is enabled, you will be prompted for a secure, random token during authentication. You may retrieve this token from your phone's Google Authenticator application.
+                    Ketika autentikasi dua faktor diaktifkan, Anda akan diminta untuk memasukkan token acak yang aman selama proses autentikasi. Anda dapat mengambil token ini dari aplikasi Google Authenticator di ponsel Anda.
                 </p>
             </div>
 
@@ -137,24 +130,24 @@ const disableTwoFactorAuthentication = () => {
                 <div v-if="qrCode">
                     <div class="mt-4 max-w-xl text-sm text-gray-600">
                         <p v-if="confirming" class="font-semibold">
-                            To finish enabling two factor authentication, scan the following QR code using your phone's authenticator application or enter the setup key and provide the generated OTP code.
+                            Untuk menyelesaikan pengaktifan autentikasi dua faktor, pindai kode QR berikut menggunakan aplikasi authenticator di ponsel Anda atau masukkan kunci pengaturan dan berikan kode OTP yang dihasilkan.
                         </p>
 
                         <p v-else>
-                            Two factor authentication is now enabled. Scan the following QR code using your phone's authenticator application or enter the setup key.
+                            Autentikasi dua faktor sekarang sudah aktif. Pindai kode QR berikut menggunakan aplikasi authenticator di ponsel Anda atau masukkan kunci pengaturan.
                         </p>
                     </div>
 
-                    <div class="mt-4 p-2 inline-block bg-white" v-html="qrCode" />
+                    <div class="mt-4 p-2 inline-block bg-white rounded-lg border border-gray-300" v-html="qrCode" />
 
                     <div v-if="setupKey" class="mt-4 max-w-xl text-sm text-gray-600">
                         <p class="font-semibold">
-                            Setup Key: <span v-html="setupKey"></span>
+                            Kunci Pengaturan: <span v-html="setupKey"></span>
                         </p>
                     </div>
 
                     <div v-if="confirming" class="mt-4">
-                        <InputLabel for="code" value="Code" />
+                        <InputLabel for="code" value="Kode" />
 
                         <TextInput
                             id="code"
@@ -175,11 +168,11 @@ const disableTwoFactorAuthentication = () => {
                 <div v-if="recoveryCodes.length > 0 && ! confirming">
                     <div class="mt-4 max-w-xl text-sm text-gray-600">
                         <p class="font-semibold">
-                            Store these recovery codes in a secure password manager. They can be used to recover access to your account if your two factor authentication device is lost.
+                            Simpan kode pemulihan ini di pengelola kata sandi yang aman. Kode ini dapat digunakan untuk memulihkan akses ke akun Anda jika perangkat autentikasi dua faktor Anda hilang.
                         </p>
                     </div>
 
-                    <div class="grid gap-1 max-w-xl mt-4 px-4 py-4 font-mono text-sm bg-gray-100 rounded-lg">
+                    <div class="grid gap-1 max-w-xl mt-4 px-4 py-4 font-mono text-sm bg-gray-100 rounded-lg border border-gray-200">
                         <div v-for="code in recoveryCodes" :key="code">
                             {{ code }}
                         </div>
@@ -190,8 +183,27 @@ const disableTwoFactorAuthentication = () => {
             <div class="mt-5">
                 <div v-if="! twoFactorEnabled">
                     <ConfirmsPassword @confirmed="enableTwoFactorAuthentication">
-                        <PrimaryButton type="button" :class="{ 'opacity-25': enabling }" :disabled="enabling">
-                            Enable
+                        <PrimaryButton
+                            type="button"
+                            :class="[
+                                'px-6 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white',
+                                'bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800',
+                                'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
+                                'transition-all duration-200 transform hover:scale-105',
+                                enabling ? 'opacity-50 cursor-not-allowed' : ''
+                            ]"
+                            :disabled="enabling"
+                        >
+                            <span v-if="enabling" class="flex items-center">
+                                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Mengaktifkan...
+                            </span>
+                            <span v-else>
+                                Aktifkan
+                            </span>
                         </PrimaryButton>
                     </ConfirmsPassword>
                 </div>
@@ -202,48 +214,79 @@ const disableTwoFactorAuthentication = () => {
                             v-if="confirming"
                             type="button"
                             class="me-3"
-                            :class="{ 'opacity-25': enabling }"
+                            :class="[
+                                'px-6 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white',
+                                'bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800',
+                                'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500',
+                                'transition-all duration-200 transform hover:scale-105',
+                                enabling ? 'opacity-50 cursor-not-allowed' : ''
+                            ]"
                             :disabled="enabling"
                         >
-                            Confirm
+                            <span v-if="enabling" class="flex items-center">
+                                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Mengonfirmasi...
+                            </span>
+                            <span v-else>
+                                Konfirmasi
+                            </span>
                         </PrimaryButton>
                     </ConfirmsPassword>
 
                     <ConfirmsPassword @confirmed="regenerateRecoveryCodes">
                         <SecondaryButton
                             v-if="recoveryCodes.length > 0 && ! confirming"
-                            class="me-3"
+                            class="me-3 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                         >
-                            Regenerate Recovery Codes
+                            Buat Ulang Kode Pemulihan
                         </SecondaryButton>
                     </ConfirmsPassword>
 
                     <ConfirmsPassword @confirmed="showRecoveryCodes">
                         <SecondaryButton
                             v-if="recoveryCodes.length === 0 && ! confirming"
-                            class="me-3"
+                            class="me-3 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                         >
-                            Show Recovery Codes
+                            Tampilkan Kode Pemulihan
                         </SecondaryButton>
                     </ConfirmsPassword>
 
                     <ConfirmsPassword @confirmed="disableTwoFactorAuthentication">
                         <SecondaryButton
                             v-if="confirming"
+                            class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                             :class="{ 'opacity-25': disabling }"
                             :disabled="disabling"
                         >
-                            Cancel
+                            Batal
                         </SecondaryButton>
                     </ConfirmsPassword>
 
                     <ConfirmsPassword @confirmed="disableTwoFactorAuthentication">
                         <DangerButton
                             v-if="! confirming"
-                            :class="{ 'opacity-25': disabling }"
+                            :class="[
+                                'px-6 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white',
+                                'bg-red-600 hover:bg-red-700',
+                                'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500',
+                                'transition-all duration-200 transform hover:scale-105',
+                                disabling ? 'opacity-50 cursor-not-allowed' : ''
+                            ]"
                             :disabled="disabling"
                         >
-                            Disable
+                            <span v-if="disabling" class="flex items-center">
+                                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Menonaktifkan...
+                            </span>
+                            <span v-else>
+                                Nonaktifkan
+                            </span>
                         </DangerButton>
                     </ConfirmsPassword>
                 </div>

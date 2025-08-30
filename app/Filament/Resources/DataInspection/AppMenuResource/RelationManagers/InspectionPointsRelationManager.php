@@ -674,10 +674,10 @@ protected function getDamageCategories(): array
         'mesin' => [
             'label' => 'Kerusakan Mesin',
             'options' => [
-                ['value' => 'Mesin berisik indikasi bearing atau vant belt bermasalah', 'label' => 'Berisik Bearing/vanbelt'],
-                ['value' => 'Oli bocor perlu pengecekan gasket atau seal', 'label' => 'Bocor Oli'],
-                ['value' => 'Mesin sulit start mungkin aki atau starter bermasalah', 'label' => 'Sulit Start'],
-                ['value' => 'Tenaga berkurang indikasi filter atau injector kotor', 'label' => 'Tenaga Turun'],
+                ['value' => 'Mesin berisik', 'label' => 'Berisik'],
+                ['value' => 'Oli bocor', 'label' => 'Bocor Oli'],
+                ['value' => 'Mesin sulit start', 'label' => 'Sulit Start'],
+                ['value' => 'Tenaga berkurang', 'label' => 'Tenaga Turun'],
                 ['value' => 'Asap putih dari knalpot', 'label' => 'Asap Putih'],
             ]
         ],
@@ -685,29 +685,90 @@ protected function getDamageCategories(): array
             'label' => 'Kerusakan Kelistrikan',
             'options' => [
                 ['value' => 'Lampu tidak menyala', 'label' => 'Lampu Mati'],
-                ['value' => 'Power window tidak berfungsi motor atau switch bermasalah', 'label' => 'Power Window Rusak'],
+                ['value' => 'Power window tidak berfungsi', 'label' => 'Power Window Rusak'],
                 ['value' => 'AC tidak dingin', 'label' => 'AC Tidak Dingin'],
                 ['value' => 'Audio tidak berfungsi', 'label' => 'Audio Rusak'],
-                ['value' => 'Kabel terbuka berbahaya dan perlu segera diperbaiki', 'label' => 'Kabel Terbuka'],
+                ['value' => 'Kabel terbuka', 'label' => 'Kabel Terbuka'],
             ]
         ],
         'kaca' => [
             'label' => 'Kerusakan Kaca',
             'options' => [
-                ['value' => 'Retak pada kaca bisa membahayakan jika di kaca depan', 'label' => 'Kaca Retak'],
-                ['value' => 'Kaca film menggelembung atau rusak perlu penggantian', 'label' => 'Kaca Film Rusak'],
-                ['value' => 'Kaca pecah sangat berbahaya dan perlu penggantian segera', 'label' => 'Kaca Pecah'],
-                ['value' => 'Pintu kaca tidak bisa naik/turun regulator bermasalah', 'label' => 'Kaca Macet'],
+                ['value' => 'Retak pada kaca', 'label' => 'Kaca Retak'],
+                ['value' => 'Kaca film menggelembung atau rusak', 'label' => 'Kaca Film Rusak'],
+                ['value' => 'Kaca pecah', 'label' => 'Kaca Pecah'],
+                ['value' => 'Pintu kaca tidak bisa naik/turun', 'label' => 'Kaca Macet'],
             ]
         ],
         'ban_velg' => [
             'label' => 'Kerusakan Ban & Velg',
             'options' => [
                 ['value' => 'Velg tergores atau penyok', 'label' => 'Velg Rusak'],
-                ['value' => 'Ban botak sangat berbahaya dan perlu penggantian segera', 'label' => 'Ban Botak'],
-                ['value' => 'Velg retak berbahaya dan perlu penggantian', 'label' => 'Velg Retak'],
+                ['value' => 'Ban botak', 'label' => 'Ban Botak'],
+                ['value' => 'Velg retak', 'label' => 'Velg Retak'],
             ]
-        ]
+        ],
+        'rangka_depan' => [
+            'label' => 'Rangka Depan (Bulkhead)',
+            'options' => [
+                ['value' => 'Bekas tabrakan depan', 'label' => 'Bekas Tabrak Depan'],
+                ['value' => 'Frame bengkok', 'label' => 'Frame Bengkok'],
+                ['value' => 'Bekas perbaikan las', 'label' => 'Bekas Las'],
+                ['value' => 'Bantalan mesin retak atau pecah', 'label' => 'Bantalan Mesin Rusak'],
+            ]
+        ],
+        'pilar' => [
+            'label' => 'Pilar',
+            'options' => [
+                ['value' => 'Pilar bengkok akibat tabrakan', 'label' => 'Pilar Bengkok'],
+                ['value' => 'Terdapat bekas perbaikan las', 'label' => 'Bekas Las'],
+                ['value' => 'Permukaan berkarat', 'label' => 'Berkarat'],
+                ['value' => 'Ada lubang akibat korosi', 'label' => 'Korosi'],
+            ]
+        ],
+        'kaki_kaki' => [
+            'label' => 'Kaki-Kaki',
+            'options' => [
+                ['value' => 'Bunyi tidak normal saat melewati jalan tidak rata', 'label' => 'Bunyi Tidak Normal'],
+                ['value' => 'Shock absorber bocor', 'label' => 'Shock Bocor'],
+                ['value' => 'Ball joint aus', 'label' => 'Ball Joint Aus'],
+                ['value' => 'Bearing roda berisik', 'label' => 'Bearing Berisik'],
+                ['value' => 'Suspensi tidak stabil', 'label' => 'Suspensi Goyang'],
+            ]
+        ],
+        'sistem_pengereman' => [
+            'label' => 'Sistem Pengereman',
+            'options' => [
+                ['value' => 'Rem bunyi berdecit', 'label' => 'Rem Berdecit'],
+                ['value' => 'Rem blong atau kurang pakem', 'label' => 'Rem Blong'],
+                ['value' => 'Piringan rem berkarat atau tipis', 'label' => 'Piringan Berkarat'],
+                ['value' => 'Minyak rem bocor', 'label' => 'Minyak Rem Bocor'],
+            ]
+        ],
+        'sistem_pembuangan' => [
+            'label' => 'Sistem Pembuangan',
+            'options' => [
+                ['value' => 'Knalpot berlubang', 'label' => 'Knalpot Bolong'],
+                ['value' => 'Suara knalpot bocor', 'label' => 'Suara Bocor'],
+                ['value' => 'Bracket knalpot patah', 'label' => 'Bracket Patah'],
+            ]
+        ],
+        'sistem_pendingin' => [
+            'label' => 'Sistem Pendingin',
+            'options' => [
+                ['value' => 'Radiator bocor', 'label' => 'Radiator Bocor'],
+                ['value' => 'Air radiator berkurang cepat', 'label' => 'Air Kurang'],
+                ['value' => 'Kipas radiator tidak berfungsi', 'label' => 'Kipas Rusak'],
+            ]
+        ],
+        'transmisi' => [
+            'label' => 'Transmisi',
+            'options' => [
+                ['value' => 'Transmisi manual sulit masuk gigi', 'label' => 'Gigi Sulit Masuk'],
+                ['value' => 'Transmisi otomatis hentakan kasar', 'label' => 'Hentakan Kasar'],
+                ['value' => 'Oli transmisi bocor', 'label' => 'Oli Transmisi Bocor'],
+            ]
+        ],
     ];
 }
 

@@ -15,6 +15,9 @@ const showCancelModal = ref(false);
 const selectedTask = ref(null);
 const cancelReason = ref('');
 
+// Form untuk memulai inspeksi, mirip dengan form pembatalan
+const startForm = useForm({});
+
 const openModal = (task) => {
     selectedTask.value = task;
     showModal.value = true;
@@ -37,14 +40,28 @@ const cancelForm = useForm({
 
 const submitCancel = () => {
     if (!selectedTask.value) return;
-    
+
     cancelForm.reason = cancelReason.value;
-    cancelForm.post(route('inspections.cancel', { 
-        inspection: props.encryptedIds[selectedTask.value.id] 
+    cancelForm.post(route('inspections.cancel', {
+        inspection: props.encryptedIds[selectedTask.value.id]
     }), {
         onSuccess: () => {
             closeModal();
             cancelReason.value = '';
+        }
+    });
+};
+
+// Fungsi baru untuk memulai inspeksi dengan status loading
+const submitStartInspection = () => {
+    if (!selectedTask.value) return;
+
+    startForm.get(route('inspections.start', {
+        inspection: props.encryptedIds[selectedTask.value.id]
+    }), {
+        onFinish: () => {
+            // Menutup modal setelah selesai, baik sukses maupun gagal
+            closeModal();
         }
     });
 };
@@ -62,6 +79,22 @@ const getButtonLabel = (status) => {
             return 'Lanjutkan Revisi';
         case 'pending':
             return 'Ditunda => Lanjutkan Inspeksi';
+        default:
+            return 'Detail';
+    }
+};
+const getButtonProses = (status) => {
+    switch (status) {
+        case 'draft':
+            return 'Memuat Halaman Inspeksi...';
+        case 'in_progress':
+            return 'Membuka Halaman Inspeksi...';
+        case 'pending_review':
+            return 'Memuat Halaman Review...';
+        case 'revision':
+            return 'Memual Halaman Revisi...';
+        case 'pending':
+            return 'Lanjutkan Inspeksi...';
         default:
             return 'Detail';
     }
@@ -88,26 +121,37 @@ const getButtonLabel = (status) => {
                         :key="task.id"
                         class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition"
                     >
-                        <!-- Jadwal -->
-                        <div class="p-4">
-                            <div class="flex items-center mb-1">
-                                <CalendarDaysIcon class="h-5 w-5 text-blue-500 mr-2" />
-                                <span class="text-sm font-medium text-gray-600">Jadwal</span>
+                          <!-- Jadwal + Link Log -->
+                        <div class="p-4 flex justify-between items-start">
+                            <div>
+                                <div class="flex items-center mb-1">
+                                    <CalendarDaysIcon class="h-5 w-5 text-blue-500 mr-2" />
+                                    <span class="text-sm font-medium text-gray-600">Jadwal</span>
+                                </div>
+                                <p class="text-sm font-semibold text-blue-700 ml-7 -mt-1">
+                                    {{ new Date(task.inspection_date).toLocaleDateString('id-ID', {
+                                        weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
+                                        hour: '2-digit', minute: '2-digit'
+                                    }) }}
+                                </p>
                             </div>
-                            <p class="text-sm font-semibold text-blue-700 ml-7 -mt-1">
-                                {{ new Date(task.inspection_date).toLocaleDateString('id-ID', { 
-                                    weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', 
-                                    hour: '2-digit', minute: '2-digit' 
-                                }) }}
-                            </p>
+
+                            <!-- Link ke Log -->
+                            <Link
+                                :href="route('inspection.log', { inspection: encryptedIds[task.id] })"
+                                class="text-xs font-semibold text-indigo-600 hover:underline"
+                            >
+                                Lihat Log
+                            </Link>
                         </div>
+
 
                         <!-- Mobil -->
                         <div  class="px-4 py-3 bg-gray-50 border-t border-gray-100">
                             <div class="flex items-center">
                                 <CarIcon class="h-5 w-5 text-gray-500 mr-2" />
                                 <div class="text-sm font-medium text-gray-800">
-                                     <div v-if="task.car">
+                                   <div v-if="task.car">
                                         {{ `${task.car.brand.name} ${task.car.model.name} ${task.car.type.name} ${task.car.cc} ${task.car.transmission} ${task.car.year}` }}
                                         <span class="text-gray-600">({{ task.car.fuel_type }})</span>
                                     </div>
@@ -230,14 +274,17 @@ const getButtonLabel = (status) => {
                         >
                             Batal
                         </button>
-                        <Link
-                            :href="route('inspections.start', { inspection: encryptedIds[selectedTask?.id] })"
-                            method="get"
-                            class="px-4 py-2 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white border border-transparent rounded-md text-sm font-medium hover:bg-blue-700"
-                            :disabled="selectedTask.processing"
+                        <!-- Tombol "Mulai Inspeksi" yang diperbarui -->
+                        <button
+                            @click="submitStartInspection"
+                            type="button"
+                            :disabled="startForm.processing"
+                            class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white border border-transparent rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {{ getButtonLabel(selectedTask?.status) }}
-                        </Link>
+                            <span v-if="startForm.processing">{{ getButtonProses(selectedTask?.status) }}</span>
+                            <span v-else>{{ getButtonLabel(selectedTask?.status) }}</span>
+                            <!-- <ArrowRightIcon v-if="!startForm.processing" class="ml-2 h-4 w-4" /> -->
+                        </button>
                     </div>
                 </div>
             </div>

@@ -52,8 +52,14 @@ class JobController extends Controller
             ->orderBy('inspection_date', 'desc')
             ->get();
 
+                // Encrypt semua ID inspection
+         $encryptedIds = $tasks->mapWithKeys(function($task) {
+        return [$task->id => Crypt::encrypt($task->id)];
+    });
+
         return Inertia::render('FrontEnd/Menu/Tugas/History', [
             'tasks' => $tasks,
+            'encryptedIds' => $encryptedIds
         ]);
     }
 

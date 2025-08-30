@@ -47,6 +47,10 @@ Route::middleware([
         return Inertia::render('Dashboard');
     })->name('dashboard');
 
+    Route::get('/welcome', function () {
+        return Inertia::render('Welcome');
+    })->name('welcome');
+
     // Menu Tugas
     Route::get('/job', [JobController::class, 'index'])->name('job.index');
     Route::get('/job/history', [JobController::class, 'history'])->name('inspections.history');
@@ -57,6 +61,7 @@ Route::middleware([
 
     Route::get('/inspections/create/new', [InspectionController::class, 'create'])
             ->name('inspections.create.new');
+    Route::get('/inspection/{inspection}/log',[InspectionController::class, 'show'])->name('inspection.log');
     Route::post('/inspections', [InspectionController::class, 'store'])->name('inspections.store');
     Route::post('/inspections/{inspection}/cancel', [InspectionController::class, 'cancel'])
     ->name('inspections.cancel');

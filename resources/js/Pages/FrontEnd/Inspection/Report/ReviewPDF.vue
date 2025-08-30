@@ -12,141 +12,149 @@
       </p>
     </div>
 
-    <div class="header flex flex-col gap-5 mb-6 mt-6">
-      <div class="flex items-center gap-5">
-        <img 
-          v-if="coverImage && imageExists(coverImage.image_path)"
-          :src="getImageUrl(coverImage.image_path)" 
-          alt="Foto Utama"
-          class="w-40 h-40 object-cover border border-gray-300"
-        >
-        <div v-else class="w-40 h-40 border border-gray-300 flex items-center justify-center">
-          <span>Gambar tidak tersedia</span>
+    <div v-if="hasDataOrImages">
+      <div class="header flex flex-col gap-5 mb-6 mt-6">
+        <div class="flex items-center gap-5">
+          <img 
+            v-if="coverImage && imageExists(coverImage.image_path)"
+            :src="getImageUrl(coverImage.image_path)" 
+            alt="Foto Utama"
+            class="w-40 h-40 object-cover border border-gray-300"
+          >
+          <div v-else class="w-40 h-40 border border-gray-300 flex items-center justify-center">
+            <span>Gambar tidak tersedia</span>
+          </div>
+          <div class="mt-8">
+            <h2 class="text-xl font-bold m-0">{{ inspection.car_name }}</h2>
+          </div>
         </div>
 
-        <div class="mt-8">
-          <h2 class="text-xl font-bold m-0">{{ inspection.car_name }}</h2>
+        <div v-if="inspection.car_id" class="car-info">
+          <table class="w-full border-collapse border border-gray-300">
+            <tr>
+              <td class="p-2 border border-gray-300 font-bold w-1/3">Nomor Polisi</td>
+              <td class="p-2 border border-gray-300">{{ inspection.plate_number }}</td>
+            </tr>
+            <tr>
+              <td class="p-2 border border-gray-300 font-bold">Merek</td>
+              <td class="p-2 border border-gray-300">{{ inspection.car?.brand?.name }}</td>
+            </tr>
+            <tr>
+              <td class="p-2 border border-gray-300 font-bold">Model</td>
+              <td class="p-2 border border-gray-300">{{ inspection.car?.model?.name }}</td>
+            </tr>
+            <tr>
+              <td class="p-2 border border-gray-300 font-bold">Tipe</td>
+              <td class="p-2 border border-gray-300">{{ inspection.car?.type?.name }}</td>
+            </tr>
+            <tr>
+              <td class="p-2 border border-gray-300 font-bold">CC</td>
+              <td class="p-2 border border-gray-300">{{ inspection.car?.cc }}</td>
+            </tr>
+            <tr>
+              <td class="p-2 border border-gray-300 font-bold">Bahan Bakar</td>
+              <td class="p-2 border border-gray-300">{{ inspection.car?.fuel_type }}</td>
+            </tr>
+            <tr>
+              <td class="p-2 border border-gray-300 font-bold">Transmisi</td>
+              <td class="p-2 border border-gray-300">{{ inspection.car?.transmission }}</td>
+            </tr>
+            <tr>
+              <td class="p-2 border border-gray-300 font-bold">Periode Model</td>
+              <td class="p-2 border border-gray-300">{{ inspection.car?.production_period || '-' }}</td>
+            </tr>
+            <tr>
+              <td class="p-2 border border-gray-300 font-bold">Tahun Pembuatan</td>
+              <td class="p-2 border border-gray-300">{{ inspection.car?.year }}</td>
+            </tr>
+          </table>
+        </div>
+        
+        <div v-if="inspection.notes" class="conclusion p-4 bg-gray-50 border-l-4 border-gray-800 rounded">
+          <h3 class="text-lg font-bold mb-2">Kesimpulan Inspeksi:</h3>
+          <p class="m-0">{{ inspection.notes }}</p>
         </div>
       </div>
 
-      <div v-if="inspection.car_id" class="car-info">
-        <table class="w-full border-collapse border border-gray-300">
-          <tr>
-            <td class="p-2 border border-gray-300 font-bold w-1/3">Nomor Polisi</td>
-            <td class="p-2 border border-gray-300">{{ inspection.plate_number }}</td>
-          </tr>
-          <tr>
-            <td class="p-2 border border-gray-300 font-bold">Merek</td>
-            <td class="p-2 border border-gray-300">{{ inspection.car?.brand?.name }}</td>
-          </tr>
-          <tr>
-            <td class="p-2 border border-gray-300 font-bold">Model</td>
-            <td class="p-2 border border-gray-300">{{ inspection.car?.model?.name }}</td>
-          </tr>
-          <tr>
-            <td class="p-2 border border-gray-300 font-bold">Tipe</td>
-            <td class="p-2 border border-gray-300">{{ inspection.car?.type?.name }}</td>
-          </tr>
-          <tr>
-            <td class="p-2 border border-gray-300 font-bold">CC</td>
-            <td class="p-2 border border-gray-300">{{ inspection.car?.cc }}</td>
-          </tr>
-          <tr>
-            <td class="p-2 border border-gray-300 font-bold">Bahan Bakar</td>
-            <td class="p-2 border border-gray-300">{{ inspection.car?.fuel_type }}</td>
-          </tr>
-          <tr>
-            <td class="p-2 border border-gray-300 font-bold">Transmisi</td>
-            <td class="p-2 border border-gray-300">{{ inspection.car?.transmission }}</td>
-          </tr>
-          <tr>
-            <td class="p-2 border border-gray-300 font-bold">Periode Model</td>
-            <td class="p-2 border border-gray-300">{{ inspection.car?.production_period || '-' }}</td>
-          </tr>
-          <tr>
-            <td class="p-2 border border-gray-300 font-bold">Tahun Pembuatan</td>
-            <td class="p-2 border border-gray-300">{{ inspection.car?.year }}</td>
-          </tr>
-        </table>
-      </div>
-      
-      <div v-if="inspection.notes" class="conclusion p-4 bg-gray-50 border-l-4 border-gray-800 rounded">
-        <h3 class="text-lg font-bold mb-2">Kesimpulan Inspeksi:</h3>
-        <p class="m-0">{{ inspection.notes }}</p>
-      </div>
-    </div>
+      <h2 class="text-xl font-bold border-b-2 border-gray-800 pb-2 mb-6">Hasil Inspeksi</h2>
 
-    <h2 class="text-xl font-bold border-b-2 border-gray-800 pb-2 mb-6">Hasil Inspeksi</h2>
+      <div v-for="(points, componentName) in groupedPoints" :key="componentName" 
+          :class="['section mb-6', componentName === 'Foto Kendaraan' ? 'photo-component' : '']">
+        
+        <div class="component-title bg-gray-100 px-3 py-2 border-l-4 border-gray-800 font-bold">
+          {{ componentName || 'Tanpa Komponen' }}
+        </div>
 
-    <div v-for="(points, componentName) in groupedPoints" :key="componentName" 
-        :class="['section mb-6', componentName === 'Foto Kendaraan' ? 'photo-component' : '']">
-      
-      <div class="component-title bg-gray-100 px-3 py-2 border-l-4 border-gray-800 font-bold">
-        {{ componentName || 'Tanpa Komponen' }}
-      </div>
-
-      <div v-if="componentName === 'Foto Kendaraan'" class="images flex flex-wrap gap-2 mt-4">
-        <div v-for="point in points" :key="point.id">
-          <div v-for="img in point.images" :key="img.id" class="image-container">
-            <img 
-              v-if="imageExists(img.image_path)"
-              :src="getImageUrl(img.image_path)" 
-              alt="Foto Kendaraan"
-              class="w-28 h-28 object-cover border border-gray-300 rounded"
-              
-            >
-            <div v-else class="w-28 h-28 border border-gray-300 rounded flex items-center justify-center">
-              <span class="text-xs">Gambar tidak ditemukan</span>
+        <div v-if="componentName === 'Foto Kendaraan'" class="images flex flex-wrap gap-2 mt-4">
+          <div v-for="point in points" :key="point.id">
+            <div v-for="img in point.images" :key="img.id" class="image-container">
+              <img 
+                v-if="imageExists(img.image_path)"
+                :src="getImageUrl(img.image_path)" 
+                alt="Foto Kendaraan"
+                class="w-28 h-28 object-cover border border-gray-300 rounded"
+              >
+              <div v-else class="w-28 h-28 border border-gray-300 rounded flex items-center justify-center">
+                <span class="text-xs">Gambar tidak ditemukan</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <template v-else>
-        <div v-for="point in points" :key="point.id" class="point ml-4 py-3 border-b border-gray-100">
-          
-          <template v-if="!hasResult(point) && !hasImage(point)">
-            </template>
-          
-          <template v-else>
-            <span class="point-name inline-block min-w-40 font-bold align-top">
-              {{ point.name || '-' }}
-            </span>
+        <template v-else>
+          <div v-for="point in points" :key="point.id" class="point ml-4 py-3 border-b border-gray-100">
             
-            <div class="point-content inline-block w-calc-[100%-170px] align-top">
+            <template v-if="hasResult(point) || hasImage(point)">
+              <span class="point-name inline-block min-w-40 font-bold align-top">
+                {{ point.name || '-' }}
+              </span>
               
-              <template v-if="hasResult(point)">
-                <span v-if="shouldShowStatusBadge(point)" 
-                      :class="['status-badge', getStatusClass(point.results[0].status)]">
-                  {{ point.results[0].status }}
-                </span>
-                
-                <div v-if="shouldShowNote(point)" class="point-note italic text-gray-600 my-1">
-                  {{ formatNote(point) }}
-                </div>
-              </template>
-            </div>
+              <div class="point-content inline-block w-calc-[100%-170px] align-top">
+                <template v-if="hasResult(point)">
+                  <span v-if="shouldShowStatusBadge(point)" 
+                          :class="['status-badge', getStatusClass(point.results[0].status)]">
+                    {{ point.results[0].status }}
+                  </span>
+                  
+                  <div v-if="shouldShowNote(point)" class="point-note italic text-gray-600 my-1">
+                    {{ formatNote(point) }}
+                  </div>
+                </template>
+              </div>
 
-            <div v-if="shouldShowImages(point)" class="inspection-images flex flex-wrap gap-2 mt-4">
-              <div v-for="img in point.images" :key="img.id" class="image-container">
-                <img 
-                  v-if="imageExists(img.image_path)"
-                  :src="getImageUrl(img.image_path)" 
-                  alt="image"
-                  class="w-20 h-20 object-cover border border-gray-300 rounded"
-                >
-                <div v-else class="w-20 h-20 border border-gray-300 rounded flex items-center justify-center">
-                  <span class="text-xs">Gambar tidak ditemukan</span>
+              <div v-if="shouldShowImages(point)" class="inspection-images flex flex-wrap gap-2 mt-4">
+                <div v-for="img in point.images" :key="img.id" class="image-container">
+                  <img 
+                    v-if="imageExists(img.image_path)"
+                    :src="getImageUrl(img.image_path)" 
+                    alt="image"
+                    class="w-20 h-20 object-cover border border-gray-300 rounded"
+                  >
+                  <div v-else class="w-20 h-20 border border-gray-300 rounded flex items-center justify-center">
+                    <span class="text-xs">Gambar tidak ditemukan</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div v-if="shouldShowTextarea(point) && hasNote(point)" class="textarea-note italic text-gray-600 my-2">
-              {{ point.results[0].note }}
-            </div>
-          </template>
-        </div>
-      </template>
+              <div v-if="shouldShowTextarea(point) && hasNote(point)" class="textarea-note italic text-gray-600 my-2">
+                {{ point.results[0].note }}
+              </div>
+            </template>
+          </div>
+        </template>
+      </div>
+    </div>
+    
+    <div v-else class="flex flex-col items-center justify-center h-96 text-center">
+      <p class="text-lg font-semibold text-gray-700">
+        Data sudah tidak ada, karena sudah dijadikan PDF.
+      </p>
+      <a 
+        :href="route('inspections.download.pdf', encryptedIds)"
+        class="mt-4 inline-block bg-blue-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      >
+        Download PDF
+      </a>
     </div>
 
     <div v-if="showConfirmationModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
@@ -165,7 +173,7 @@
             <span v-else>Setujui Laporan</span>
           </button>
           <button v-else class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
-            <span >Laporan sudah di buat</span>
+            <span>Laporan sudah di buat</span>
           </button>
         </div>
       </div>
@@ -219,6 +227,23 @@ const approveReport = () => {
   }, 2000); // Simulasi loading 2 detik
 };
 
+const hasDataOrImages = computed(() => {
+    if (props.inspection.notes) {
+        return true;
+    }
+
+    const hasContent = props.inspection_points.some(point => {
+        // Pengecekan data di setiap point
+        return (point.results && point.results.length > 0) || (point.images && point.images.length > 0);
+    });
+    
+    // Pengecekan gambar utama
+    const hasCoverImage = props.coverImage && props.coverImage.image_path;
+
+    return hasContent || hasCoverImage;
+});
+
+
 // Helper functions (tetap sama)
 const imageExists = (imagePath) => imagePath && imagePath.length > 0;
 const getImageUrl = (imagePath) => `/${imagePath}`;
@@ -245,8 +270,8 @@ const shouldShowImages = (point) => {
 
   return (
     (inputType === 'image' || 
-     inputType === 'imageTOradio' || 
-     (inputType === 'radio' && showImageUpload)) && 
+      inputType === 'imageTOradio' || 
+      (inputType === 'radio' && showImageUpload)) && 
     hasImage(point)
   );
 };
