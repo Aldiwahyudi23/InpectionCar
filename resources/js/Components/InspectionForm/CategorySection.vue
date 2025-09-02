@@ -1,19 +1,20 @@
 <template>
   <div class="bg-gray-50 shadow-lg rounded-xl overflow-hidden border border-gray-100">
-    <div class="bg-indigo-50 px-6 py-2 border-b border-indigo-100">
-      <h2 class="text-xl font-semibold text-indigo-700">{{ category.name }} </h2>
+    <div class="bg-indigo-200 px-6 py-2 border-b">
+      <h3 class="text-xl font-semibold text-indigo-700">{{ category.name }} </h3>
     </div>
     
     <div class="p-4 space-y-4"> 
-      <div v-for="point in category.points" :key="point.id" 
-        class="space-y-2 pb-4 border-b border-gray-100 last:border-0 last:pb-0" >
+      <!-- PERBAIKAN: Gunakan filteredPoints bukan category.menu_point -->
+      <div v-for="menuPoint in filteredPoints" :key="menuPoint.id" 
+        class="space-y-2 pb-2 border-b border-gray-100 last:border-0 last:pb-0" >
         <div class="flex items-start justify-between">
           <label class="block text-sm font-medium text-gray-700">
-            {{ point.name }}
-            <span v-if="point.settings?.is_required" class="text-red-500">*</span>
+            {{ menuPoint.inspection_point?.name }}
+            <span v-if="menuPoint.settings?.is_required" class="text-red-500">*</span>
           </label>
           <span 
-            v-if="isPointComplete(point)"
+            v-if="isPointComplete(menuPoint)"
             class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"
           >
             ✓
@@ -21,134 +22,143 @@
         </div>
         
         <input-text
-          v-if="point.input_type === 'text'"
-          v-model="form.results[point.id].note"
-          :required="point.settings?.is_required"
-          :min-length="point.settings?.min_length"
-          :max-length="point.settings?.max_length"
-          :allowSpace="point.settings?.allow_space"
-          :textTransform="point.settings?.text_transform"
-          :placeholder="point.settings?.placeholder || 'Masukan text'"
-          :error="form.errors[`results.${point.id}.note`]"
-          @update:modelValue="updateResult(point.id, $event)"
-          @save="saveResult(point.id)"
+          v-if="menuPoint.input_type === 'text'"
+          v-model="form.results[menuPoint.inspection_point?.id].note"
+          :required="menuPoint.settings?.is_required"
+          :min-length="menuPoint.settings?.min_length"
+          :max-length="menuPoint.settings?.max_length"
+          :allowSpace="menuPoint.settings?.allow_space"
+          :textTransform="menuPoint.settings?.text_transform"
+          :placeholder="menuPoint.settings?.placeholder || 'Masukan text'"
+          :error="form.errors[`results.${menuPoint.inspection_point?.id}.note`]"
+          @update:modelValue="updateResult(menuPoint.inspection_point?.id, $event, 'note')"
+          @save="saveResult(menuPoint.inspection_point?.id)"
         />
         
         <input-number
-          v-if="point.input_type === 'number'"
-          v-model="form.results[point.id].note"
-          :required="point.settings?.is_required"
-          :min="point.settings?.min"
-          :max="point.settings?.max"
-          :step="point.settings?.step || 1"
-          :placeholder="point.settings?.placeholder || 'Masukan number'"
-          :error="form.errors[`results.${point.id}.note`]"
-          @update:modelValue="updateResult(point.id, $event)"
-          @save="saveResult(point.id)"
+          v-if="menuPoint.input_type === 'number'"
+          v-model="form.results[menuPoint.inspection_point?.id].note"
+          :required="menuPoint.settings?.is_required"
+          :min="menuPoint.settings?.min"
+          :max="menuPoint.settings?.max"
+          :step="menuPoint.settings?.step || 1"
+          :placeholder="menuPoint.settings?.placeholder || 'Masukan number'"
+          :error="form.errors[`results.${menuPoint.inspection_point?.id}.note`]"
+          @update:modelValue="updateResult(menuPoint.inspection_point?.id, $event, 'note')"
+          @save="saveResult(menuPoint.inspection_point?.id)"
         />
 
-      <input-account
-        v-if="point.input_type === 'account'"
-        v-model="form.results[point.id].note"
-        :required="point.settings?.is_required"
-        :placeholder="point.settings?.placeholder || 'Masukkan nilai'"
-        :error="form.errors[`results.${point.id}.note`]"
-        :point-id="point.id"
-        :settings="point.settings"
-        @update:modelValue="updateResult(point.id, $event)"
-        @save="saveResult(point.id)"
-      />
-       
+        <input-account
+          v-if="menuPoint.input_type === 'account'"
+          v-model="form.results[menuPoint.inspection_point?.id].note"
+          :required="menuPoint.settings?.is_required"
+          :placeholder="menuPoint.settings?.placeholder || 'Masukkan nilai'"
+          :error="form.errors[`results.${menuPoint.inspection_point?.id}.note`]"
+          :point-id="menuPoint.inspection_point?.id"
+          :settings="menuPoint.settings"
+          @update:modelValue="updateResult(menuPoint.inspection_point?.id, $event, 'note')"
+          @save="saveResult(menuPoint.inspection_point?.id)"
+        />
         
         <input-date
-          v-if="point.input_type === 'date'"
-          v-model="form.results[point.id].note"
-          :required="point.settings?.is_required"
-          :min-date="point.settings?.min_date"
-          :max-date="point.settings?.max_date"
-          :error="form.errors[`results.${point.id}.note`]"
-          @update:modelValue="updateResult(point.id, $event)"
-          @save="saveResult(point.id)"
+          v-if="menuPoint.input_type === 'date'"
+          v-model="form.results[menuPoint.inspection_point?.id].note"
+          :required="menuPoint.settings?.is_required"
+          :min-date="menuPoint.settings?.min_date"
+          :max-date="menuPoint.settings?.max_date"
+          :error="form.errors[`results.${menuPoint.inspection_point?.id}.note`]"
+          @update:modelValue="updateResult(menuPoint.inspection_point?.id, $event, 'note')"
+          @save="saveResult(menuPoint.inspection_point?.id)"
         />
         
         <input-textarea
-          v-if="point.input_type === 'textarea'"
-          v-model="form.results[point.id].note"
-          :required="point.settings?.is_required"
-          :min-length="point.settings?.min_length"
-          :max-length="point.settings?.max_length"
-          :placeholder="point.settings?.placeholder || 'Masukkan teks di sini'"
-          :settings="point.settings"  
-          :error="form.errors[`results.${point.id}.note`]"
-          @update:modelValue="updateResult(point.id, $event)"
-          @save="saveResult(point.id)"
+          v-if="menuPoint.input_type === 'textarea'"
+          v-model="form.results[menuPoint.inspection_point?.id].note"
+          :required="menuPoint.settings?.is_required"
+          :min-length="menuPoint.settings?.min_length"
+          :max-length="menuPoint.settings?.max_length"
+          :placeholder="menuPoint.settings?.placeholder || 'Masukkan teks di sini'"
+          :settings="menuPoint.settings"
+          :error="form.errors[`results.${menuPoint.inspection_point?.id}.note`]"
+          @update:modelValue="updateResult(menuPoint.inspection_point?.id, $event, 'note')"
+          @save="saveResult(menuPoint.inspection_point?.id)"
         />
 
         <input-radio
-          v-if="point.input_type === 'radio'"
-          v-model="form.results[point.id].status"
-          :notes="form.results[point.id].note"
-          :images="form.images[point.id]"
-          :required="point.settings?.is_required"
-          :point-id="point.id"  
-          :point="point"
+          v-if="menuPoint.input_type === 'radio'"
+          v-model="form.results[menuPoint.inspection_point?.id].status"
+          :notes="form.results[menuPoint.inspection_point?.id].note"
+          :images="form.images[menuPoint.inspection_point?.id]"
+          :required="menuPoint.settings?.is_required"
+          :point-id="menuPoint.inspection_point?.id"
+          :point="menuPoint.inspection_point"
           :inspection-id="inspectionId" 
-          :settings="point.settings"  
-          :point-name="point.name"
-          :selected-point="point.app_menu.input_type === 'damage' ? point : null"
-          :options="point.settings?.radios || defaultRadioOptions"
-          :error="form.errors[`results.${point.id}.status`]"
-          @update:modelValue="updateResult(point.id, $event)"
-          @update:notes="val => form.results[point.id].note = val"
-          @update:images="val => form.images[point.id] = val"
-          @save="saveResult(point.id)"
-          @hapus="HapusPoint(point.id)"
+          :settings="menuPoint.settings"
+          :point-name="menuPoint.inspection_point?.name"
+          :selected-point="menuPoint.input_type === 'damage' ? menuPoint.inspection_point : null"
+          :options="menuPoint.settings?.radios || defaultRadioOptions"
+          :error="form.errors[`results.${menuPoint.inspection_point?.id}.status`]"
+          @update:modelValue="updateResult(menuPoint.inspection_point?.id, $event, 'status')"
+          @update:notes="val => form.results[menuPoint.inspection_point?.id].note = val"
+          @update:images="val => form.images[menuPoint.inspection_point?.id] = val"
+          @save="saveResult(menuPoint.inspection_point?.id)"
+          @hapus="HapusPoint(menuPoint.inspection_point?.id)"
         />
 
         <InputImageToRadio
-          v-if="point.input_type === 'imageTOradio'"
-          v-model="form.results[point.id].status"
-          :notes="form.results[point.id].note"
-          :images="form.images[point.id]"
-          :required="point.settings?.is_required"
-          :point-id="point.id"  
+          v-if="menuPoint.input_type === 'imageTOradio'"
+          v-model="form.results[menuPoint.inspection_point?.id].status"
+          :notes="form.results[menuPoint.inspection_point?.id].note"
+          :images="form.images[menuPoint.inspection_point?.id]"
+          :required="menuPoint.settings?.is_required"
+          :point-id="menuPoint.inspection_point?.id"
           :inspection-id="inspectionId" 
-          :settings="point.settings"  
-          :point-name="point.name"
-          :point = "point"
-          :selected-point="point.app_menu.input_type === 'damage' ? point : null"
-          :options="point.settings?.radios || defaultRadioOptions"
-          :error="form.errors[`results.${point.id}.status`]"
-          @update:modelValue="updateResult(point.id, $event)"
-          @update:notes="val => form.results[point.id].note = val"
-          @update:images="val => form.images[point.id] = val"
-          @save="saveResult(point.id)"
-          @hapus="HapusPoint(point.id)"
+          :settings="menuPoint.settings"
+          :point-name="menuPoint.inspection_point?.name"
+          :point="menuPoint"
+          :selected-point="menuPoint.input_type === 'damage' ? menuPoint.inspection_point : null"
+          :options="menuPoint.settings?.radios || defaultRadioOptions"
+          :error="form.errors[`results.${menuPoint.inspection_point?.id}.status`]"
+          @update:modelValue="updateResult(menuPoint.inspection_point?.id, $event,'status')"
+          @update:notes="val => form.results[menuPoint.inspection_point?.id].note = val"
+          @update:images="val => form.images[menuPoint.inspection_point?.id] = val"
+          @save="saveResult(menuPoint.inspection_point?.id)"
+          @hapus="HapusPoint(menuPoint.inspection_point?.id)"
         />
-
         
-       <input-image
-          v-if="point.input_type === 'image'"
-          v-model="form.images[point.id]"
-          :error="form.errors[`images.${point.id}`]"
+        <input-image
+          v-if="menuPoint.input_type === 'image'"
+          v-model="form.images[menuPoint.inspection_point?.id]"
+          :error="form.errors[`images.${menuPoint.inspection_point?.id}`]"
           :inspection-id="inspectionId"
-          :point-id="point.id"
-          :point="point"
-          :point-name="point.name"
-          :settings="point.settings"
-          @update:notes="val => form.results[point.id].note = val"
-          @update:status="val => form.results[point.id].status = val"
+          :point-id="menuPoint.inspection_point?.id"
+          :point="menuPoint.inspection_point"
+          :point-name="menuPoint.inspection_point?.name"
+          :settings="menuPoint.settings"
+          @update:notes="val => form.results[menuPoint.inspection_point?.id].note = val"
+          @update:status="val => form.results[menuPoint.inspection_point?.id].status = val"
         />
 
-         <input-select
-          v-if="point.input_type === 'select'"
-          v-model="form.results[point.id].status"
-          :required="point.settings?.is_required"
-          :error="form.errors[`results.${point.id}.status`]"
-          @update:modelValue="updateResult(point.id, $event)"
-          @save="saveResult(point.id)"
+        <input-select
+          v-if="menuPoint.input_type === 'select'"
+          v-model="form.results[menuPoint.inspection_point?.id].status"
+          :required="menuPoint.settings?.is_required"
+          :error="form.errors[`results.${menuPoint.inspection_point?.id}.status`]"
+          @update:modelValue="updateResult(menuPoint.inspection_point?.id, $event, 'status')"
+          @save="saveResult(menuPoint.inspection_point?.id)"
         />
         
+      </div>
+
+      <!-- Tampilkan pesan jika tidak ada points yang visible -->
+      <div v-if="filteredPoints.length === 0" class="text-center py-8 text-gray-500">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        <p class="mt-2 text-sm">Tidak ada data untuk ditampilkan</p>
+        <p v-if="category.isDamageMenu" class="text-xs text-gray-400">
+          Tambahkan data melalui tombol "+" di pojok kanan bawah
+        </p>
       </div>
     </div>
   </div>
@@ -164,7 +174,8 @@ import InputSelect from './InputSelect.vue';
 import InputRadio from './InputRadio.vue';
 import InputImage from './InputImage.vue';
 import InputImageToRadio from './InputImageToRadio.vue';
-import { Ham } from 'lucide-vue-next';
+import { computed } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 
 const props = defineProps({
   category: Object,
@@ -173,7 +184,68 @@ const props = defineProps({
   selectedPoint: Object,
 });
 
-const emit = defineEmits(['saveResult', 'updateResult', 'removeImage']);
+const emit = defineEmits(['saveResult', 'updateResult', 'removeImage', 'hapusPoint']);
+
+const page = usePage();
+
+// PERBAIKAN: Filter points berdasarkan jenis menu
+const filteredPoints = computed(() => {
+  console.log('CategorySection - Filtering points:', {
+    categoryName: props.category.name,
+    isDamageMenu: props.category.isDamageMenu,
+    allPoints: props.category.points,
+    allPointsCount: props.category.points?.length
+  });
+
+  if (!props.category.isDamageMenu) {
+    console.log('Menu biasa - tampilkan semua points');
+    return props.category.points || [];
+  }
+  
+  // Untuk damage menu, hanya tampilkan points yang sudah ada datanya
+  const filtered = (props.category.points || []).filter(point => {
+    const pointId = point.inspection_point?.id;
+    const hasData = hasPointData(pointId);
+    console.log(`Point ${pointId} (${point.inspection_point?.name}): hasData = ${hasData}`);
+    return hasData;
+  });
+  
+  console.log('Filtered damage points:', filtered);
+  return filtered;
+});
+
+// PERBAIKAN: Cek apakah point sudah memiliki data
+const hasPointData = (pointId) => {
+  if (!pointId) {
+    console.log('hasPointData: pointId is null/undefined');
+    return false;
+  }
+  
+  // Cek di existingResults (data dari server)
+  const hasServerResult = page.props.existingResults[pointId] !== undefined;
+  
+  // Cek di existingImages (data dari server)
+  const hasServerImages = page.props.existingImages[pointId] && page.props.existingImages[pointId].length > 0;
+  
+  // Cek di form results (data lokal yang belum disimpan)
+  const hasLocalResult = props.form.results[pointId] && 
+                        (props.form.results[pointId].status || props.form.results[pointId].note);
+  
+  // Cek di form images (data lokal yang belum disimpan)
+  const hasLocalImages = props.form.images[pointId] && props.form.images[pointId].length > 0;
+
+  const result = hasServerResult || hasServerImages || hasLocalResult || hasLocalImages;
+
+  console.log(`Point ${pointId} data check:`, {
+    hasServerResult,
+    hasServerImages,
+    hasLocalResult,
+    hasLocalImages,
+    finalResult: result
+  });
+  
+  return result;
+};
 
 const defaultRadioOptions = [
   { value: 'good', label: 'Good' },
@@ -181,64 +253,56 @@ const defaultRadioOptions = [
   { value: 'na', label: 'N/A' }
 ];
 
-const isPointComplete = (point) => {
-  const result = props.form.results[point.id];
-  const image = props.form.images[point.id];
+const isPointComplete = (menuPoint) => {
+  const result = props.form.results[menuPoint.inspection_point?.id];
+  const image = props.form.images[menuPoint.inspection_point?.id];
 
   if (!result) return false;
   
-
-  switch(point.input_type) {
-     case 'text':
-      case 'number':
-      case 'date':
-      case 'account':
-      case 'textarea':
+  switch(menuPoint.input_type) {
+    case 'text':
+    case 'number':
+    case 'date':
+    case 'account':
+    case 'textarea':
       return !!result.note;
 
     case 'select':
     case 'radio':
       if (!result.status) return false;
-        
-        // Cek jika opsi yang dipilih memiliki requirements tambahan
-        const selectedOption = point.settings.radios?.find(opt => opt.value === result.status);
-        if (selectedOption?.settings) {
-          // Validasi textarea jika required
-          if (selectedOption.settings.show_textarea && !result.note?.trim()) {
-            return false;
-          }
-          // Validasi image jika required
-          if (selectedOption.settings.show_image_upload && image?.length === 0) {
-            return false;
-          }
+      
+      const selectedOption = menuPoint.settings?.radios?.find(opt => opt.value === result.status);
+      if (selectedOption?.settings) {
+        if (selectedOption.settings.show_textarea && !result.note?.trim()) {
+          return false;
         }
-        return true;
+        if (selectedOption.settings.show_image_upload && image?.length === 0) {
+          return false;
+        }
+      }
+      return true;
 
-     case 'imageTOradio':
-        // Harus ada gambar DAN pilihan radio
-        if (image?.length === 0 || !result.status) return false;
-        
-        // Cek requirements tambahan dari opsi yang dipilih
-        const selectedOptionImage = point.settings.radios?.find(opt => opt.value === result.status);
-        if (selectedOptionImage?.settings) {
-          // Validasi textarea jika required
-          if (selectedOptionImage.settings.show_textarea && !result.note?.trim()) {
-            return false;
-          }
+    case 'imageTOradio':
+      if (image?.length === 0 || !result.status) return false;
+      
+      const selectedOptionImage = menuPoint.settings?.radios?.find(opt => opt.value === result.status);
+      if (selectedOptionImage?.settings) {
+        if (selectedOptionImage.settings.show_textarea && !result.note?.trim()) {
+          return false;
         }
-        return true;
+      }
+      return true;
 
     case 'image':
-      return image.length > 0;
+      return image?.length > 0;
 
     default:
-        return !!result.status || !!result.note?.trim();
+      return !!result.status || !!result.note?.trim();
   }
 };
 
-
-const updateResult = (pointId, value) => {
-  emit('updateResult', { pointId, value });
+const updateResult = (pointId, value, type) => {
+  emit('updateResult', { pointId, type, value });
 };
 
 const saveResult = (pointId) => {
@@ -250,12 +314,12 @@ const removeImage = (pointId, imageIndex) => {
 };
 
 const HapusPoint = (pointId) => {
-    emit("hapusPoint", pointId);
+  emit("hapusPoint", pointId);
 };
 </script>
 
 <style scoped>
-/* Mobile-first styles (tetap relevan, namun tidak langsung mempengaruhi spacing ini) */
+/* Mobile-first styles */
 @media (min-width: 640px) {
   .point-card {
     padding: 1.25rem;

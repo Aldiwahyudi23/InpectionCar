@@ -14,10 +14,8 @@ return new class extends Migration
        Schema::create('inspection_points', function (Blueprint $table) {
             $table->id();
             $table->foreignId('component_id')->constrained('components');
-            $table->foreignId('app_menu_id')->constrained('app_menus');
             $table->string('name');
-            $table->string('input_type')->default('text');
-            $table->json('settings')->nullable(); // Kolom untuk menyimpan konfigurasi dinamis
+            $table->string('description')->nullable();
             $table->integer('order');
             $table->boolean('is_active')->default(true);
             $table->timestamps();

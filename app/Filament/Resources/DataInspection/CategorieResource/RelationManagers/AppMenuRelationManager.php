@@ -11,6 +11,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Validation\Rules\Unique;
 
 class AppMenuRelationManager extends RelationManager
 {
@@ -18,12 +19,19 @@ class AppMenuRelationManager extends RelationManager
 
     public function form(Form $form): Form
     {
+
+         // Dapatkan ID dari model induk (Category)
+        $ownerRecord = $this->getOwnerRecord();
+
         return $form
             ->schema([
                 Forms\Components\TextInput::make('name')
                     ->label('Nama Menu')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                     ->unique(ignoreRecord: true, modifyRuleUsing: function (Unique $rule) use ($ownerRecord) {
+                    return $rule->where('category_id', $ownerRecord->id);
+                    }),
 
                 Forms\Components\Select::make('input_type')
                     ->label('Tipe Input')
@@ -31,7 +39,7 @@ class AppMenuRelationManager extends RelationManager
                         'menu' => 'Menu',
                         'damage' => 'Kerusakan',
                     ])
-                    ->default('damage')
+                    ->default('menu')
                     ->required(),
 
                 Forms\Components\Toggle::make('is_active')

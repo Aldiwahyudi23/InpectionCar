@@ -12,6 +12,7 @@ use App\Models\DataInspection\Inspection;
 use App\Models\DataInspection\InspectionImage;
 use App\Models\DataInspection\InspectionPoint;
 use App\Models\DataInspection\InspectionResult;
+use App\Models\DataInspection\MenuPoint;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
@@ -49,180 +50,153 @@ class InspectionController extends Controller
             'Category' => $Category,
         ]);
     }
+    
+    /**
+     * Store a newly created resource in storage.
+   
+    */
+    public function start($inspection)
+    {
+        try {
+            // Dekripsi dan validasi
+            $id = Crypt::decrypt($inspection);
+            $inspection = Inspection::findOrFail($id);
 
-public function start($inspection)
-{
-    try {
-    // Di controller atau blade
-        $id = Crypt::decrypt($inspection);
+            // Redirect jika pending_review
+                if ($inspection->status === 'pending_review') {
+                    $encryptID = Crypt::encrypt($inspection->id);
+                    return redirect()->route('inspections.review', ['id' => $encryptID]);
+                }
 
-        $inspection = Inspection::find($id);
+            // Validasi status
+            $allowedStatuses = ['draft', 'in_progress', 'revision', 'pending'];
+            if (!in_array($inspection->status, $allowedStatuses)) {
+                return redirect()->route('job.index')
+                    ->with('error', 'Halaman inspeksi tidak bisa diakses karena status tidak valid.');
+            }
 
-         // Jika status pending_review, langsung arahkan ke halaman review
-        if ($inspection->status === 'pending_review') {
-            $encryptID =Crypt::encrypt($inspection->id);
-            return redirect()->route('inspections.review', ['id' => $encryptID]);
-        }
+            // Update status jika draft
+            if ($inspection->status === 'draft') {
+                $inspection->update(['status' => 'in_progress']);
+                $inspection->addLog('in_progress', 'Mulai Inspeksi');
+            }
 
-        // Validasi status yang diperbolehkan
-        $allowedStatuses = ['draft', 'in_progress', 'revision', 'pending'];
-
-        if (!in_array($inspection->status, $allowedStatuses)) {
-            return redirect()->route('job.index')
-                ->with('error', 'Halaman inspeksi tidak bisa diakses karena status tidak valid.');
-        }
-
-       
-
-        // Jika status masih draft, ubah ke in-progress
-        if ($inspection->status === 'draft') {
-            $inspection->update([
-                'status' => 'in_progress',
-            ]);
-            $inspection->addLog('in_progress', 'Mulai Inspeksi');
-        }
-
-    // Ambil appMenu tanpa filter damage points (ambil semua points)
-        $appMenu = AppMenu::with(['points' => function($query) {
-            $query->where('is_active', true)
-                ->orderBy('order');
-        },
-        'points.component', // relasi component di dalam points
-        'points.app_menu',   // relasi appMenu di dalam points
-        ])
-        ->where('is_active', true)
-        ->where('category_id', $inspection->category_id)
-        ->orderBy('order')
-        ->get();
-
-        $appMenu_damage = AppMenu::with(['points' => function($query) {
-            $query->where('is_active', true)
-                ->orderBy('order');
-        },
-        'points.component', // relasi component di dalam points
-        'points.app_menu',   // relasi appMenu di dalam points
-        ])
-
-        ->where('input_type', 'damage')
-        ->where('is_active', true)
-        ->where('category_id', $inspection->category_id)
-        ->orderBy('order')
-        ->get();
-
-        // Ambil damage points secara terpisah
-        $damagePoints = InspectionPoint::with(['component','app_menu'])
+            // Ambil semua AppMenu dengan relasi
+            $appMenus = AppMenu::with([
+                'menu_point' => function ($query) {
+                    $query->where('is_active', true)->orderBy('order');
+                },
+                'menu_point.inspection_point.component',
+                'menu_point.inspection_point' => function ($query) {
+                    $query->where('is_active', true);
+                }
+            ])
             ->where('is_active', true)
-            ->whereIn('app_menu_id', $appMenu_damage->pluck('id'))
+            ->where('category_id', $inspection->category_id)
             ->orderBy('order')
             ->get();
 
-        // Ambil component IDs (jika masih diperlukan)
-        $componentIds = collect();
-        foreach ($appMenu as $menu) {
-            foreach ($menu->points as $point) {
-                if ($point->component_id !== null) {
-                    $componentIds->push($point->component_id);
-                }
-            }
+            // Ambil semua damage points
+            $damagePoints = MenuPoint::with(['inspection_point', 'app_menu'])
+                ->where('is_active', true)
+                ->whereHas('app_menu', function ($query) use ($inspection) {
+                    $query->where('input_type', 'damage')
+                        ->where('is_active', true)
+                        ->where('category_id', $inspection->category_id);
+                })
+                ->orderBy('order')
+                ->get();
+
+            // Ambil semua inspection_point_id yang terkait
+            $inspectionPointIds = $appMenus->flatMap(function ($menu) {
+                return $menu->menu_point->pluck('inspection_point_id');
+            })->merge($damagePoints->pluck('inspection_point_id'))->unique();
+
+            // Ambil semua hasil inspeksi dan gambar
+            $existingResults = InspectionResult::where('inspection_id', $inspection->id)
+                ->whereIn('point_id', $inspectionPointIds)
+                ->get()
+                ->keyBy('point_id');
+
+            $existingImages = InspectionImage::where('inspection_id', $inspection->id)
+                ->whereIn('point_id', $inspectionPointIds)
+                ->get()
+                ->groupBy('point_id');
+
+            // Data untuk frontend
+            return Inertia::render('FrontEnd/Inspection/InspectionForm', [
+                'inspection' => $inspection->load(['car', 'user']),
+                'appMenus' => $appMenus,
+                'damagePoints' => $damagePoints,
+                'existingResults' => $existingResults,
+                'existingImages' => $existingImages,
+                'CarDetail' => CarDetail::with(['brand', 'model', 'type'])->get(),
+            ]);
+
+        } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
+            abort(404, 'ID Inspeksi Tidak Valid');
         }
-
-        $uniqueComponentIds = $componentIds->unique()->values();
-        $components = Component::whereIn('id', $uniqueComponentIds)->get();
-
-        // Ambil existing results dan images
-        $existingResults = InspectionResult::where('inspection_id', $inspection->id)
-            ->get()
-            ->keyBy('point_id');
-
-        $existingImages = InspectionImage::whereIn('point_id', 
-            $appMenu->flatMap->points->pluck('id')
-        )->where('inspection_id', $inspection->id)
-        ->get()
-        ->groupBy('point_id');
-
-        $CarDetail = CarDetail::with(['brand', 'model', 'type'])
-            ->get();
-
-        // DD($CarDetail);
-        return Inertia::render('FrontEnd/Inspection/InspectionForm', [
-            'inspection' => $inspection->fresh()->load(['car', 'user']),
-            'appMenu' => $appMenu,
-            'existingResults' => $existingResults->values()->all(),
-            'existingImages' => $existingImages,
-            'components' => $components,
-            'damagePoints' => $damagePoints, // Kirim damage points terpisah
-            'CarDetail' => $CarDetail,
-        ]);
-    } catch (\Illuminate\Contracts\Encryption\DecryptException $e) {
-        abort(404, 'Tidak Valid');
     }
-}
+    // app/Http/Controllers/InspectionController.php
+    public function store(Request $request)
+    {
+        // Perbaikan: Jika dijadwalkan, gabungkan tanggal dan waktu menjadi satu field
+            if ($request->input('is_scheduled')) {
+                $scheduledAt = $request->input('scheduled_at_date') . ' ' . $request->input('scheduled_at_time');
+                $request->merge(['scheduled_at' => $scheduledAt]);
+            }
 
+        // Validasi data yang masuk dari form
+            $validated = $request->validate([
+                'plate_number' => 'required|string|max:20',
+                'category_id' => 'required|exists:categories,id',
+                'is_scheduled' => 'required|boolean',
+                'scheduled_at' => 'nullable|date', // Digunakan jika is_scheduled true
+                'car_id' => 'nullable',
+                'car_name' => 'required_without:car_id|nullable|string|max:100',
+            ]);
 
+            $carId = $validated['car_id'] ?? null;
 
-    /**
-     * Store a newly created resource in storage.
-     */
-// app/Http/Controllers/InspectionController.php
-public function store(Request $request)
-{
-     // Perbaikan: Jika dijadwalkan, gabungkan tanggal dan waktu menjadi satu field
-        if ($request->input('is_scheduled')) {
-            $scheduledAt = $request->input('scheduled_at_date') . ' ' . $request->input('scheduled_at_time');
-            $request->merge(['scheduled_at' => $scheduledAt]);
-        }
+        
 
-    // Validasi data yang masuk dari form
-        $validated = $request->validate([
-            'plate_number' => 'required|string|max:20',
-            'category_id' => 'required|exists:categories,id',
-            'is_scheduled' => 'required|boolean',
-            'scheduled_at' => 'nullable|date', // Digunakan jika is_scheduled true
-            'car_id' => 'nullable',
-            'car_name' => 'required_without:car_id|nullable|string|max:100',
-        ]);
+            // Siapkan data dasar untuk inspeksi
+            $inspectionData = [
+                'user_id' => Auth::user()->id,
+                'plate_number' => $validated['plate_number'],
+                'category_id' => $validated['category_id'],
+                'car_id' => $carId,
+                'car_name' => $validated['car_name'] ?? null,
+                'status' => $validated['is_scheduled'] ? 'draft' : 'in_progress',
+            ];
 
-        $carId = $validated['car_id'] ?? null;
+            // Atur waktu jadwal atau waktu mulai sekarang
+            if ($validated['is_scheduled']) {
+                $inspectionData['inspection_date'] = $validated['scheduled_at'];
+            } else {
+                $inspectionData['inspection_date'] = now(); // Gunakan waktu sekarang
+                // Anda bisa mengatur status menjadi 'in_progress' atau 'completed'
+                $inspectionData['status'] = 'in_progress';
+            }
 
-     
+            // Buat entri inspeksi baru di database
+            $inspection = Inspection::create($inspectionData);
 
-        // Siapkan data dasar untuk inspeksi
-        $inspectionData = [
-            'user_id' => Auth::user()->id,
-            'plate_number' => $validated['plate_number'],
-            'category_id' => $validated['category_id'],
-            'car_id' => $carId,
-            'car_name' => $validated['car_name'] ?? null,
-            'status' => $validated['is_scheduled'] ? 'draft' : 'in_progress',
-        ];
+            $inspection->addLog('created', 'Inspection baru dibuat');
 
-        // Atur waktu jadwal atau waktu mulai sekarang
-        if ($validated['is_scheduled']) {
-            $inspectionData['inspection_date'] = $validated['scheduled_at'];
-        } else {
-            $inspectionData['inspection_date'] = now(); // Gunakan waktu sekarang
-            // Anda bisa mengatur status menjadi 'in_progress' atau 'completed'
-            $inspectionData['status'] = 'in_progress';
-        }
+            // Tentukan respons berdasarkan status jadwal
+            if ($validated['is_scheduled']) {
+                // Jika dijadwalkan, kembali ke halaman sebelumnya dengan pesan sukses
+                return redirect()->route('job.index')
+                    ->with('success', 'Inspeksi berhasil dijadwalkan.');
+            } else {
+                // Encrypt semua ID di backend
+                    $inspection = Crypt::encrypt($inspection->id);
+                // Jika mulai inspeksi sekarang, redirect ke halaman start dengan ID inspeksi
+                return redirect()->route('inspections.start', ['inspection' => $inspection]);
+            }
 
-        // Buat entri inspeksi baru di database
-        $inspection = Inspection::create($inspectionData);
-
-        $inspection->addLog('created', 'Inspection baru dibuat');
-
-        // Tentukan respons berdasarkan status jadwal
-        if ($validated['is_scheduled']) {
-            // Jika dijadwalkan, kembali ke halaman sebelumnya dengan pesan sukses
-            return redirect()->route('job.index')
-                ->with('success', 'Inspeksi berhasil dijadwalkan.');
-        } else {
-            // Encrypt semua ID di backend
-                $inspection = Crypt::encrypt($inspection->id);
-            // Jika mulai inspeksi sekarang, redirect ke halaman start dengan ID inspeksi
-            return redirect()->route('inspections.start', ['inspection' => $inspection]);
-        }
-
-}
+    }
 
     /**
      * Display the specified resource.
@@ -566,167 +540,167 @@ public function store(Request $request)
     }
 
 
- public function deleteResultImage(Request $request)
-{
-    $request->validate([
-        'inspection_id' => 'required|exists:inspections,id',
-        'point_id' => 'required|exists:inspection_points,id',
-    ]);
+    public function deleteResultImage(Request $request)
+    {
+        $request->validate([
+            'inspection_id' => 'required|exists:inspections,id',
+            'point_id' => 'required|exists:inspection_points,id',
+        ]);
 
-    // 1. Hapus hasil (result) jika ada
-    $result = InspectionResult::where('inspection_id', $request->inspection_id)
-        ->where('point_id', $request->point_id)
-        ->first();
+        // 1. Hapus hasil (result) jika ada
+        $result = InspectionResult::where('inspection_id', $request->inspection_id)
+            ->where('point_id', $request->point_id)
+            ->first();
 
-    if ($result) {
-        $result->delete();
-    }
+        if ($result) {
+            $result->delete();
+        }
 
-    // 2. Ambil semua gambar terkait
-    $images = InspectionImage::where('inspection_id', $request->inspection_id)
-        ->where('point_id', $request->point_id)
-        ->get();
+        // 2. Ambil semua gambar terkait
+        $images = InspectionImage::where('inspection_id', $request->inspection_id)
+            ->where('point_id', $request->point_id)
+            ->get();
 
-    foreach ($images as $image) {
-        if ($image->image_path) {
-            // Lokasi file fisik
-            $fullPathToDelete = public_path($image->image_path);
+        foreach ($images as $image) {
+            if ($image->image_path) {
+                // Lokasi file fisik
+                $fullPathToDelete = public_path($image->image_path);
 
-            if (file_exists($fullPathToDelete)) {
-                try {
-                    unlink($fullPathToDelete); // hapus file fisik
-                } catch (\Exception $e) {
-                    Log::error("Gagal hapus file: {$fullPathToDelete}. Error: {$e->getMessage()}");
+                if (file_exists($fullPathToDelete)) {
+                    try {
+                        unlink($fullPathToDelete); // hapus file fisik
+                    } catch (\Exception $e) {
+                        Log::error("Gagal hapus file: {$fullPathToDelete}. Error: {$e->getMessage()}");
+                    }
+                } else {
+                    Log::warning("File tidak ditemukan: {$fullPathToDelete}, skip hapus.");
                 }
-            } else {
-                Log::warning("File tidak ditemukan: {$fullPathToDelete}, skip hapus.");
             }
+
+            // Hapus record di DB
+            $image->delete();
         }
 
-        // Hapus record di DB
-        $image->delete();
     }
 
-}
 
+    public function finalSubmit(Request $request, $id)
+    {
+        // Cari inspeksi berdasarkan ID
+        $inspection = Inspection::findOrFail($id);
 
-public function finalSubmit(Request $request, $id)
-{
-    // Cari inspeksi berdasarkan ID
-    $inspection = Inspection::findOrFail($id);
+        // Update status inspeksi
+        $inspection->update([
+            'status' => 'pending_review',
+        ]);
+        $inspection->addLog('finish', 'Sudah selesai Inspection');
 
-    // Update status inspeksi
-    $inspection->update([
-        'status' => 'pending_review',
-    ]);
-    $inspection->addLog('finish', 'Sudah selesai Inspection');
-
-    $encryptId = Crypt::encrypt($inspection->id);
-    // Redirect ke halaman review
-    return redirect()->route('inspections.review', ['id' => $encryptId])
-        ->with('success', 'Inspeksi berhasil dikirim untuk review');
-}
-
-
-public function review($id)
-{
-    $id = Crypt::decrypt($id);
-    $inspection = Inspection::with([
-        'car',
-        'car.brand',
-        'car.model',
-        'car.type',
-        'category',
-    ])->findOrFail($id);
-
-
-    // cek status
-    if (in_array($inspection->status, [
-        'draft', 
-        'in_progress', 
-        'pending', 
-        'revision',        
-        // 'rejected',
-        // 'revision',
-        // 'completed',
-        // 'cancelled'
-        ])) {
-        return redirect()->route('job.index');
+        $encryptId = Crypt::encrypt($inspection->id);
+        // Redirect ke halaman review
+        return redirect()->route('inspections.review', ['id' => $encryptId])
+            ->with('success', 'Inspeksi berhasil dikirim untuk review');
     }
 
-    $encryptedIds = Crypt::encrypt($inspection->id);
 
-    return inertia('FrontEnd/Inspection/Review', [
-        'inspection' => $inspection,
-        'encryptedIds' => $encryptedIds,
-    ]);
-}
+    public function review($id)
+    {
+        $id = Crypt::decrypt($id);
+        $inspection = Inspection::with([
+            'car',
+            'car.brand',
+            'car.model',
+            'car.type',
+            'category',
+        ])->findOrFail($id);
 
 
-public function reviewPdf($id)
-{
-     $id = Crypt::decrypt($id);
-    $inspection = Inspection::with([
-        'car',
-        'car.brand',
-        'car.model',
-        'car.type',
-        'category',
-    ])->findOrFail($id);
-
-    
-     // cek status
-    if (in_array($inspection->status, [
-        'draft', 
-        'in_progress', 
-        'pending', 
-        'revision',        
-        'rejected',
-        'revision',
-        'completed',
-        'cancelled'
-        ])) {
-        return redirect()->route('job.index');
-    }
-
-    $inspection_points = InspectionPoint::with([
-        'component',
-        'app_menu',
-        'results' => function ($q) use ($inspection) {
-            $q->where('inspection_id', $inspection->id);
-        },
-        'images' => function ($q) use ($inspection) {
-            $q->where('inspection_id', $inspection->id)
-              ->orderBy('created_at', 'asc');
+        // cek status
+        if (in_array($inspection->status, [
+            'draft', 
+            'in_progress', 
+            'pending', 
+            'revision',        
+            // 'rejected',
+            // 'revision',
+            // 'completed',
+            // 'cancelled'
+            ])) {
+            return redirect()->route('job.index');
         }
-    ])
-    ->whereHas('app_menu', function ($query) use ($inspection) {
-        $query->where('category_id', $inspection->category_id);
-    })
-    ->get();
 
+        $encryptedIds = Crypt::encrypt($inspection->id);
 
-    $coverImage = InspectionImage::where('inspection_id', $inspection->id)
-        ->whereHas('point', function ($q) {
-            $q->where('name', 'Depan Kanan');
-        })->first();
-
-    // Jika tidak ada cover image, coba ambil gambar pertama
-    if (!$coverImage) {
-        $coverImage = InspectionImage::where('inspection_id', $inspection->id)->first();
+        return inertia('FrontEnd/Inspection/Review', [
+            'inspection' => $inspection,
+            'encryptedIds' => $encryptedIds,
+        ]);
     }
 
-      $encryptedIds = Crypt::encrypt($inspection->id);
+    public function reviewPdf($id)
+    {
+        $id = Crypt::decrypt($id);
+        $inspection = Inspection::with([
+            'car',
+            'car.brand',
+            'car.model',
+            'car.type',
+            'category',
+        ])->findOrFail($id);
 
-    return Inertia::render('FrontEnd/Inspection/Report/ReviewPDF', [
-        'inspection' => $inspection,
-        'inspection_points' => $inspection_points,
-        'coverImage' => $coverImage,
-        'encryptedIds' => $encryptedIds,
-    ]);
+        
+        // cek status
+        if (in_array($inspection->status, [
+            'draft', 
+            'in_progress', 
+            'pending', 
+            'revision',        
+            'rejected',
+            'revision',
+            'completed',
+            'cancelled'
+            ])) {
+            return redirect()->route('job.index');
+        }
 
-    // return view('inspection.report.report2', compact('inspection', 'inspection_points', 'coverImage')); 
-}
+        $menu_points = MenuPoint::with([
+            'app_menu',
+            'inspection_point',
+            'inspection_point.component',
+            'inspection_point.results' => function ($q) use ($inspection) {
+                $q->where('inspection_id', $inspection->id);
+            },
+            'inspection_point.images' => function ($q) use ($inspection) {
+                $q->where('inspection_id', $inspection->id)
+                ->orderBy('created_at', 'asc');
+            }
+        ])
+        ->whereHas('app_menu', function ($query) use ($inspection) {
+            $query->where('category_id', $inspection->category_id);
+        })
+        ->get();
+// dd($menu_points);
+
+        $coverImage = InspectionImage::where('inspection_id', $inspection->id)
+            ->whereHas('point', function ($q) {
+                $q->where('name', 'Depan Kanan');
+            })->first();
+
+        // Jika tidak ada cover image, coba ambil gambar pertama
+        if (!$coverImage) {
+            $coverImage = InspectionImage::where('inspection_id', $inspection->id)->first();
+        }
+
+        $encryptedIds = Crypt::encrypt($inspection->id);
+
+        return Inertia::render('FrontEnd/Inspection/Report/ReviewPDF', [
+            'inspection' => $inspection,
+            'menu_points' => $menu_points,
+            'coverImage' => $coverImage,
+            'encryptedIds' => $encryptedIds,
+        ]);
+
+        // return view('inspection.report.report1', compact('inspection', 'menu_points', 'coverImage')); 
+    }
 
 // Belum di pake 
 
@@ -756,15 +730,16 @@ public function downloadPdf($id)
             return redirect()->route('job.index')->with('error', 'Status inspection tidak valid untuk download.');
         }
         
-        $inspection_points = InspectionPoint::with([
-            'component',
+       $menu_points = MenuPoint::with([
             'app_menu',
-            'results' => function ($q) use ($inspection) {
+            'inspection_point',
+            'inspection_point.component',
+            'inspection_point.results' => function ($q) use ($inspection) {
                 $q->where('inspection_id', $inspection->id);
             },
-            'images' => function ($q) use ($inspection) {
+            'inspection_point.images' => function ($q) use ($inspection) {
                 $q->where('inspection_id', $inspection->id)
-                  ->orderBy('created_at', 'asc');
+                ->orderBy('created_at', 'asc');
             }
         ])
         ->whereHas('app_menu', function ($query) use ($inspection) {
@@ -784,7 +759,7 @@ public function downloadPdf($id)
 
         $pdf = Pdf::loadView('inspection.report.report1', [
             'inspection' => $inspection,
-            'inspection_points' => $inspection_points,
+            'menu_points' => $menu_points,
             'coverImage' => $coverImage,
         ])->setPaper('a4', 'portrait');
 

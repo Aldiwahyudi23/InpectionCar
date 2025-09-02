@@ -1,6 +1,6 @@
 <script setup>
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { Link } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 
 // Data menu untuk mempermudah penambahan atau penghapusan item di masa depan
 const navMenus = [
@@ -17,9 +17,10 @@ const navMenus = [
 
 <template>
     <AppLayout title="Dashboard">
-            <main class="p-4">
+         <!-- <Head title="Riwayat Inspeksi" /> -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div class="bg-white rounded-lg shadow-md p-6 mb-6 text-center">
-                    <h2 class="text-gray-500 font-semibold text-sm">Inspeksi Menunggu</h2>
+                    <h2 class="text-gray-500 font-semibold text-sm">Hasil Inspection</h2>
                     <p class="text-4xl font-bold text-gray-800 mt-2">12</p>
                 </div>
 
@@ -86,6 +87,6 @@ const navMenus = [
                         </Link>
                     </div>
                 </div>
-            </main>
+            </div>
     </AppLayout>
 </template>

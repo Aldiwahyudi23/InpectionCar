@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\OtpController;
 use App\Http\Controllers\Inspection\InspectionController;
+use App\Http\Controllers\Menu\Home\HomeController;
 use App\Http\Controllers\Menu\Job\JobController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -43,9 +44,7 @@ Route::middleware([
     'verified',
     'role_spatie:Admin,Inspektor,Kordinator',
 ])->group(function () {
-    Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [HomeController::class,'index'])->name('dashboard');
 
     Route::get('/welcome', function () {
         return Inertia::render('Welcome');

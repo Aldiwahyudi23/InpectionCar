@@ -70,11 +70,11 @@ const handleDownload = (route) => {
   <AppLayout>
     <Head title="Review Inspeksi" />
 
-    <div class="py-6 md:py-10">
-      <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 class="text-2xl md:text-3xl font-bold text-indigo-900 mb-6 text-center">
-          Review Pemeriksaan
-        </h1>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <h3 class="text-xl md:text-3xl font-bold text-gray-900 mb-6 text-center">
+           Inspeksi yang Harus Diselesaikan
+        </h3>
+
 
         <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
              <!-- Jadwal + Link Log -->
@@ -240,7 +240,6 @@ const handleDownload = (route) => {
           </template>
         </div>
       </div>
-    </div>
 
     <!-- Modal Konfirmasi Revisi -->
     <div v-if="showRevisionModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">

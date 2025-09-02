@@ -31,7 +31,9 @@ class CategorieResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->label('Nama Kategori')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                      // Tambahkan aturan validasi unique di sini
+                    ->unique(ignoreRecord: true),
 
                 Forms\Components\Hidden::make('order')
                     ->required()
@@ -92,7 +94,7 @@ class CategorieResource extends Resource
     {
         return [
             'index' => Pages\ListCategories::route('/'),
-            'create' => Pages\CreateCategorie::route('/create'),
+            // 'create' => Pages\CreateCategorie::route('/create'),
             'view' => Pages\ViewCategorie::route('/{record}'),
             'edit' => Pages\EditCategorie::route('/{record}/edit'),
         ];

@@ -104,9 +104,7 @@ const getButtonProses = (status) => {
 <template>
     <AppLayout>
         <Head title="Tugas" />
-
-        <div class="py-2 md:py-10">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <h3 class="text-xl md:text-3xl font-bold text-gray-900 mb-6 text-center">
                     Inspeksi yang Harus Diselesaikan
                 </h3>
@@ -211,7 +209,6 @@ const getButtonProses = (status) => {
                 </div>
 
             </div>
-        </div>
 
         <!-- Tombol Mengambang untuk Membuat Inspeksi Baru -->
         <Link

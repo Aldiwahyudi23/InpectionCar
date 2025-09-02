@@ -24,7 +24,7 @@ class Component extends Model
     ];
 
 
-        public function points()
+        public function inspection_point()
     {
         return $this->hasMany(InspectionPoint::class, 'component_id');
     }

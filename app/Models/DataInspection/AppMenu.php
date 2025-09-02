@@ -29,9 +29,9 @@ class AppMenu extends Model
         return $this->belongsTo(Categorie::class, 'category_id'); // Spesifikkan foreign key
     }
 
-        public function points()
+        public function menu_point()
     {
-        return $this->hasMany(InspectionPoint::class, 'app_menu_id');
+        return $this->hasMany(MenuPoint::class);
     }
 
 

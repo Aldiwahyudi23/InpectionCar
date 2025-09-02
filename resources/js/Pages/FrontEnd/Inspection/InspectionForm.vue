@@ -1,7 +1,9 @@
 <template>
-  <div class="container mx-auto px-4 py-2">
+  <!-- Header dengan Menu Navigasi -->
+  
+  <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
     <div class="sticky top-0 z-10 bg-white shadow-sm mb-2">
-      <div class="flex overflow-x-auto scrollbar-hide py-3 px-4 space-x-2">
+      <div class="flex overflow-x-auto scrollbar-hide py-3 px-4 ">
         <!-- Menu Detail Kendaraan -->
         <button
           @click="changeCategory('vehicle')"
@@ -11,12 +13,18 @@
             'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== 'vehicle'
           }"
         >
-          Detail Kendaraan 
+          Detail Kendaraan
+          <span 
+            v-if="isVehicleComplete"
+            class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs rounded-full bg-green-500 text-white"
+          >
+            ✓
+          </span>
         </button>
-
+  
         <!-- Menu Inspeksi -->
         <button
-          v-for="menu in appMenu"
+          v-for="menu in appMenus"
           :key="menu.id"
           @click="changeCategory(menu.id)"
           class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200"
@@ -33,7 +41,7 @@
             ✓
           </span>
         </button>
-
+  
         <!-- Menu Kesimpulan -->
         <button
           @click="changeCategory('conclusion')"
@@ -52,7 +60,8 @@
           </span>
         </button>
       </div>
-    </div>
+  </div>
+  <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-1">
 
     <!-- Pesan sukses -->
     <transition name="fade">
@@ -64,6 +73,7 @@
       </div>
     </transition>
 
+    <!-- Konten Utama -->
     <div class="relative overflow-hidden">
       <transition name="category-slide" mode="out-in">
         <!-- Detail Kendaraan -->
@@ -75,15 +85,11 @@
           @save-car-details="saveNewCarDetails"
         />
 
-
         <!-- Menu Inspeksi Biasa -->
         <category-section
           v-else-if="activeMenuData && activeCategory !== 'conclusion'"
           :key="activeMenuData.id"
-          :category="{
-            ...activeMenuData,
-            points: getVisiblePoints(activeMenuData.points || [], activeMenuData.input_type === 'damage')
-          }"
+          :category="activeMenuData"
           :inspection-id="inspection.id"
           :form="form"
           @saveResult="saveResult"
@@ -104,8 +110,11 @@
       </transition>
     </div>
 
-    <!-- Tombol Simpan Final (hanya tampil di kesimpulan) -->
-    <div v-if="activeCategory === 'conclusion'" class="flex justify-end gap-4 mt-8 p-6 bg-white rounded-xl shadow-md">
+
+
+
+    <!-- Tombol Simpan Final -->
+    <div v-if="activeCategory === 'conclusion'" class="flex justify-end gap-4 mt-2 p-4 bg-white rounded-xl shadow-md">
       <button
         type="button"
         @click="submitAll"
@@ -118,10 +127,9 @@
         </svg>
         <span>{{ form.processing ? 'Mengirim...' : 'Final Kirim Inspeksi' }}</span>
       </button>
-      
     </div>
 
-    <!-- Floating Button untuk Akses Damage Points -->
+    <!-- Floating Button untuk Damage Points -->
     <button
       v-if="!showSearchModal && !showRadioModal"
       @click="showSearchModal = true"
@@ -167,13 +175,12 @@
             @click="selectPoint(point)"
             class="w-full text-left p-3 border-b border-gray-200 hover:bg-gray-50 transition-colors"
           >
-            <div class="font-medium text-gray-900">{{ point.name }}</div>
-            <div class="text-sm text-gray-500">{{ point.description }}</div>
+            <div class="font-medium text-gray-900">{{ point.inspection_point?.name }}</div>
+            <div class="text-sm text-gray-500">{{ point.inspection_point?.description }}</div>
             <div class="text-xs text-gray-400 mt-1">
               {{ getComponentName(point) }}
             </div>
-            <!-- Tampilkan status jika sudah ada data -->
-            <div v-if="hasPointData(point.id)" class="text-xs text-green-600 mt-1">
+            <div v-if="hasPointData(point.inspection_point_id)" class="text-xs text-green-600 mt-1">
               ✓ Sudah ada data
             </div>
           </button>
@@ -186,26 +193,27 @@
       v-if="showRadioModal"
       :key="selectedPoint?.id"
       :show="showRadioModal"
-      :title="selectedPoint?.name || 'Detail Point'"
-      :subtitle="selectedPoint?.description"
+      :title="selectedPoint?.inspection_point?.name || 'Detail Point'"
+      :subtitle="selectedPoint?.inspection_point?.description"
       :name="`point-${selectedPoint?.id}`"
       :inspection-id="inspection.id"
-      :point-id="selectedPoint?.id"
+      :point-id="selectedPoint?.inspection_point_id"
       :settings="selectedPoint?.settings || {}"
       :options="selectedPoint?.settings?.radios || []"
       :selected-Point="selectedPoint"
       :selected-value="tempRadioValue"
-      :images-value="form.images[selectedPoint.id]"
+      :images-value="form.images[selectedPoint?.inspection_point_id]"
       :notes-value="tempNotes"
       :point="selectedPoint"
-      :existing-data="getExistingPointData(selectedPoint?.id)"
+      :existing-data="getExistingPointData(selectedPoint?.inspection_point_id)"
       @update:selectedValue="tempRadioValue = $event"
       @update:notesValue="tempNotes = $event"
-      @update:imagesValue="form.images[selectedPoint.id] = $event"
+      @update:imagesValue="updateImagesValue"
       @save="saveAllData"
       @close="closeRadioModal"
       @hapus="hapusData"
     />
+  </div>
   </div>
 </template>
 
@@ -221,12 +229,11 @@ import BottomSheetModal from '@/Components/InspectionForm/BottomSheetModal.vue';
 
 const props = defineProps({
   inspection: Object,
-  appMenu: Array,
-  existingResults: Array,
+  appMenus: Array,
+  damagePoints: Array,
+  existingResults: Object,
   existingImages: Object,
   CarDetail: Array,
-  components: Array,
-  damagePoints: Array,
 });
 
 // State untuk modal
@@ -236,188 +243,194 @@ const searchQuery = ref('');
 const selectedPoint = ref(null);
 const tempRadioValue = ref('');
 const tempNotes = ref('');
-const tempImages = ref([]);
 const successMessage = ref('');
 
-// Filter points untuk tampilan normal: sembunyikan damage points kecuali ada data
-const getVisiblePoints = (points, isDamageMenu) => {
-  return points.filter(point => {
-    // Kalau menu bukan damage → semua point tampil
-    if (!isDamageMenu) return true;
+// Inisialisasi daftar kategori lengkap (termasuk 'vehicle' dan 'conclusion')
+const allCategories = computed(() => {
+  return ['vehicle', ...props.appMenus.map(menu => menu.id), 'conclusion'];
+});
 
-    // Kalau menu damage → point hanya tampil kalau ada data
-    return hasPointData(point.id);
+// State untuk navigasi kategori
+const activeCategory = ref(allCategories.value[0]);
+const activeIndex = ref(0);
+
+// Watcher untuk sinkronisasi activeIndex dengan activeCategory
+watch(activeCategory, (newVal) => {
+  activeIndex.value = allCategories.value.indexOf(newVal);
+});
+
+// Properti terhitung untuk mendapatkan data menu aktif
+const activeMenuData = computed(() => {
+  if (activeCategory.value === 'vehicle' || activeCategory.value === 'conclusion') {
+    return null;
+  }
+  const menu = props.appMenus.find(m => m.id === activeCategory.value);
+  if (!menu) return null;
+
+  return {
+    ...menu,
+    points: getVisiblePoints(menu.menu_point, menu.input_type === 'damage')
+  };
+});
+
+// Filter points berdasarkan kondisi
+const getVisiblePoints = (menuPoints, isDamageMenu) => {
+  if (!isDamageMenu) {
+    return menuPoints || [];
+  }
+  
+  return (menuPoints || []).filter(point => {
+    const pointId = point.inspection_point_id;
+    return hasPointData(pointId);
   });
 };
 
-// Gunakan damagePoints dari props
-const allDamagePoints = computed(() => {
-  return props.damagePoints || [];
+// Properti terhitung untuk mengecek kelengkapan menu "Detail Kendaraan"
+const isVehicleComplete = computed(() => {
+  const car = props.CarDetail;
+  const inspection = props.inspection;
+  
+  return !!inspection.plate_number && !!inspection.car_name ;
 });
 
 // Filter damage points berdasarkan pencarian
 const filteredDamagePoints = computed(() => {
   if (!searchQuery.value.trim()) {
-    return allDamagePoints.value;
+    return props.damagePoints || [];
   }
   
   const query = searchQuery.value.toLowerCase().trim();
-  return allDamagePoints.value.filter(point => 
-    point.name?.toLowerCase().includes(query) ||
-    point.description?.toLowerCase().includes(query) ||
+  return (props.damagePoints || []).filter(point => 
+    point.inspection_point?.name?.toLowerCase().includes(query) ||
+    point.inspection_point?.description?.toLowerCase().includes(query) ||
     getComponentName(point)?.toLowerCase().includes(query)
   );
 });
 
 // Cek apakah point sudah memiliki data
 const hasPointData = (pointId) => {
-  const result = form.results[pointId];
-  return result && (result.status || result.note || result.images?.length > 0);
+  const hasServerResult = props.existingResults && props.existingResults[pointId] !== undefined;
+  const hasServerImages = props.existingImages && props.existingImages[pointId] && props.existingImages[pointId].length > 0;
+  
+  const hasLocalResult = form.results[pointId] && 
+                         (form.results[pointId].status || form.results[pointId].note);
+  
+  const hasLocalImages = form.images[pointId] && form.images[pointId].length > 0;
+  
+  return hasServerResult || hasServerImages || hasLocalResult || hasLocalImages;
 };
 
-// Ambil nama component berdasarkan point.component_id
+// Ambil nama component
 const getComponentName = (point) => {
-  const component = props.components.find(c => c.id === point.component_id);
-  return component ? component.name : 'Komponen Tidak Diketahui';
+  return point.inspection_point?.component?.name || 'Komponen Tidak Diketahui';
 };
 
 // Get existing data untuk point
 const getExistingPointData = (pointId) => {
-  if (!pointId) return null;
-  
-  return Array.isArray(props.existingResults) 
-    ? props.existingResults.find(r => r.point_id === pointId)
-    : null;
+  return props.existingResults[pointId] || null;
 };
 
 // Pilih point dan buka modal
 const selectPoint = (point) => {
   selectedPoint.value = point;
-
-    // ambil nilai awal dari form.results untuk point tsb
-  const existing = form.results[point.id] || {};
-  tempRadioValue.value = existing.status || '';
-  tempNotes.value = existing.note || '';
-  tempImages.value = Array.isArray(existing.images) ? [...existing.images] : [];
+  const pointId = point.inspection_point_id;
+  
+  const existingResult = form.results[pointId] || {};
+  tempRadioValue.value = existingResult.status || '';
+  tempNotes.value = existingResult.note || '';
 
   showSearchModal.value = false;
   showRadioModal.value = true;
 };
 
+// Update images value
+const updateImagesValue = (images) => {
+  if (selectedPoint.value) {
+    form.images[selectedPoint.value.inspection_point_id] = images;
+  }
+};
+
 // Handle save data dari modal
 const saveAllData = () => {
-  // Update form results
   if (selectedPoint.value) {
-    form.results[selectedPoint.value.id] = {
-      ...form.results[selectedPoint.value.id],
+    const pointId = selectedPoint.value.inspection_point_id;
+    
+    form.results[pointId] = {
+      ...form.results[pointId],
       status: tempRadioValue.value,
       note: tempNotes.value,
-      images: Array.isArray(tempImages.value) ? [...tempImages.value] : []
     };
     
-    // Kirim ke server
-    saveResult(selectedPoint.value.id);
-     // Tampilkan pesan sukses
+    saveResult(pointId);
     successMessage.value = "Data berhasil disimpan!";
-    setTimeout(() => {
-      successMessage.value = "";
-    }, 1000);
+    setTimeout(() => successMessage.value = "", 1000);
   }
   
   closeRadioModal();
-}; 
+};
 
-// Close modal pencarian
+// Close modals
 const closeSearchModal = () => {
   showSearchModal.value = false;
   searchQuery.value = '';
 };
 
-// Close modal radio
 const closeRadioModal = () => {
   showRadioModal.value = false;
   selectedPoint.value = null;
   tempRadioValue.value = '';
   tempNotes.value = '';
-  tempImages.value = [];
 };
 
-// Akses inspection dari page props
-const page = usePage();
-const inspection = page.props.inspection;
-
-// Ubah inisialisasi activeCategory
-const activeCategory = ref(props.appMenu[0]?.id || 'conclusion');
-const activeIndex = ref(0);
-
-// Properti terhitung untuk mendapatkan data menu aktif
-const activeMenuData = computed(() => {
-  return activeCategory.value !== 'conclusion' 
-    ? props.appMenu.find(m => m.id === activeCategory.value)
-    : null;
-});
-
 // Inisialisasi form
-
-function initializeForm() {
+const initializeForm = () => {
   const results = {};
-  const images = {}; // Objek terpisah untuk menyimpan data gambar
-  
-  // Proses semua points termasuk damage points
-  props.appMenu.forEach(menu => {
-    (menu.points || []).forEach(point => {
-      // 1. Inisialisasi data untuk inspection_result
-      const existingResult = Array.isArray(props.existingResults)
-        ? props.existingResults.find(r => r.point_id === point.id)
-        : null;
-      
-      results[point.id] = {
-        status: existingResult?.status || '',
-        note: existingResult?.note || '',
-      };
-      
-      // 2. Inisialisasi data untuk inspection_image
-      // Periksa apakah ada gambar yang sudah ada untuk point ini
-      const existingImagesForPoint = props.existingImages?.[point.id] || [];
-      images[point.id] = existingImagesForPoint.map(img => ({
-        id: img.id, // Pastikan ID gambar disertakan jika ada
-        image_path: img.image_path,
-        // Properti lain yang diperlukan oleh komponen anak
-        preview: `/${img.image_path}`, // Gunakan image_path untuk preview
-        rotation: img.rotation || 0,
-        isNew: false
-      }));
-    });
+  const images = {};
+
+  const allPoints = [
+    ...props.appMenus.flatMap(menu => menu.menu_point || []),
+    ...(props.damagePoints || [])
+  ];
+
+  allPoints.forEach(point => {
+    const pointId = point.inspection_point_id;
+    const existingResult = props.existingResults[pointId];
+    
+    results[pointId] = {
+      status: existingResult?.status || '',
+      note: existingResult?.note || '',
+    };
+    
+    images[pointId] = props.existingImages[pointId] || [];
   });
   
   return {
     inspection_id: props.inspection.id,
     results,
-    images, // Tambahkan objek 'images' ke dalam form
+    images,
     overall_note: props.inspection.overall_note || ''
   };
-}
+};
 
 const form = useForm(initializeForm());
 
-// PERBAIKAN: Fungsi isMenuComplete yang benar
+// Check if menu is complete
 const isMenuComplete = (menu) => {
-  // Kalau menu ini tipe damage → selalu dianggap complete
   if (menu.input_type === 'damage') {
-    return true;
+    const pointsWithData = getVisiblePoints(menu.menu_point, true);
+    return pointsWithData.length > 0;
   }
 
-  // Khusus untuk menu kesimpulan
   if (menu.id === 'conclusion') {
     return isConclusionComplete();
   }
 
-  return menu.points.every(point => {
-    const result = form.results[point.id];
-    const image = form.images[point.id];
+  const points = getVisiblePoints(menu.menu_point, false);
+  return points.every(point => {
+    const result = form.results[point.inspection_point_id];
+    const image = form.images[point.inspection_point_id];
     if (!result) return false;
     
-    // Parse settings untuk point
     const settings = parseSettings(point.settings);
     
     switch(point.input_type) {
@@ -432,14 +445,11 @@ const isMenuComplete = (menu) => {
       case 'radio':
         if (!result.status) return false;
         
-        // Cek jika opsi yang dipilih memiliki requirements tambahan
         const selectedOption = settings.radios?.find(opt => opt.value === result.status);
         if (selectedOption?.settings) {
-          // Validasi textarea jika required
           if (selectedOption.settings.show_textarea && !result.note?.trim()) {
             return false;
           }
-          // Validasi image jika required
           if (selectedOption.settings.show_image_upload && image?.length === 0) {
             return false;
           }
@@ -447,13 +457,10 @@ const isMenuComplete = (menu) => {
         return true;
       
       case 'imageTOradio':
-        // Harus ada gambar DAN pilihan radio
         if (image?.length === 0 || !result.status) return false;
         
-        // Cek requirements tambahan dari opsi yang dipilih
         const selectedOptionImage = settings.radios?.find(opt => opt.value === result.status);
         if (selectedOptionImage?.settings) {
-          // Validasi textarea jika required
           if (selectedOptionImage.settings.show_textarea && selectedOptionImage.settings.required && !result.note?.trim()) {
             return false;
           }
@@ -466,13 +473,12 @@ const isMenuComplete = (menu) => {
       default:
         return !!result.status || !!result.note?.trim();
     }
-  });  
+  });
 };
 
-// Fungsi parse settings
+// Parse settings
 const parseSettings = (settings) => {
   if (!settings) return {};
-  
   if (typeof settings === 'string') {
     try {
       return JSON.parse(settings) || {};
@@ -481,35 +487,30 @@ const parseSettings = (settings) => {
       return {};
     }
   }
-  
   if (typeof settings === 'object' && settings !== null) {
     return settings;
   }
-  
   return {};
 };
 
-// Fungsi khusus untuk mengecek kelengkapan kesimpulan
+// Check if conclusion is complete
 const isConclusionComplete = () => {
   const settings = parseSettings(props.inspection.settings);
   const conclusionData = settings.conclusion || {};
   
-  // Cek apakah semua field kesimpulan sudah diisi
   const hasFlooded = !!conclusionData.flooded;
   const hasCollision = !!conclusionData.collision;
   
-  // Jika collision = 'yes', pastikan severity juga diisi
   const hasValidCollision = conclusionData.collision === 'yes' 
     ? !!conclusionData.collision_severity 
     : true;
   
-  // Pastikan catatan kesimpulan juga diisi
   const hasConclusionNote = !!props.inspection.notes?.trim();
   
   return hasFlooded && hasCollision && hasValidCollision && hasConclusionNote;
 };
 
-// Computed property untuk status kesimpulan
+// Conclusion status
 const conclusionStatus = computed(() => {
   const settings = parseSettings(props.inspection.settings);
   const conclusionData = settings.conclusion || {};
@@ -523,20 +524,149 @@ const conclusionStatus = computed(() => {
   };
 });
 
+// Check if all menus are complete
+const allMenusComplete = computed(() => {
+  const vehicleComplete = isVehicleComplete.value;
+  const regularMenusComplete = props.appMenus.every(menu => isMenuComplete(menu));
+  const conclusionComplete = isConclusionComplete();
+  return vehicleComplete && regularMenusComplete && conclusionComplete;
+});
+
 // Change active category
 const changeCategory = (menuId) => {
   activeCategory.value = menuId;
 };
 
-// Navigate between menus
+// Navigasi dengan swipe
 const navigate = (direction) => {
   let newIndex = activeIndex.value + direction;
   
-  const maxIndex = props.appMenu.length;
-  
-  if (newIndex >= 0 && newIndex <= maxIndex) {
-    activeIndex.value = newIndex;
-    activeCategory.value = props.appMenu[newIndex]?.id || 'conclusion';
+  if (newIndex >= 0 && newIndex < allCategories.value.length) {
+    activeCategory.value = allCategories.value[newIndex];
+  }
+};
+
+// Save single result
+const saveResult = debounce(async (pointId) => {
+  try {
+    await router.post(route('inspections.save-result'), {
+      inspection_id: props.inspection.id,
+      point_id: pointId,
+      status: form.results[pointId]?.status,
+      note: form.results[pointId]?.note,
+      images: form.images[pointId],
+    }, {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => {
+        router.reload({ only: ['existingResults', 'existingImages'] });
+      }
+    });
+  } catch (error) {
+    console.error('Error menyimpan hasil:', error);
+  }
+}, 500);
+
+// Update result
+const updateResult = ({ pointId, type, value }) => {
+  if (form.results[pointId]?.hasOwnProperty(type)) {
+    form.results[pointId][type] = value;
+  }
+  saveResult(pointId);
+};
+
+// Delete data
+const hapusData = async (pointId) => {
+  if (!pointId) return;
+
+  if (confirm("Apakah kamu yakin ingin menghapus data ini?")) {
+    try {
+      await router.post(route('inspections.delete-result'), {
+        inspection_id: props.inspection.id,
+        point_id: pointId,
+      }, {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => {
+          if (form.results[pointId]) {
+            delete form.results[pointId];
+          }
+          if (form.images[pointId]) {
+            delete form.images[pointId];
+          }
+          
+          successMessage.value = "Data berhasil dihapus!";
+          setTimeout(() => {
+            successMessage.value = "";
+          }, 2000);
+          
+          router.reload({ only: ['existingResults', 'existingImages'] });
+        },
+        onError: (errors) => {
+          console.error('Error menghapus hasil:', errors);
+        }
+      });
+    } catch (error) {
+      console.error('Error menghapus hasil:', error);
+    }
+    closeRadioModal();
+  }
+};
+
+// Update vehicle details
+const updateVehicleDetails = (vehicleData) => {
+  console.log('Update vehicle:', vehicleData);
+};
+
+// Save new car details
+const saveNewCarDetails = (carDetails) => {
+  console.log('Save car details:', carDetails);
+};
+
+// Update conclusion
+const updateConclusion = (conclusionData) => {
+  Object.assign(form.conclusion, conclusionData);
+  saveConclusion();
+};
+
+// Save conclusion
+const saveConclusion = debounce(async () => {
+  try {
+    await router.post(route('inspections.save-conclusion'), {
+      inspection_id: props.inspection.id,
+      ...form.conclusion
+    }, {
+      preserveScroll: true,
+      preserveState: true,
+    });
+  } catch (error) {
+    console.error('Error menyimpan kesimpulan:', error);
+  }
+}, 500);
+
+// Final submit
+const submitAll = () => {
+  if (!allMenusComplete.value) {
+    alert('Harap lengkapi semua menu inspeksi termasuk kesimpulan sebelum submit final');
+    return;
+  }
+
+  form.post(route('inspections.final-submit', { 
+    id: props.inspection.id 
+  }), {
+    preserveScroll: true,
+    onSuccess: () => {},
+    onError: (errors) => {
+      console.error('Kesalahan pengiriman:', errors);
+    }
+  });
+};
+
+// Remove image
+const removeImage = ({ pointId, imageId }) => {
+  if (form.images[pointId]) {
+    form.images[pointId] = form.images[pointId].filter(img => img.id !== imageId);
+    saveResult(pointId);
   }
 };
 
@@ -555,10 +685,11 @@ const setupSwipe = () => {
   };
   
   const handleSwipe = () => {
-    if (touchEndX < touchStartX - 150) {
-      navigate(1);
-    } else if (touchEndX > touchStartX + 150) {
-      navigate(-1);
+    const swipeThreshold = 150;
+    if (touchEndX < touchStartX - swipeThreshold) {
+      navigate(1); // Geser kiri -> kategori berikutnya
+    } else if (touchEndX > touchStartX + swipeThreshold) {
+      navigate(-1); // Geser kanan -> kategori sebelumnya
     }
   };
   
@@ -576,112 +707,6 @@ const setupSwipe = () => {
   };
 };
 
-// Save single result
-const saveResult = debounce(async (pointId) => {
-  try {
-    await router.post(route('inspections.save-result'), {
-      inspection_id: props.inspection.id,
-      point_id: pointId,
-      status: form.results[pointId].status,
-      note: form.results[pointId].note,
-    }, {
-      preserveScroll: true,
-      preserveState: true,
-      only: ['existingResults'], 
-    });
-  } catch (error) {
-    console.error('Error menyimpan hasil:', error);
-  }
-}, 500); 
-
-// Update result data
-const updateResult = ({ pointId, type, value }) => {
-  if (form.results[pointId].hasOwnProperty(type)) {
-    form.results[pointId][type] = value;
-  }
-  saveResult(pointId);
-};
-
-const hapusData = async (pointId) => {
-  if (!pointId) return;
-
-  if (confirm("Apakah kamu yakin ingin menghapus data ini?")) {
-    try {
-      await router.post(route('inspections.delete-result'), {
-        inspection_id: props.inspection.id,
-        point_id: pointId,
-      }, {
-        preserveScroll: true,
-        preserveState: true,
-        only: ['existingResults'], 
-        onSuccess: () => {
-          if (form.results[pointId]) {
-            delete form.results[pointId];
-          }
-          successMessage.value = "Data berhasil dihapus!";
-          setTimeout(() => {
-            successMessage.value = "";
-          }, 2000);
-        },
-      });
-    } catch (error) {
-      console.error('Error menghapus hasil:', error);
-    }
-
-    closeRadioModal();
-  }
-};
-
-// Fungsi untuk update kesimpulan
-const updateConclusion = (conclusionData) => {
-  Object.assign(form.conclusion, conclusionData);
-  saveConclusion();
-};
-
-
-// Final submit all
-const submitAll = () => {
-  if (!allMenusComplete.value) {
-    alert('Harap lengkapi semua menu inspeksi termasuk kesimpulan sebelum submit final');
-    return;
-  }
-
-  form.post(route('inspections.final-submit', { 
-    id: props.inspection.id 
-  }), {
-    preserveScroll: true,
-    onSuccess: () => {
-      // Redirect akan ditangani oleh controller
-    },
-    onError: (errors) => {
-      console.error('Kesalahan pengiriman:', errors);
-    }
-  });
-};
-
-// Watcher untuk perubahan activeCategory
-watch(activeCategory, (newVal) => {
-  const menuButton = document.querySelector(`.flex-shrink-0[data-category-id="${newVal}"]`);
-  if (menuButton) {
-    menuButton.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  }
-});
-
-const allMenusComplete = computed(() => {
-  // 1. Cek semua menu regular dari appMenu
-  const regularMenusComplete = props.appMenu.every(menu => isMenuComplete(menu));
-  
-  // 2. Cek kesimpulan
-  const conclusionComplete = isConclusionComplete();
-  
-  return regularMenusComplete && conclusionComplete;
-});
-
-// Watcher untuk search query
-watch(searchQuery, debounce(() => {
-  // Filter akan dihandle oleh computed property
-}, 300));
-
 onMounted(() => {
   setupSwipe();
 });
@@ -697,7 +722,6 @@ onMounted(() => {
   scrollbar-width: none;
 }
 
-/* Transisi untuk conditional rendering */
 .category-slide-enter-active,
 .category-slide-leave-active {
   transition: all 0.3s ease-out;
@@ -715,7 +739,6 @@ onMounted(() => {
   opacity: 0;
 }
 
-/* Animasi fade */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.5s;

@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\DataInspection;
 
 use App\Filament\Resources\DataInspection\ComponentResource\Pages;
-use App\Filament\Resources\DataInspection\ComponentResource\RelationManagers\InspectionPointsRelationManager;
+use App\Filament\Resources\DataInspection\ComponentResource\RelationManagers\InspectionPointRelationManager;
 use App\Models\DataInspection\Component;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -31,7 +31,8 @@ class ComponentResource extends Resource
                 Forms\Components\TextInput::make('name')
                     ->label('Nama Kategori')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->unique(ignoreRecord: true),
                     
                 Forms\Components\Toggle::make('is_active')
                     ->label('Status Aktif')
@@ -84,7 +85,7 @@ class ComponentResource extends Resource
     public static function getRelations(): array
     {
         return [
-           //
+          InspectionPointRelationManager::class,
         ];
     }
 
@@ -92,7 +93,7 @@ class ComponentResource extends Resource
     {
         return [
             'index' => Pages\ListComponents::route('/'),
-            'create' => Pages\CreateComponent::route('/create'),
+            // 'create' => Pages\CreateComponent::route('/create'),
             'view' => Pages\ViewComponent::route('/{record}'),
             'edit' => Pages\EditComponent::route('/{record}/edit'),
         ];

@@ -1,7 +1,7 @@
 <template>
   <div class="bg-gray-50 shadow-lg rounded-xl overflow-hidden border border-gray-100">
-    <div class="bg-indigo-50 px-6 py-2 border-b border-indigo-100">
-      <h2 class="text-xl font-semibold text-indigo-700">Kesimpulan Inspeksi </h2>
+    <div class="bg-indigo-200 px-6 py-2 border-b">
+      <h3 class="text-xl font-semibold text-indigo-700">Kesimpulan Inspeksi </h3>
     </div>
     <!-- Banjir -->
     <div class="p-4 space-y-4-6">
@@ -63,7 +63,7 @@
       </div>
 
       <!-- Tingkat Kerusakan -->
-      <div v-if="form.collision === 'yes'" class="p-4 space-y-4-6">
+      <div v-if="form.collision === 'yes'" class="p-4 space-y-4">
         <label class="block text-sm font-medium text-gray-700 mb-3">Tingkat kerusakan:</label>
         <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 w-full">
           <label

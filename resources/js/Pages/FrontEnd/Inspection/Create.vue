@@ -1,238 +1,264 @@
 <template>
     <AppLayout title="Buat Inspeksi Baru">
         <Head title="Inspek Baru" />
-        <div class="space-y-6 bg-white rounded-xl shadow-md p-6">
-            <div class="mb-4">
-                <h3 class="text-xl md:text-3xl font-bold text-gray-900 mb-6 text-center">Buat Inspeksi Baru</h3>
-                <p class="text-gray-600">Isi detail kendaraan dan jadwal untuk memulai inspeksi.</p>
-            </div>
-
-            <!-- Notifikasi Error -->
-            <div v-if="form.errors.form_error" class="mb-4 text-sm text-red-600 bg-red-100 p-3 rounded-md">
-                {{ form.errors.form_error }}
-            </div>
-
-            <!-- Form Input Plate Number -->
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Nomor Plat Kendaraan
-                </label>
-                <input
-                    v-model="form.plate_number"
-                    type="text"
-                    placeholder="Contoh: B 1234 ABC"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                >
-            </div>
-
-            <!-- Form Input Car Name with Auto-complete -->
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Nama Mobil
-                </label>
-                <div class="relative">
-                    <input
-                        v-model="carSearchQuery"
-                        type="text"
-                        placeholder="Cari atau ketik nama mobil..."
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                        @input="searchCars"
-                        @focus="showSuggestions = true"
-                        @blur="handleInputBlur"
-                    >
-                    
-                    <!-- Loading Indicator -->
-                    <div v-if="isSearching" class="absolute right-3 top-3">
-                        <svg class="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                    </div>
-
-                    <!-- Search Suggestions Dropdown -->
-                    <div 
-                        v-if="showSuggestions" 
-                        class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
-                    >
-                        <div v-if="filteredCars.length > 0">
-                            <div 
-                                v-for="car in filteredCars" 
-                                :key="car.id"
-                                class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
-                                @mousedown="selectCar(car)"
-                            >
-                                <div class="font-medium text-gray-900">
-                                    {{ formatCarName(car) }}
-                                </div>
-                               
-                            </div>
-                        </div>
-                        <!-- Pesan jika tidak ada hasil -->
-                        <div v-else class="p-4 text-sm text-gray-500 text-center">
-                            Tidak ada data mobil yang cocok. <br>
-                            Silakan input manual dengan format: <br>
-                            <span class="font-medium text-gray-800">Toyota Avanza 1.5 G AT Bensin 2019</span>
-                        </div>
-                    </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="space-y-6 bg-white rounded-xl shadow-md p-6">
+                <div class="mb-4">
+                    <h3 class="text-xl md:text-3xl font-bold text-gray-900 mb-6 text-center">Buat Inspeksi Baru</h3>
+                    <p class="text-gray-600">Isi detail kendaraan dan jadwal untuk memulai inspeksi.</p>
                 </div>
-            </div>
 
-  
-            <!-- Select Kategori Inspeksi -->
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2" for="category">
-                    Kategori Inspeksi
-                </label>
-                <select
-                    id="category"
-                    v-model="form.category_id"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                    required
-                >
-                    <option value="" disabled>Pilih Kategori</option>
-                    <option v-for="category in Category" :key="category.id" :value="category.id">
-                        {{ category.name }}
-                    </option>
-                </select>
-            </div>
+                <!-- Notifikasi Error -->
+                <div v-if="form.errors.form_error" class="mb-4 text-sm text-red-600 bg-red-100 p-3 rounded-md">
+                    {{ form.errors.form_error }}
+                </div>
 
-            <!-- Toggle Jadwal -->
-            <div class="mb-6 flex items-center justify-between">
-                <label for="schedule-toggle" class="text-sm font-medium text-gray-700">Jadwalkan Inspeksi?</label>
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" v-model="form.is_scheduled" id="schedule-toggle" class="sr-only peer">
-                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-700"></div>
-                </label>
-            </div>
-
-            <!-- Input Tanggal & Waktu (Muncul Jika Toggle Aktif) -->
-            <div v-if="form.is_scheduled" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2" for="schedule-date">
-                        Tanggal
+                <!-- Form Input Plate Number -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Nomor Plat Kendaraan
                     </label>
-                    <input
-                        type="date"
-                        id="schedule-date"
-                        v-model="form.scheduled_at_date"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                        required
-                    >
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2" for="schedule-time">
-                        Waktu
-                    </label>
-                    <input
-                        type="time"
-                        id="schedule-time"
-                        v-model="form.scheduled_at_time"
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                        required
-                    >
-                </div>
-            </div>
-
-            <!-- Tombol Submit -->
-            <div class="mt-6 flex justify-end">
-                <button
-                    @click="submitInspection"
-                    :disabled="!isFormValid || form.processing"
-                    :class="{
-                        'px-6 py-3 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed': true,
-                        'bg-gradient-to-r from-indigo-700 to-sky-600  border border-transparent text-white hover:bg-blue-700': !form.is_scheduled,
-                        'bg-gradient-to-r from-green-700 to-indigo-600  border-transparent text-white hover:bg-green-700': form.is_scheduled
-                    }"
-                >
-                    {{ buttonText }}
-                </button>
-            </div>
-
-            <!-- Bagian ini hanya tampil jika car_id ada -->
-            <div v-if="form.car_id && selectedCar" class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <div v-if="selectedCar.description" class="mb-4">
-                    <h3 class="text-sm font-medium text-gray-700 mb-2">Deskripsi:</h3>
-                    <div class="prose prose-sm max-w-none text-gray-600" v-html="selectedCar.description"></div>
-                </div>
-
-                <div v-if="carImages.length > 0">
-                    <h3 class="text-sm font-medium text-gray-700 mb-3">Gambar Mobil:</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        <div 
-                            v-for="(image, index) in carImages" 
-                            :key="image.id || index"
-                            class="relative group cursor-pointer"
-                            @click="openLightbox(index)"
+                    <div class="flex items-center space-x-2">
+                        <!-- Kode Wilayah (Huruf) -->
+                        <input
+                            v-model="plateAreaCode"
+                            type="text"
+                            placeholder="D"
+                            class="w-1/4 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-center transition duration-150"
+                            @input="handlePlateInput('area')"
+                            maxlength="2"
                         >
-                            <img 
-                                :src="getImageSrc(image)" 
-                                :alt="image.name || 'Car Image'"
-                                class="w-full h-24 object-cover rounded-lg border border-gray-200 transition-transform duration-200 group-hover:scale-105"
-                            >
-                            <div 
-                                v-if="image.note"
-                                class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center p-2"
-                            >
-                                <p class="text-white text-xs text-center">{{ image.note }}</p>
+                        <!-- Nomor Acak (Angka) -->
+                        <input
+                            v-model="plateNumber"
+                            type="tel"
+                            pattern="[0-9]*"
+                            placeholder="1234"
+                            class="w-2/4 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-center transition duration-150"
+                            @input="handlePlateInput('number')"
+                            maxlength="4"
+                        >
+                        <!-- Huruf Acak (Huruf) -->
+                        <input
+                            v-model="plateSuffix"
+                            type="text"
+                            placeholder="ABC"
+                            class="w-1/4 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-center transition duration-150"
+                            @input="handlePlateInput('suffix')"
+                            maxlength="3"
+                        >
+                    </div>
+                </div>
+
+                <!-- Form Input Car Name with Auto-complete -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Nama Mobil
+                    </label>
+                    <div class="relative">
+                        <input
+                            v-model="carSearchQuery"
+                            type="text"
+                            placeholder="Cari atau ketik nama mobil..."
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                            @input="searchCars"
+                            @focus="showSuggestions = true"
+                            @blur="handleInputBlur"
+                        >
+                        
+                        <!-- Loading Indicator -->
+                        <div v-if="isSearching" class="absolute right-3 top-3">
+                            <svg class="animate-spin h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </div>
+
+                        <!-- Search Suggestions Dropdown -->
+                        <div 
+                            v-if="showSuggestions" 
+                            class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                        >
+                            <div v-if="filteredCars.length > 0">
+                                <div 
+                                    v-for="car in filteredCars" 
+                                    :key="car.id"
+                                    class="px-4 py-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                                    @mousedown="selectCar(car)"
+                                >
+                                    <div class="font-medium text-gray-900">
+                                        {{ formatCarName(car) }}
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                            <!-- Pesan jika tidak ada hasil -->
+                            <div v-else class="p-4 text-sm text-gray-500 text-center">
+                                Tidak ada data mobil yang cocok. <br>
+                                Silakan input manual dengan format: <br>
+                                <span class="font-medium text-gray-800">Toyota Avanza 1.5 G AT Bensin 2019</span>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div v-else class="text-center py-4 text-gray-500 text-sm">
-                    Tidak ada gambar tersedia untuk mobil ini
-                </div>
-            </div>
+
             
-            <!-- Lightbox Modal -->
-            <div v-if="showLightbox" class="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4" @click="closeLightbox">
-                <div class="relative max-w-4xl max-h-full w-full h-full flex items-center justify-center">
-                    <!-- Close Button -->
-                    <button 
-                        @click="closeLightbox" 
-                        class="absolute top-4 right-4 z-10 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-70 transition-colors"
+                <!-- Select Kategori Inspeksi -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2" for="category">
+                        Kategori Inspeksi
+                    </label>
+                    <select
+                        id="category"
+                        v-model="form.category_id"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                        required
                     >
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
+                        <option value="" disabled>Pilih Kategori</option>
+                        <option v-for="category in Category" :key="category.id" :value="category.id">
+                            {{ category.name }}
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Toggle Jadwal -->
+                <div class="mb-6 flex items-center justify-between">
+                    <label for="schedule-toggle" class="text-sm font-medium text-gray-700">Jadwalkan Inspeksi?</label>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" v-model="form.is_scheduled" id="schedule-toggle" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-700"></div>
+                    </label>
+                </div>
+
+                <!-- Input Tanggal & Waktu (Muncul Jika Toggle Aktif) -->
+                <div v-if="form.is_scheduled" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2" for="schedule-date">
+                            Tanggal
+                        </label>
+                        <input
+                            type="date"
+                            id="schedule-date"
+                            v-model="form.scheduled_at_date"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                            required
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2" for="schedule-time">
+                            Waktu
+                        </label>
+                        <input
+                            type="time"
+                            id="schedule-time"
+                            v-model="form.scheduled_at_time"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                            required
+                        >
+                    </div>
+                </div>
+
+                <!-- Tombol Submit -->
+                <div class="mt-6 flex justify-end">
+                    <button
+                        @click="submitInspection"
+                        :disabled="!isFormValid || form.processing"
+                        :class="{
+                            'px-6 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed': true,
+                            'bg-gradient-to-r from-indigo-700 to-sky-600  border border-transparent text-white hover:bg-blue-700': !form.is_scheduled,
+                            'bg-gradient-to-r from-green-700 to-indigo-600  border-transparent text-white hover:bg-green-700': form.is_scheduled
+                        }"
+                    >
+                        {{ buttonText }}
                     </button>
+                </div>
 
-                    <!-- Navigation Arrows -->
-                    <button 
-                        v-if="carImages.length > 1"
-                        @click.stop="prevImage" 
-                        class="absolute left-4 z-10 text-white bg-black bg-opacity-50 rounded-full p-3 hover:bg-opacity-70 transition-colors"
-                    >
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                        </svg>
-                    </button>
-
-                    <button 
-                        v-if="carImages.length > 1"
-                        @click.stop="nextImage" 
-                        class="absolute right-4 z-10 text-white bg-black bg-opacity-50 rounded-full p-3 hover:bg-opacity-70 transition-colors"
-                    >
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                        </svg>
-                    </button>
-
-                    <!-- Image Display -->
-                    <img 
-                        :src="getImageSrc(carImages[currentImageIndex])" 
-                        :alt="'Car Image ' + (currentImageIndex + 1)"
-                        class="max-w-full max-h-full object-contain"
-                        @click.stop
-                    >
-
-                    <!-- Image Counter -->
-                    <div v-if="carImages.length > 1" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white bg-black bg-opacity-50 px-3 py-1 rounded-full text-sm">
-                        {{ currentImageIndex + 1 }} / {{ carImages.length }}
+                <!-- Bagian ini hanya tampil jika car_id ada -->
+                <div v-if="form.car_id && selectedCar" class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div v-if="selectedCar.description" class="mb-4">
+                        <h3 class="text-sm font-medium text-gray-700 mb-2">Deskripsi:</h3>
+                        <div class="prose prose-sm max-w-none text-gray-600" v-html="selectedCar.description"></div>
                     </div>
 
-                    <!-- Image Note -->
-                    <div v-if="carImages[currentImageIndex]?.note" class="absolute bottom-4 left-4 text-white bg-black bg-opacity-50 px-3 py-1 rounded text-sm max-w-md">
-                        {{ carImages[currentImageIndex].note }}
+                    <div v-if="carImages.length > 0">
+                        <h3 class="text-sm font-medium text-gray-700 mb-3">Gambar Mobil:</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            <div 
+                                v-for="(image, index) in carImages" 
+                                :key="image.id || index"
+                                class="relative group cursor-pointer"
+                                @click="openLightbox(index)"
+                            >
+                                <img 
+                                    :src="getImageSrc(image)" 
+                                    :alt="image.name || 'Car Image'"
+                                    class="w-full h-24 object-cover rounded-lg border border-gray-200 transition-transform duration-200 group-hover:scale-105"
+                                >
+                                <div 
+                                    v-if="image.note"
+                                    class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center p-2"
+                                >
+                                    <p class="text-white text-xs text-center">{{ image.note }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else class="text-center py-4 text-gray-500 text-sm">
+                        Tidak ada gambar tersedia untuk mobil ini
+                    </div>
+                </div>
+                
+                <!-- Lightbox Modal -->
+                <div v-if="showLightbox" class="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4" @click="closeLightbox">
+                    <div class="relative max-w-4xl max-h-full w-full h-full flex items-center justify-center">
+                        <!-- Close Button -->
+                        <button 
+                            @click="closeLightbox" 
+                            class="absolute top-4 right-4 z-10 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-70 transition-colors"
+                        >
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+
+                        <!-- Navigation Arrows -->
+                        <button 
+                            v-if="carImages.length > 1"
+                            @click.stop="prevImage" 
+                            class="absolute left-4 z-10 text-white bg-black bg-opacity-50 rounded-full p-3 hover:bg-opacity-70 transition-colors"
+                        >
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                        </button>
+
+                        <button 
+                            v-if="carImages.length > 1"
+                            @click.stop="nextImage" 
+                            class="absolute right-4 z-10 text-white bg-black bg-opacity-50 rounded-full p-3 hover:bg-opacity-70 transition-colors"
+                        >
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+
+                        <!-- Image Display -->
+                        <img 
+                            :src="getImageSrc(carImages[currentImageIndex])" 
+                            :alt="'Car Image ' + (currentImageIndex + 1)"
+                            class="max-w-full max-h-full object-contain"
+                            @click.stop
+                        >
+
+                        <!-- Image Counter -->
+                        <div v-if="carImages.length > 1" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white bg-black bg-opacity-50 px-3 py-1 rounded-full text-sm">
+                            {{ currentImageIndex + 1 }} / {{ carImages.length }}
+                        </div>
+
+                        <!-- Image Note -->
+                        <div v-if="carImages[currentImageIndex]?.note" class="absolute bottom-4 left-4 text-white bg-black bg-opacity-50 px-3 py-1 rounded text-sm max-w-md">
+                            {{ carImages[currentImageIndex].note }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -262,6 +288,11 @@ const form = useForm({
     scheduled_at_time: null,
 });
 
+// State untuk input plat nomor terpisah
+const plateAreaCode = ref('');
+const plateNumber = ref('');
+const plateSuffix = ref('');
+
 // State untuk autocomplete
 const carSearchQuery = ref('');
 const showSuggestions = ref(false);
@@ -273,6 +304,23 @@ const carImages = ref([]);
 // State untuk lightbox
 const showLightbox = ref(false);
 const currentImageIndex = ref(0);
+
+// --- Logic Plate Number ---
+const combinePlateNumber = () => {
+    const combinedPlate = `${plateAreaCode.value}${plateNumber.value}${plateSuffix.value}`;
+    form.plate_number = combinedPlate;
+};
+
+const handlePlateInput = (type) => {
+    if (type === 'area') {
+        plateAreaCode.value = plateAreaCode.value.toUpperCase().replace(/[^A-Z]/g, '');
+    } else if (type === 'number') {
+        plateNumber.value = plateNumber.value.replace(/[^0-9]/g, '');
+    } else if (type === 'suffix') {
+        plateSuffix.value = plateSuffix.value.toUpperCase().replace(/[^A-Z]/g, '');
+    }
+    combinePlateNumber();
+};
 
 // computed properties untuk validasi dan teks tombol
 const isFormValid = computed(() => {

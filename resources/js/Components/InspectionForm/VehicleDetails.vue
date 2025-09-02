@@ -1,26 +1,49 @@
 <template>
     <div class="bg-gray-50 shadow-lg rounded-xl overflow-hidden border border-gray-100">
-        <div class="bg-indigo-50 px-6 py-2 border-b border-indigo-100">
-            <h2 class="text-xl font-semibold text-indigo-700">Detail Kendaraan</h2>
+        <div class="bg-indigo-200 px-6 py-2 border-b ">
+            <h3 class="text-xl font-semibold text-indigo-700">Detail Kendaraan</h3>
         </div>
 
-        <div v-if="inspection" class="p-4 space-y-4">
+        <div v-if="inspection" class="p-4 space-y-2">
             <!-- Form Input Plate Number -->
-            <div class="space-y-2 pb-4 border-b border-gray-100 last:border-0 last:pb-0">
-                <label class="block text-sm font-medium text-gray-700">
+            <div class="space-y-2 pb-2 border-b border-gray-100 last:border-0 last:pb-0">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
                     Nomor Plat Kendaraan
                 </label>
-                <input
-                    v-model="form.plate_number"
-                    type="text"
-                    placeholder="Contoh: B 1234 ABC"
-                    class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition duration-150"
-                    @input="updateVehicleData"
-                >
+                <div class="flex items-center space-x-2">
+                    <!-- Kode Wilayah (Huruf) -->
+                    <input
+                        v-model="plateAreaCode"
+                        type="text"
+                        placeholder="Contoh: B"
+                        class="w-1/4 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-center transition duration-150"
+                        @input="handlePlateInput('area')"
+                        maxlength="2"
+                    >
+                    <!-- Nomor Acak (Angka) -->
+                    <input
+                        v-model="plateNumber"
+                        type="tel"
+                        pattern="[0-9]*"
+                        placeholder="1234"
+                        class="w-2/4 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-center transition duration-150"
+                        @input="handlePlateInput('number')"
+                        maxlength="4"
+                    >
+                    <!-- Huruf Acak (Huruf) -->
+                    <input
+                        v-model="plateSuffix"
+                        type="text"
+                        placeholder="ABC"
+                        class="w-1/4 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-center transition duration-150"
+                        @input="handlePlateInput('suffix')"
+                        maxlength="3"
+                    >
+                </div>
             </div>
 
             <!-- Form Input Car Name with Auto-complete -->
-            <div class="space-y-2 pb-4 border-b border-gray-100 last:border-0 last:pb-0">
+            <div class="space-y-2 pb-2 border-b border-gray-100 last:border-0 last:pb-0">
                 <label class="block text-sm font-medium text-gray-700">
                     Nama Mobil
                 </label>
@@ -166,6 +189,7 @@
                 type="button"
                 @click="updateVehicleDetails"
                 class="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="!isVehicleComplete"
             >
                 <svg v-if="form.processing" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -184,7 +208,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { debounce } from 'lodash';
 import PrimaryButton from '../PrimaryButton.vue';
@@ -203,10 +227,15 @@ const emit = defineEmits(['update-vehicle']);
 const form = useForm({
     plate_number: props.inspection?.plate_number || '',
     car_id: props.inspection?.car_id || null,
-    car_name: props.inspection?.car?.name || '' // Mengambil nama dari relasi jika ada
+    car_name: props.inspection?.car?.name || ''
 });
 
-// State
+// State untuk input plat nomor terpisah
+const plateAreaCode = ref('');
+const plateNumber = ref('');
+const plateSuffix = ref('');
+
+// State untuk fungsionalitas lain
 const carSearchQuery = ref(form.car_name);
 const showSuggestions = ref(false);
 const isSearching = ref(false);
@@ -218,9 +247,12 @@ const carImages = ref([]);
 const showLightbox = ref(false);
 const currentImageIndex = ref(0);
 
-// --- Initial Setup ---
+// --- Initial Setup & Parsing Data ---
 onMounted(() => {
-    // Sinkronisasi data awal
+    // Parsing plat nomor yang sudah ada menjadi 3 bagian
+    parsePlateNumber(props.inspection?.plate_number);
+
+    // Sinkronisasi data awal untuk mobil
     if (props.inspection?.car_id && props.CarDetail?.length > 0) {
         const car = props.CarDetail.find(c => c.id === props.inspection.car_id);
         if (car) {
@@ -238,16 +270,67 @@ onUnmounted(() => {
     window.removeEventListener('keydown', handleKeydown);
 });
 
-// --- Sinkronisasi input ke form.car_name ---
-watch(carSearchQuery, (val) => {
-    // Reset car_id saat user mengetik
-    if (form.car_id && formatCarName(selectedCar.value) !== val) {
-        form.car_id = null;
-        selectedCar.value = null;
-        carImages.value = [];
+// --- Logic Plate Number ---
+const parsePlateNumber = (plateStr) => {
+    if (!plateStr) {
+        plateAreaCode.value = '';
+        plateNumber.value = '';
+        plateSuffix.value = '';
+        return;
     }
-    form.car_name = val;
-});
+    const plate = plateStr.toUpperCase().trim();
+    // Regex untuk memecah plat nomor. Mengasumsikan format: Huruf Angka Huruf
+    const match = plate.match(/^([A-Z]{1,2})?([0-9]{1,4})?([A-Z]{1,3})?$/);
+    if (match) {
+        plateAreaCode.value = match[1] || '';
+        plateNumber.value = match[2] || '';
+        plateSuffix.value = match[3] || '';
+    } else {
+        // Fallback jika regex gagal (misal format tidak standar)
+        // Kita coba pisahkan secara manual
+        let currentPart = 'area';
+        let area = '';
+        let number = '';
+        let suffix = '';
+        for (const char of plate) {
+            if (currentPart === 'area' && /[A-Z]/.test(char)) {
+                area += char;
+            } else if (currentPart === 'area' && /[0-9]/.test(char)) {
+                currentPart = 'number';
+                number += char;
+            } else if (currentPart === 'number' && /[0-9]/.test(char)) {
+                number += char;
+            } else if (currentPart === 'number' && /[A-Z]/.test(char)) {
+                currentPart = 'suffix';
+                suffix += char;
+            } else if (currentPart === 'suffix' && /[A-Z]/.test(char)) {
+                suffix += char;
+            }
+        }
+        plateAreaCode.value = area;
+        plateNumber.value = number;
+        plateSuffix.value = suffix;
+    }
+    combinePlateNumber();
+};
+
+const combinePlateNumber = () => {
+    // Gabungkan 3 bagian menjadi 1 string tunggal tanpa spasi
+    const combinedPlate = `${plateAreaCode.value}${plateNumber.value}${plateSuffix.value}`;
+    form.plate_number = combinedPlate;
+    updateVehicleData();
+};
+
+const handlePlateInput = (type) => {
+    if (type === 'area') {
+        plateAreaCode.value = plateAreaCode.value.toUpperCase().replace(/[^A-Z]/g, '');
+    } else if (type === 'number') {
+        plateNumber.value = plateNumber.value.replace(/[^0-9]/g, '');
+    } else if (type === 'suffix') {
+        plateSuffix.value = plateSuffix.value.toUpperCase().replace(/[^A-Z]/g, '');
+    }
+    combinePlateNumber();
+};
 
 // --- Helpers ---
 const formatCarName = (car) => {
@@ -292,7 +375,7 @@ const selectCar = async (car) => {
     selectedCar.value = car;
     carSearchQuery.value = formatCarName(car);
     form.car_id = car.id;
-    form.car_name = formatCarName(car); // Sinkronkan car_name dengan yang dipilih
+    form.car_name = formatCarName(car);
     showSuggestions.value = false;
     await loadCarImages(car.id);
     updateVehicleData();
@@ -322,12 +405,12 @@ const loadCarImages = async (carId) => {
 const openLightbox = (index) => {
     currentImageIndex.value = index;
     showLightbox.value = true;
-    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    document.body.style.overflow = 'hidden';
 };
 
 const closeLightbox = () => {
     showLightbox.value = false;
-    document.body.style.overflow = ''; // Re-enable scrolling
+    document.body.style.overflow = '';
 };
 
 const nextImage = () => {
@@ -371,12 +454,16 @@ const updateVehicleDetails = () => {
     });
 };
 
+// --- Properti terhitung untuk mengecek kelengkapan menu "Detail Kendaraan" ---
+const isVehicleComplete = computed(() => {
+  return !!form.plate_number && !!form.car_name;
+});
+
 // --- Watch inspection props ---
 watch(() => props.inspection, (newInspection) => {
     if (!newInspection) return;
-    form.plate_number = newInspection.plate_number || '';
+    parsePlateNumber(newInspection.plate_number);
     form.car_id = newInspection.car_id || null;
-
     if (newInspection.car_id && props.CarDetail?.length > 0) {
         const car = props.CarDetail.find(c => c.id === newInspection.car_id);
         if (car) {

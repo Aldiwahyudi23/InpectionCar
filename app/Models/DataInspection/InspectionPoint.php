@@ -18,10 +18,8 @@ class InspectionPoint extends Model
 
     protected $fillable = [
         'component_id',
-        'app_menu_id',
         'name',
-        'input_type',
-        'settings',
+        'description',
         'order',
         'is_active',
     ];
@@ -32,7 +30,6 @@ class InspectionPoint extends Model
      * @var array
      */
     protected $casts = [
-        'settings' => 'array',
         'is_active' => 'boolean',
         'deleted_at' => 'datetime',
     ];
@@ -43,7 +40,6 @@ class InspectionPoint extends Model
      * @var array
      */
     protected $attributes = [
-        'input_type' => 'text',
         'is_active' => true,
     ];
 
@@ -59,21 +55,12 @@ class InspectionPoint extends Model
             ->count();
     }
 
-
-
-    /**
-     * Get the category that owns the inspection point.
-     */
-    public function component()
+          public function component()
     {
         return $this->belongsTo(Component::class, 'component_id', 'id');
     }
-    public function app_menu()
-    {
-        return $this->belongsTo(AppMenu::class, 'app_menu_id', 'id');
-    }
 
-    // di InspectionPoint.php
+       // di InspectionPoint.php
 
     public function results()
     {
@@ -84,16 +71,5 @@ class InspectionPoint extends Model
     {
         return $this->hasMany(InspectionImage::class, 'point_id', 'id');
     }
-
-    public function getShowImageUploadAttribute()
-{
-    return $this->settings['show_image_upload'] ?? false;
-}
-
-public function getShowTextareaAttribute()
-{
-    return $this->settings['show_textarea'] ?? false;
-}
-
-
+    
 }

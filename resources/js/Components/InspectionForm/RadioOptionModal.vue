@@ -14,7 +14,7 @@
         <InputImage
           :model-value="imagesValue"
           :point-id="pointId"
-          :point="point"
+          :point="point.inspection_point"
           :inspection-id="inspectionId"
           :settings="point.settings"
           @update:modelValue="$emit('update:imagesValue', $event)"

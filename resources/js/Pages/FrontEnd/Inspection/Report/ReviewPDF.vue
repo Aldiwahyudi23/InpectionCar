@@ -1,9 +1,10 @@
 <template>
-  <div class="p-6 bg-white">
+  <div class="p-6 bg-white rounded-lg shadow-md">
+    <!-- Tombol Persetujuan Laporan -->
     <div v-if="inspection.status === 'pending_review'" class="mt-2 mb-6">
       <button 
         @click="showConfirmationModal = true"
-        class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200"
       >
         Setujui Laporan
       </button>
@@ -12,132 +13,144 @@
       </p>
     </div>
 
+    <!-- Konten Laporan -->
     <div v-if="hasDataOrImages">
       <div class="header flex flex-col gap-5 mb-6 mt-6">
         <div class="flex items-center gap-5">
+          <!-- Gambar Utama -->
           <img 
             v-if="coverImage && imageExists(coverImage.image_path)"
             :src="getImageUrl(coverImage.image_path)" 
             alt="Foto Utama"
-            class="w-40 h-40 object-cover border border-gray-300"
+            class="w-40 h-40 object-cover rounded-lg border border-gray-300"
           >
-          <div v-else class="w-40 h-40 border border-gray-300 flex items-center justify-center">
+          <div v-else class="w-40 h-40 border border-gray-300 rounded-lg flex items-center justify-center bg-gray-100 text-gray-400">
             <span>Gambar tidak tersedia</span>
           </div>
           <div class="mt-8">
-            <h2 class="text-xl font-bold m-0">{{ inspection.car_name }}</h2>
+            <h2 class="text-3xl font-bold m-0 text-gray-800">{{ inspection.car_name }}</h2>
           </div>
         </div>
 
+        <!-- Tabel Informasi Mobil -->
         <div v-if="inspection.car_id" class="car-info">
-          <table class="w-full border-collapse border border-gray-300">
-            <tr>
-              <td class="p-2 border border-gray-300 font-bold w-1/3">Nomor Polisi</td>
-              <td class="p-2 border border-gray-300">{{ inspection.plate_number }}</td>
+          <table class="w-full border-collapse border border-gray-300 rounded-lg overflow-hidden">
+            <tr class="bg-gray-50">
+              <td class="p-2 border border-gray-300 font-bold w-1/3 text-gray-700">Nomor Polisi</td>
+              <td class="p-2 border border-gray-300 text-gray-600">{{ inspection.plate_number }}</td>
             </tr>
             <tr>
-              <td class="p-2 border border-gray-300 font-bold">Merek</td>
-              <td class="p-2 border border-gray-300">{{ inspection.car?.brand?.name }}</td>
+              <td class="p-2 border border-gray-300 font-bold text-gray-700">Merek</td>
+              <td class="p-2 border border-gray-300 text-gray-600">{{ inspection.car?.brand?.name }}</td>
+            </tr>
+            <tr class="bg-gray-50">
+              <td class="p-2 border border-gray-300 font-bold text-gray-700">Model</td>
+              <td class="p-2 border border-gray-300 text-gray-600">{{ inspection.car?.model?.name }}</td>
             </tr>
             <tr>
-              <td class="p-2 border border-gray-300 font-bold">Model</td>
-              <td class="p-2 border border-gray-300">{{ inspection.car?.model?.name }}</td>
+              <td class="p-2 border border-gray-300 font-bold text-gray-700">Tipe</td>
+              <td class="p-2 border border-gray-300 text-gray-600">{{ inspection.car?.type?.name }}</td>
+            </tr>
+            <tr class="bg-gray-50">
+              <td class="p-2 border border-gray-300 font-bold text-gray-700">CC</td>
+              <td class="p-2 border border-gray-300 text-gray-600">{{ inspection.car?.cc }}</td>
             </tr>
             <tr>
-              <td class="p-2 border border-gray-300 font-bold">Tipe</td>
-              <td class="p-2 border border-gray-300">{{ inspection.car?.type?.name }}</td>
+              <td class="p-2 border border-gray-300 font-bold text-gray-700">Bahan Bakar</td>
+              <td class="p-2 border border-gray-300 text-gray-600">{{ inspection.car?.fuel_type }}</td>
+            </tr>
+            <tr class="bg-gray-50">
+              <td class="p-2 border border-gray-300 font-bold text-gray-700">Transmisi</td>
+              <td class="p-2 border border-gray-300 text-gray-600">{{ inspection.car?.transmission }}</td>
             </tr>
             <tr>
-              <td class="p-2 border border-gray-300 font-bold">CC</td>
-              <td class="p-2 border border-gray-300">{{ inspection.car?.cc }}</td>
+              <td class="p-2 border border-gray-300 font-bold text-gray-700">Periode Model</td>
+              <td class="p-2 border border-gray-300 text-gray-600">{{ inspection.car?.production_period || '-' }}</td>
             </tr>
-            <tr>
-              <td class="p-2 border border-gray-300 font-bold">Bahan Bakar</td>
-              <td class="p-2 border border-gray-300">{{ inspection.car?.fuel_type }}</td>
-            </tr>
-            <tr>
-              <td class="p-2 border border-gray-300 font-bold">Transmisi</td>
-              <td class="p-2 border border-gray-300">{{ inspection.car?.transmission }}</td>
-            </tr>
-            <tr>
-              <td class="p-2 border border-gray-300 font-bold">Periode Model</td>
-              <td class="p-2 border border-gray-300">{{ inspection.car?.production_period || '-' }}</td>
-            </tr>
-            <tr>
-              <td class="p-2 border border-gray-300 font-bold">Tahun Pembuatan</td>
-              <td class="p-2 border border-gray-300">{{ inspection.car?.year }}</td>
+            <tr class="bg-gray-50">
+              <td class="p-2 border border-gray-300 font-bold text-gray-700">Tahun Pembuatan</td>
+              <td class="p-2 border border-gray-300 text-gray-600">{{ inspection.car?.year }}</td>
             </tr>
           </table>
         </div>
         
-        <div v-if="inspection.notes" class="conclusion p-4 bg-gray-50 border-l-4 border-gray-800 rounded">
-          <h3 class="text-lg font-bold mb-2">Kesimpulan Inspeksi:</h3>
-          <p class="m-0">{{ inspection.notes }}</p>
+        <!-- Kesimpulan Inspeksi -->
+        <div v-if="inspection.notes" class="conclusion p-4 bg-gray-50 border-l-4 border-gray-800 rounded-lg">
+          <h3 class="text-lg font-bold mb-2 text-gray-800">Kesimpulan Inspeksi:</h3>
+          <p class="m-0 text-gray-600">{{ inspection.notes }}</p>
         </div>
       </div>
 
-      <h2 class="text-xl font-bold border-b-2 border-gray-800 pb-2 mb-6">Hasil Inspeksi</h2>
+      <h2 class="text-2xl font-bold border-b-2 border-gray-800 pb-2 mb-6">Hasil Inspeksi</h2>
 
+      <!-- Loop untuk setiap komponen inspeksi -->
       <div v-for="(points, componentName) in groupedPoints" :key="componentName" 
           :class="['section mb-6', componentName === 'Foto Kendaraan' ? 'photo-component' : '']">
         
-        <div class="component-title bg-gray-100 px-3 py-2 border-l-4 border-gray-800 font-bold">
+        <!-- Judul Komponen -->
+        <div class="component-title bg-gray-100 px-3 py-2 border-l-4 border-gray-800 font-bold rounded-l-lg">
           {{ componentName || 'Tanpa Komponen' }}
         </div>
 
+        <!-- Bagian Foto Kendaraan -->
         <div v-if="componentName === 'Foto Kendaraan'" class="images flex flex-wrap gap-2 mt-4">
           <div v-for="point in points" :key="point.id">
-            <div v-for="img in point.images" :key="img.id" class="image-container">
+            <div v-for="img in point.inspection_point?.images" :key="img.id" class="image-container">
               <img 
                 v-if="imageExists(img.image_path)"
                 :src="getImageUrl(img.image_path)" 
                 alt="Foto Kendaraan"
-                class="w-28 h-28 object-cover border border-gray-300 rounded"
+                class="w-28 h-28 object-cover border border-gray-300 rounded-lg"
               >
-              <div v-else class="w-28 h-28 border border-gray-300 rounded flex items-center justify-center">
-                <span class="text-xs">Gambar tidak ditemukan</span>
+              <div v-else class="w-28 h-28 border border-gray-300 rounded-lg flex items-center justify-center bg-gray-100 text-xs text-gray-400">
+                <span>Gambar tidak ditemukan</span>
               </div>
             </div>
           </div>
         </div>
 
+        <!-- Bagian Poin Inspeksi non-foto -->
         <template v-else>
           <div v-for="point in points" :key="point.id" class="point ml-4 py-3 border-b border-gray-100">
-            
             <template v-if="hasResult(point) || hasImage(point)">
-              <span class="point-name inline-block min-w-40 font-bold align-top">
-                {{ point.name || '-' }}
+              <!-- Nama Poin Inspeksi -->
+              <span class="point-name inline-block min-w-[160px] font-bold align-top text-gray-700">
+                {{ point.inspection_point?.name || '-' }}
               </span>
               
-              <div class="point-content inline-block w-calc-[100%-170px] align-top">
+              <div class="point-content inline-block w-[calc(100%-170px)] align-top">
                 <template v-if="hasResult(point)">
+                  <!-- Badge Status -->
                   <span v-if="shouldShowStatusBadge(point)" 
-                          :class="['status-badge', getStatusClass(point.results[0].status)]">
-                    {{ point.results[0].status }}
+                    :class="['status-badge', getStatusClass(point.inspection_point?.results[0].status)]">
+                    {{ point.inspection_point?.results[0].status }}
                   </span>
                   
+                  <!-- Catatan (Note) -->
                   <div v-if="shouldShowNote(point)" class="point-note italic text-gray-600 my-1">
                     {{ formatNote(point) }}
                   </div>
                 </template>
               </div>
 
+              <!-- Gambar Poin Inspeksi -->
               <div v-if="shouldShowImages(point)" class="inspection-images flex flex-wrap gap-2 mt-4">
-                <div v-for="img in point.images" :key="img.id" class="image-container">
+                <div v-for="img in point.inspection_point?.images" :key="img.id" class="image-container">
                   <img 
                     v-if="imageExists(img.image_path)"
                     :src="getImageUrl(img.image_path)" 
                     alt="image"
-                    class="w-20 h-20 object-cover border border-gray-300 rounded"
+                    class="w-20 h-20 object-cover border border-gray-300 rounded-lg"
                   >
-                  <div v-else class="w-20 h-20 border border-gray-300 rounded flex items-center justify-center">
-                    <span class="text-xs">Gambar tidak ditemukan</span>
+                  <div v-else class="w-20 h-20 border border-gray-300 rounded-lg flex items-center justify-center bg-gray-100 text-xs text-gray-400">
+                    <span>Gambar tidak ditemukan</span>
                   </div>
                 </div>
               </div>
 
+              <!-- Catatan Textarea -->
               <div v-if="shouldShowTextarea(point) && hasNote(point)" class="textarea-note italic text-gray-600 my-2">
-                {{ point.results[0].note }}
+                {{ point.inspection_point?.results[0].note }}
               </div>
             </template>
           </div>
@@ -145,6 +158,7 @@
       </div>
     </div>
     
+    <!-- Tampilan Jika Data Tidak Ada -->
     <div v-else class="flex flex-col items-center justify-center h-96 text-center">
       <p class="text-lg font-semibold text-gray-700">
         Data sudah tidak ada, karena sudah dijadikan PDF.
@@ -157,22 +171,27 @@
       </a>
     </div>
 
-    <div v-if="showConfirmationModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
-      <div class="bg-white p-6 rounded-lg shadow-xl w-96">
+    <!-- Modal Konfirmasi -->
+    <div v-if="showConfirmationModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white p-6 rounded-lg shadow-xl w-96 max-w-sm">
         <h3 class="text-lg font-bold mb-4">Konfirmasi Laporan</h3>
         <p class="text-gray-700 mb-6">
           Apakah Anda yakin semua data sudah sesuai? Setelah disetujui, laporan akan diproses menjadi file PDF.
         </p>
         <div class="flex justify-end space-x-4">
-          <button @click="showConfirmationModal = false" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">
+          <button @click="showConfirmationModal = false" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400">
             Batal
           </button>
-
-          <button v-if="!inspection.file" @click="approveReport" class="bg-sky-600 text-white px-4 py-2 rounded hover:bg-sky-700" :disabled="isLoading">
+          <button 
+            v-if="!inspection.file" 
+            @click="approveReport" 
+            class="bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition-colors duration-200" 
+            :disabled="isLoading"
+          >
             <span v-if="isLoading">Membuat file PDF...</span>
             <span v-else>Setujui Laporan</span>
           </button>
-          <button v-else class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+          <button v-else class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors duration-200 cursor-not-allowed">
             <span>Laporan sudah di buat</span>
           </button>
         </div>
@@ -189,7 +208,7 @@ const props = defineProps({
     type: Object,
     required: true
   },
-  inspection_points: {
+  menu_points: {
     type: Array,
     default: () => []
   },
@@ -205,8 +224,8 @@ const isLoading = ref(false);
 
 const groupedPoints = computed(() => {
   const groups = {};
-  props.inspection_points.forEach(point => {
-    const componentName = point.component?.name || 'Tanpa Komponen';
+  props.menu_points.forEach(point => {
+    const componentName = point.inspection_point?.component?.name || 'Tanpa Komponen';
     if (!groups[componentName]) {
       groups[componentName] = [];
     }
@@ -231,11 +250,8 @@ const hasDataOrImages = computed(() => {
     if (props.inspection.notes) {
         return true;
     }
-
-    const hasContent = props.inspection_points.some(point => {
-        // Pengecekan data di setiap point
-        return (point.results && point.results.length > 0) || (point.images && point.images.length > 0);
-    });
+    // Menggunakan fungsi helper untuk memeriksa apakah ada data atau gambar di salah satu poin.
+    const hasContent = props.menu_points.some(point => hasResult(point) || hasImage(point));
     
     // Pengecekan gambar utama
     const hasCoverImage = props.coverImage && props.coverImage.image_path;
@@ -244,16 +260,20 @@ const hasDataOrImages = computed(() => {
 });
 
 
-// Helper functions (tetap sama)
+// Helper functions
 const imageExists = (imagePath) => imagePath && imagePath.length > 0;
 const getImageUrl = (imagePath) => `/${imagePath}`;
-const hasResult = (point) => point.results && point.results.length > 0;
-const hasImage = (point) => point.images && point.images.length > 0;
-const hasNote = (point) => hasResult(point) && point.results[0].note;
+
+// Mengakses data hasil dan gambar dari 'inspection_point' dengan aman
+const hasResult = (point) => point.inspection_point?.results && point.inspection_point.results.length > 0;
+const hasImage = (point) => point.inspection_point?.images && point.inspection_point.images.length > 0;
+const hasNote = (point) => hasResult(point) && point.inspection_point.results[0].note;
 
 const shouldShowStatusBadge = (point) => {
   const inputType = point.input_type || '';
-  return ['radio', 'imageTOradio'].includes(inputType) && hasResult(point) && point.results[0].status;
+  // Perbaikan: Menggunakan 'point.inspection_point'
+  const status = point.inspection_point?.results?.[0]?.status;
+  return ['radio', 'imageTOradio'].includes(inputType) && status;
 };
 
 const shouldShowNote = (point) => {
@@ -264,7 +284,7 @@ const shouldShowNote = (point) => {
 const shouldShowImages = (point) => {
   const inputType = point.input_type || '';
   const settings = point.settings || {};
-  const result = point.results?.[0] || {};
+  const result = point.inspection_point?.results?.[0] || {};
   const selectedOption = settings.radios?.find(radio => radio.value === result.status) || {};
   const showImageUpload = selectedOption.settings?.show_image_upload || false;
 
@@ -278,7 +298,7 @@ const shouldShowImages = (point) => {
 
 const shouldShowTextarea = (point) => {
   const settings = point.settings || {};
-  const result = point.results?.[0] || {};
+  const result = point.inspection_point?.results?.[0] || {};
   const selectedOption = settings.radios?.find(radio => radio.value === result.status) || {};
   return selectedOption.settings?.show_textarea || false;
 };
@@ -297,7 +317,7 @@ const getStatusClass = (status) => {
 
 const formatNote = (point) => {
   const inputType = point.input_type || '';
-  const result = point.results?.[0] || {};
+  const result = point.inspection_point?.results?.[0] || {};
   const settings = point.settings || {};
   
   if (inputType === 'account' && result.note) {
@@ -305,7 +325,13 @@ const formatNote = (point) => {
     const thousand = settings.thousands_separator || '.';
     const decimal = settings.decimal_separator || ',';
     
-    return `${symbol} ${Number(result.note).toLocaleString('id-ID', {
+    // Pastikan nilai adalah angka sebelum diformat
+    const value = parseFloat(result.note);
+    if (isNaN(value)) {
+      return result.note;
+    }
+
+    return `${symbol} ${value.toLocaleString('id-ID', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2
     }).replace(/,/g, decimal).replace(/\./g, thousand)}`;
@@ -316,7 +342,6 @@ const formatNote = (point) => {
 </script>
 
 <style scoped>
-/* Pastikan style CSS sesuai dengan Tailwind CSS */
 .point-name {
   min-width: 160px;
 }
@@ -326,7 +351,7 @@ const formatNote = (point) => {
 .status-badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 3px;
+  border-radius: 9999px; /* rounded-full */
   font-size: 12px;
   margin-right: 8px;
   margin-bottom: 10px;
@@ -343,34 +368,8 @@ const formatNote = (point) => {
   background-color: #fff3cd;
   color: #856404;
 }
-.images {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 15px;
-}
-.images img {
-  width: 120px;
-  height: 120px;
-  object-fit: cover;
-  border: 1px solid #ddd;
-  border-radius: 3px;
-}
 .photo-component .point {
   display: none;
-}
-.inspection-images {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 15px;
-}
-.inspection-images img {
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-  border: 1px solid #ddd;
-  border-radius: 3px;
 }
 .conclusion {
   margin-top: 20px;

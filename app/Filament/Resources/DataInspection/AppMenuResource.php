@@ -5,6 +5,7 @@ namespace App\Filament\Resources\DataInspection;
 use App\Filament\Resources\DataInspection\AppMenuResource\Pages;
 use App\Filament\Resources\DataInspection\AppMenuResource\RelationManagers;
 use App\Filament\Resources\DataInspection\AppMenuResource\RelationManagers\InspectionPointsRelationManager;
+use App\Filament\Resources\DataInspection\AppMenuResource\RelationManagers\MenuPointRelationManager;
 use App\Models\DataInspection\AppMenu;
 use Filament\Forms;
 use Filament\Forms\Components\Select;
@@ -71,7 +72,7 @@ class AppMenuResource extends Resource
     public static function getRelations(): array
     {
         return [
-            InspectionPointsRelationManager::class,
+            MenuPointRelationManager::class,
         ];
     }
 

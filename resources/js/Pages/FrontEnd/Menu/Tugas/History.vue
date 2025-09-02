@@ -15,9 +15,7 @@ const getButtonLabel = () => 'Lihat Detail';
 <template>
     <AppLayout>
         <Head title="Riwayat Inspeksi" />
-
-        <div class="py-2 md:py-10">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <h3 class="text-xl md:text-3xl font-bold text-gray-900 mb-6 text-center">
                     Riwayat Inspeksi
                 </h3>
@@ -110,8 +108,6 @@ const getButtonLabel = () => 'Lihat Detail';
                     </Link>
                 </div>
             </div>
-        </div>
-
     </AppLayout>
 </template>
 
