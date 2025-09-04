@@ -29,4 +29,9 @@ class CarType extends Model
     {
         return $this->hasMany(CarDetail::class);
     }
+
+        public function carDetails()
+    {
+        return $this->hasMany(CarDetail::class);
+    }
 }

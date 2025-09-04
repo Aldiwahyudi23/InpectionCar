@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\OtpController;
+use App\Http\Controllers\DataCar\CarController;
 use App\Http\Controllers\Inspection\InspectionController;
 use App\Http\Controllers\Menu\Home\HomeController;
 use App\Http\Controllers\Menu\Job\JobController;
@@ -54,7 +55,7 @@ Route::middleware([
     Route::get('/job', [JobController::class, 'index'])->name('job.index');
     Route::get('/job/history', [JobController::class, 'history'])->name('inspections.history');
 
-    // Inspections Routes
+    //============================================ Inspections Routes ===================================================
     Route::get('/inspections/{inspection}/start', [InspectionController::class, 'start'])
         ->name('inspections.start');
 
@@ -104,6 +105,29 @@ Route::middleware([
         ->name('inspections.download.approved.pdf');
 
     Route::post('/inspections/{encryptedIds}/send-email', [InspectionController::class, 'sendEmail'])
-    ->name('inspections.send.email');
+    ->name('inspections.send.email'); //belum berfungsi
+
+
+    // ========================= Rute Menu ==============================================
+   
+    Route::get('/cars/create' ,[CarController::class, 'create' ])->name('car.create');
+    Route::get('/cars' ,[CarController::class, 'index' ])->name('cars');
+
+        // API Routes
+    Route::get('/api/brands', [CarController::class, 'getBrands']);
+    Route::get('/api/models', [CarController::class, 'getModels']);
+    Route::get('/api/types', [CarController::class, 'getTypes']);
+
+    Route::post('/api/brands/check-duplicate', [CarController::class, 'checkBrandDuplicate']);
+    Route::post('/api/models/check-duplicate', [CarController::class, 'checkModelDuplicate']);
+    Route::post('/types/check-duplicate', [CarController::class, 'checkTypeDuplicate']);
+
+        // API Routes untuk car management
+    Route::post('/api/car-details/check-duplicate', [CarController::class, 'checkDuplicateCarDetail']);
+
+    Route::post('/api/brands', [CarController::class, 'storeBrand']);
+    Route::post('/api/models', [CarController::class, 'storeModel']);
+    Route::post('/api/types', [CarController::class, 'storeType']);
+    Route::post('/api/car-details', [CarController::class, 'storeCarDetail'])->name('car-details.store');
 });
 

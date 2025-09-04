@@ -62,7 +62,7 @@ class RolePermissionSeeder extends Seeder
         ];
         $adminRole->syncPermissions($adminPermissions);
 
-        $coordinatorRole = Role::firstOrCreate(['name' => 'Kordinator']);
+        $coordinatorRole = Role::firstOrCreate(['name' => 'coordinator']);
         $coordinatorPermissions = [
             'view inspections', 'create inspections', 'edit inspections',
             'view reports', 'generate reports',
@@ -70,7 +70,14 @@ class RolePermissionSeeder extends Seeder
         ];
         $coordinatorRole->syncPermissions($coordinatorPermissions);
 
-        $inspectorRole = Role::firstOrCreate(['name' => 'Inspektor']);
+        $inspectorRole = Role::firstOrCreate(['name' => 'inspector']);
+        $inspectorPermissions = [
+            'view inspections', 'create inspections',
+            'view dashboard', 'view inspector dashboard',
+        ];
+        $inspectorRole->syncPermissions($inspectorPermissions);
+
+        $inspectorRole = Role::firstOrCreate(['name' => 'region_admin']);
         $inspectorPermissions = [
             'view inspections', 'create inspections',
             'view dashboard', 'view inspector dashboard',

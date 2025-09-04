@@ -8,45 +8,106 @@ const props = defineProps({
     recentInspections: Array,
 });
 
-// Data menu untuk mempermudah penambahan atau penghapusan item di masa depan
+// Data menu dengan warna yang berbeda-beda dan ikon kendaraan yang diperbarui
 const navMenus = [
-    { name: 'Inspeksi Baru', icon: 'M12 4v16m8-8H4', route: 'inspections.create.new' },
-    { name: 'Daftar Inspeksi', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M15 12a3 3 0 11-6 0 3 3 0 016 0z', route: 'inspections.create.new' },
-    { name: 'Arsip', icon: 'M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4', route: 'inspections.history' },
-    { name: 'Pelanggan', icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z', route: 'job.index' },
-    { name: 'Kendaraan', icon: 'M3 5a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-4l-4 4v-4H5a2 2 0 01-2-2V5z', route: 'job.index' },
-    { name: 'Laporan', icon: 'M9 19V6l12-3v14H9zM9 19a2 2 0 002 2h2a2 2 0 002-2M9 19c-.333 0-.667 0-1 0a2 2 0 01-2-2v-3.5a2 2 0 012-2a2 2 0 002-2c0-.333 0-.667 0-1', route: 'job.index' },
-    { name: 'Pengaturan', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z', route: 'job.index' },
-    { name: 'Bantuan', icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4c-.733 0-1.424-.23-1.992-.622l-.462.924a7.99 7.99 0 002.454.898c2.93 0 5.295-2.365 5.295-5.295S15.158 3.5 12.228 3.5c-2.93 0-5.295 2.365-5.295 5.295z', route: 'job.index' },
+  { 
+    name: 'Inspeksi Baru', 
+    icon: 'M12 4v16m8-8H4', 
+    route: 'inspections.create.new',
+    color: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+  },
+  { 
+    name: 'Daftar Inspeksi', 
+    icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M15 12a3 3 0 11-6 0 3 3 0 016 0z', 
+    route: 'inspections.create.new',
+    color: 'bg-sky-100 text-sky-700 hover:bg-sky-200'
+  },
+  { 
+    name: 'Arsip', 
+    icon: 'M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4', 
+    route: 'inspections.history',
+    color: 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+  },
+  { 
+    name: 'Pelanggan', 
+    icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z', 
+    route: 'job.index',
+    color: 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200'
+  },
+  { 
+    name: 'Kendaraan', 
+    // Ikon kendaraan yang diperbarui (mobil)
+    icon: 'M5 13.5a1.5 1.5 0 01-1.5-1.5V7a1.5 1.5 0 011.5-1.5h1a1.5 1.5 0 011.5 1.5v5a1.5 1.5 0 01-1.5 1.5H5zM13 13.5a1.5 1.5 0 01-1.5-1.5V7a1.5 1.5 0 011.5-1.5h1a1.5 1.5 0 011.5 1.5v5a1.5 1.5 0 01-1.5 1.5h-1zM5 19a2 2 0 01-2-2v-1a1 1 0 011-1h14a1 1 0 011 1v1a2 2 0 01-2 2H5z', 
+    route: 'cars',
+    color: 'bg-teal-100 text-teal-700 hover:bg-teal-200'
+  },
+  { 
+    name: 'Laporan', 
+    icon: 'M9 19V6l12-3v14H9zM9 19a2 2 0 002 2h2a2 2 0 002-2M9 19c-.333 0-.667 0-1 0a2 2 0 01-2-2v-3.5a2 2 0 012-2a2 2 0 002-2c0-.333 0-.667 0-1', 
+    route: 'job.index',
+    color: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+  },
+  { 
+    name: 'Pengaturan', 
+    icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z', 
+    route: 'job.index',
+    color: 'bg-violet-100 text-violet-700 hover:bg-violet-200'
+  },
+  { 
+    name: 'Bantuan', 
+    icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4c-.733 0-1.424-.23-1.992-.622l-.462.924a7.99 7.99 0 002.454.898c2.93 0 5.295-2.365 5.295-5.295S15.158 3.5 12.228 3.5c-2.93 0-5.295 2.365-5.295 5.295z', 
+    route: 'job.index',
+    color: 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+  },
 ];
 
 // Function untuk menentukan class badge berdasarkan status
 const getStatusBadgeClass = (status) => {
     switch (status) {
+        case 'draft':
+            return 'bg-gray-100 text-gray-800';
+        case 'in_progress':
+            return 'bg-blue-100 text-blue-800';
+        case 'pending':
+            return 'bg-yellow-100 text-yellow-800';
+        case 'pending_review':
+            return 'bg-orange-100 text-orange-800';
         case 'approved':
             return 'bg-green-100 text-green-800';
         case 'rejected':
             return 'bg-red-100 text-red-800';
-        case 'pending':
-            return 'bg-yellow-100 text-yellow-800';
-        case 'in_progress':
-            return 'bg-blue-100 text-blue-800';
+        case 'revision':
+            return 'bg-purple-100 text-purple-800';
+        case 'completed':
+            return 'bg-teal-100 text-teal-800';
+        case 'cancelled':
+            return 'bg-red-100 text-red-800';
         default:
             return 'bg-gray-100 text-gray-800';
     }
 };
 
-// Function untuk teks status yang lebih user-friendly
+// Function untuk teks status yang lebih user-friendly dalam Bahasa Indonesia
 const getStatusText = (status) => {
     switch (status) {
+        case 'draft':
+            return 'Dibuat';
+        case 'in_progress':
+            return 'Dalam Proses';
+        case 'pending':
+            return 'Menunggu';
+        case 'pending_review':
+            return 'Menunggu Review';
         case 'approved':
             return 'Disetujui';
         case 'rejected':
             return 'Ditolak';
-        case 'pending':
-            return 'Menunggu';
-        case 'in_progress':
-            return 'Dalam Proses';
+        case 'revision':
+            return 'Revisi';
+        case 'completed':
+            return 'Selesai';
+        case 'cancelled':
+            return 'Dibatalkan';
         default:
             return status;
     }

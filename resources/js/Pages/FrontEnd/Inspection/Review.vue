@@ -24,21 +24,27 @@ const currentAction = ref(null);
 // Mapping status ke label bahasa Indonesia
 const statusLabel = (status) => {
   switch (status) {
-    case 'draft':
-      return 'Draft';
-    case 'in_progress':
-      return 'Sedang Berjalan';
-    case 'pending_review':
-      return 'Menunggu Review';
-    case 'revisi':
-      return 'Perlu Revisi';
-    case 'jeda':
-      return 'Ditunda';
-    case 'approved':
-      return 'Disetujui';
-    default:
-      return status;
-  }
+        case 'draft':
+            return 'Dibuat';
+        case 'in_progress':
+            return 'Dalam Proses';
+        case 'pending':
+            return 'Menunggu';
+        case 'pending_review':
+            return 'Menunggu Review';
+        case 'approved':
+            return 'Disetujui';
+        case 'rejected':
+            return 'Ditolak';
+        case 'revision':
+            return 'Revisi';
+        case 'completed':
+            return 'Selesai';
+        case 'cancelled':
+            return 'Dibatalkan';
+        default:
+            return status;
+    }
 };
 
 // Fungsi untuk menangani aksi dengan status loading

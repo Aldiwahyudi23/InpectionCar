@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Team\Region;
+use App\Models\Team\RegionTeam;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -33,6 +35,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'numberPhone',
         'email',
         'password',
+        'is_active',
     ];
 
     /**
@@ -67,5 +70,17 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function regionTeams()
+    {
+        return $this->hasMany(RegionTeam::class);
+    }
+
+    public function regions()
+    {
+        return $this->belongsToMany(Region::class, 'region_teams')
+            ->withPivot('role', 'status')
+            ->withTimestamps();
     }
 }
