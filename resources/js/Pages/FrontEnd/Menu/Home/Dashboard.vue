@@ -1,6 +1,7 @@
 <script setup>
+import { computed } from 'vue';
+import { Head, Link, usePage} from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
 
 // Props dari controller
 const props = defineProps({
@@ -8,58 +9,76 @@ const props = defineProps({
     recentInspections: Array,
 });
 
-// Data menu dengan warna yang berbeda-beda dan ikon kendaraan yang diperbarui
+// Mengambil data global dari Inertia, termasuk roles pengguna
+const page = usePage();
+const userRoles = page.props.global.has_roles;
+
+// Definisi menu dengan ikon dan warna
 const navMenus = [
-  { 
-    name: 'Inspeksi Baru', 
-    icon: 'M12 4v16m8-8H4', 
-    route: 'inspections.create.new',
-    color: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
-  },
-  { 
-    name: 'Daftar Inspeksi', 
-    icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M15 12a3 3 0 11-6 0 3 3 0 016 0z', 
-    route: 'inspections.create.new',
-    color: 'bg-sky-100 text-sky-700 hover:bg-sky-200'
-  },
-  { 
-    name: 'Arsip', 
-    icon: 'M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4', 
-    route: 'inspections.history',
-    color: 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-  },
-  { 
-    name: 'Pelanggan', 
-    icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z', 
-    route: 'job.index',
-    color: 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200'
-  },
-  { 
-    name: 'Kendaraan', 
-    // Ikon kendaraan yang diperbarui (mobil)
-    icon: 'M5 13.5a1.5 1.5 0 01-1.5-1.5V7a1.5 1.5 0 011.5-1.5h1a1.5 1.5 0 011.5 1.5v5a1.5 1.5 0 01-1.5 1.5H5zM13 13.5a1.5 1.5 0 01-1.5-1.5V7a1.5 1.5 0 011.5-1.5h1a1.5 1.5 0 011.5 1.5v5a1.5 1.5 0 01-1.5 1.5h-1zM5 19a2 2 0 01-2-2v-1a1 1 0 011-1h14a1 1 0 011 1v1a2 2 0 01-2 2H5z', 
-    route: 'cars',
-    color: 'bg-teal-100 text-teal-700 hover:bg-teal-200'
-  },
-  { 
-    name: 'Laporan', 
-    icon: 'M9 19V6l12-3v14H9zM9 19a2 2 0 002 2h2a2 2 0 002-2M9 19c-.333 0-.667 0-1 0a2 2 0 01-2-2v-3.5a2 2 0 012-2a2 2 0 002-2c0-.333 0-.667 0-1', 
-    route: 'job.index',
-    color: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-  },
-  { 
-    name: 'Pengaturan', 
-    icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z', 
-    route: 'job.index',
-    color: 'bg-violet-100 text-violet-700 hover:bg-violet-200'
-  },
-  { 
-    name: 'Bantuan', 
-    icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4c-.733 0-1.424-.23-1.992-.622l-.462.924a7.99 7.99 0 002.454.898c2.93 0 5.295-2.365 5.295-5.295S15.158 3.5 12.228 3.5c-2.93 0-5.295 2.365-5.295 5.295z', 
-    route: 'job.index',
-    color: 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-  },
+    { 
+        name: 'Inspeksi Baru', 
+        icon: 'M12 4v16m8-8H4', 
+        route: 'inspections.create.new',
+        color: 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+    },
+    { 
+        name: 'Daftar Inspeksi', 
+        icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M15 12a3 3 0 11-6 0 3 3 0 016 0z', 
+        route: 'coordinator.inspections.index',
+        color: 'bg-sky-100 text-sky-700 hover:bg-sky-200',
+        restricted: true // Penanda bahwa menu ini dibatasi
+    },
+    { 
+        name: 'Arsip', 
+        icon: 'M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4', 
+        route: 'inspections.history',
+        color: 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+    },
+    { 
+        name: 'Pelanggan', 
+        icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z', 
+        route: 'job.index',
+        color: 'bg-cyan-100 text-cyan-700 hover:bg-cyan-200'
+    },
+    { 
+        name: 'Kendaraan', 
+        icon: 'M5 13.5a1.5 1.5 0 01-1.5-1.5V7a1.5 1.5 0 011.5-1.5h1a1.5 1.5 0 011.5 1.5v5a1.5 1.5 0 01-1.5 1.5H5zM13 13.5a1.5 1.5 0 01-1.5-1.5V7a1.5 1.5 0 011.5-1.5h1a1.5 1.5 0 011.5 1.5v5a1.5 1.5 0 01-1.5 1.5h-1zM5 19a2 2 0 01-2-2v-1a1 1 0 011-1h14a1 1 0 011 1v1a2 2 0 01-2 2H5z', 
+        route: 'cars',
+        color: 'bg-teal-100 text-teal-700 hover:bg-teal-200'
+    },
+    { 
+        name: 'Laporan', 
+        icon: 'M9 19V6l12-3v14H9zM9 19a2 2 0 002 2h2a2 2 0 002-2M9 19c-.333 0-.667 0-1 0a2 2 0 01-2-2v-3.5a2 2 0 012-2a2 2 0 002-2c0-.333 0-.667 0-1', 
+        route: 'job.index',
+        color: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200',
+        restricted: true // Penanda bahwa menu ini dibatasi
+    },
+    { 
+        name: 'Pengaturan', 
+        icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z', 
+        route: 'job.index',
+        color: 'bg-violet-100 text-violet-700 hover:bg-violet-200'
+    },
+    { 
+        name: 'Bantuan', 
+        icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4s-1.79 4-4 4c-.733 0-1.424-.23-1.992-.622l-.462.924a7.99 7.99 0 002.454.898c2.93 0 5.295-2.365 5.295-5.295S15.158 3.5 12.228 3.5c-2.93 0-5.295 2.365-5.295 5.295z', 
+        route: 'bantuan.index',
+        color: 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+    },
 ];
+
+// Menghitung menu yang difilter berdasarkan peran
+const filteredNavMenus = computed(() => {
+    return navMenus.filter(menu => {
+        // Jika menu tidak dibatasi, selalu tampilkan
+        if (!menu.restricted) {
+            return true;
+        }
+
+        // Jika menu dibatasi, periksa apakah pengguna memiliki peran yang diizinkan
+        return userRoles.includes('Admin') || userRoles.includes('coordinator');
+    });
+});
 
 // Function untuk menentukan class badge berdasarkan status
 const getStatusBadgeClass = (status) => {
@@ -129,8 +148,8 @@ const getStatusText = (status) => {
             <div class="bg-white rounded-lg shadow-md p-4 mb-6">
                 <h3 class="text-md font-bold text-gray-800 mb-4">Fitur Utama</h3>
                 <div class="grid grid-cols-4 sm:grid-cols-5 gap-y-6">
-                    <Link v-for="menu in navMenus" :key="menu.name" :href="route(menu.route)" 
-                          class="flex flex-col items-center text-gray-600 hover:text-gray-800 transition-colors duration-200">
+                    <Link v-for="menu in filteredNavMenus" :key="menu.name" :href="route(menu.route)" 
+                            class="flex flex-col items-center text-gray-600 hover:text-gray-800 transition-colors duration-200">
                         <div class="bg-gray-100 p-3 rounded-xl mb-1 hover:bg-gray-200 transition-colors duration-200">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="menu.icon" />
@@ -147,8 +166,8 @@ const getStatusText = (status) => {
                 
                 <div class="space-y-4" v-if="recentInspections.length > 0">
                     <Link v-for="inspection in recentInspections" :key="inspection.id" 
-                          :href="route('job.index', inspection.id)" 
-                          class="block bg-gray-50 p-3 rounded-md border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                            :href="route('job.index', inspection.id)" 
+                            class="block bg-gray-50 p-3 rounded-md border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
                         <div class="flex justify-between items-center">
                             <div class="flex-1 min-w-0">
                                 <p class="font-bold text-gray-800 truncate">{{ inspection.vehicle_name }}</p>

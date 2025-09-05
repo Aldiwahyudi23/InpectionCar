@@ -14,9 +14,10 @@ return new class extends Migration
         Schema::create('components', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('description')->nullable();
+            $table->longText('description')->nullable();
             $table->integer('order')->default(0);
             $table->boolean('is_active')->default(true);
+            $table->string('file_path')->nullable(); // lokasi file gambar
             $table->timestamps();
             $table->softDeletes();
         });

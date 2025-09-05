@@ -89,7 +89,6 @@
                                     <div class="font-medium text-gray-900">
                                         {{ formatCarName(car) }}
                                     </div>
-                                    
                                 </div>
                             </div>
                             <!-- Pesan jika tidak ada hasil -->
@@ -106,7 +105,7 @@
                 <!-- Select Kategori Inspeksi -->
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2" for="category">
-                        Kategori Inspeksi
+                        Kategori Inspeksi {{ region.id }}
                     </label>
                     <select
                         id="category"
@@ -121,6 +120,7 @@
                     </select>
                 </div>
 
+              
                 <!-- Toggle Jadwal -->
                 <div class="mb-6 flex items-center justify-between">
                     <label for="schedule-toggle" class="text-sm font-medium text-gray-700">Jadwalkan Inspeksi?</label>
@@ -156,7 +156,26 @@
                             required
                         >
                     </div>
+
+                      <!-- SELECT INSPECTOR_ID (Hanya untuk Admin & Coordinator) -->
+                    <div v-if="roles.includes('Admin') || roles.includes('coordinator')" class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2" for="inspector">
+                            Pilih Inspektor
+                        </label>
+                        <select
+                            id="inspector"
+                            v-model="form.inspector_id"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
+                            required
+                        >
+                            <option value="" disabled>Pilih Inspektor</option>
+                            <option v-for="inspector in filteredInspectors" :key="inspector.id" :value="inspector.id">
+                                {{ inspector.user.name }}
+                            </option>
+                        </select>
+                    </div>
                 </div>
+
 
                 <!-- Tombol Submit -->
                 <div class="mt-6 flex justify-end">
@@ -267,14 +286,15 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted, onUnmounted } from 'vue';
-import { useForm, Head } from '@inertiajs/vue3';
+import { ref, watch, computed, onMounted, onUnmounted, watchEffect } from 'vue';
+import { usePage, useForm, Head } from '@inertiajs/vue3';
 import { debounce } from 'lodash';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
     CarDetail: Array,
-    Category: Array
+    Category: Array,
+    team: Array,
 });
 
 // State form Inertia
@@ -286,7 +306,14 @@ const form = useForm({
     is_scheduled: false,
     scheduled_at_date: null,
     scheduled_at_time: null,
+    inspector_id: null, // Tambahkan inspector_id ke form
 });
+
+const page = usePage();
+const user = page.props.global.user;
+const region = page.props.global.region;
+const roles = page.props.global.has_roles;
+const permissions = page.props.global.permissions;
 
 // State untuk input plat nomor terpisah
 const plateAreaCode = ref('');
@@ -336,11 +363,36 @@ const isFormValid = computed(() => {
     if (form.is_scheduled) {
         return form.scheduled_at_date && form.scheduled_at_time;
     }
+    // Validasi tambahan untuk inspector_id
+    // Cek jika roles adalah Admin atau Coordinator, maka inspector_id harus ada
+    if ((roles.includes('Admin') || roles.includes('coordinator')) && !form.inspector_id) {
+        return false;
+    }
     return true;
 });
 
 const buttonText = computed(() => {
     return form.is_scheduled ? 'Buat Jadwal' : 'Mulai Inspeksi';
+});
+
+// Computed property untuk memfilter daftar inspektor
+const filteredInspectors = computed(() => {
+    // Filter semua anggota tim yang berstatus aktif
+    const activeTeam = props.team.filter(member => member.status === 'active');
+
+    const userIsAdmin = roles.includes('Admin');
+    const userIsCoordinator = roles.includes('coordinator');
+
+    if (userIsAdmin) {
+        // Admin melihat semua anggota tim yang aktif
+        return activeTeam;
+    } else if (userIsCoordinator) {
+        // Coordinator hanya melihat anggota tim yang aktif di regional yang sama
+        const currentUserRegionId = region.id;
+        return activeTeam.filter(member => member.region_id === currentUserRegionId);
+    }
+    // Untuk peran lain, daftar ini akan kosong
+    return [];
 });
 
 // Format nama mobil
@@ -470,22 +522,37 @@ watch(carSearchQuery, (newValue) => {
     }
 });
 
+// WATCH EFFECT
+// This watcher handles the core logic of setting inspector_id based on roles
+// It runs immediately and whenever `roles` or `user` changes.
+watchEffect(() => {
+    const userIsAdminOrCoordinator = roles.includes('Admin') || roles.includes('coordinator');
+    
+    if (!userIsAdminOrCoordinator) {
+        // If the user is not an Admin or Coordinator,
+        // their own ID should be automatically assigned.
+        form.inspector_id = user?.id || null;
+    } else {
+        // If they are Admin/Coordinator, we reset the value
+        // to null, so they are required to select an inspector.
+        form.inspector_id = user?.id || null;
+    }
+});
+
+
 // Submit form ke backend
 const submitInspection = () => {
     const dataToSend = {
         plate_number: form.plate_number,
+        car_id: form.car_id,
+        car_name: form.car_name,
         category_id: form.category_id,
         is_scheduled: form.is_scheduled,
+        inspector_id: form.inspector_id,
     };
 
     if (form.is_scheduled) {
         dataToSend.scheduled_at = `${form.scheduled_at_date} ${form.scheduled_at_time}`;
-    }
-
-    if (form.car_id) {
-        dataToSend.car_id = form.car_id;
-    } else {
-        dataToSend.car_name = carSearchQuery.value;
     }
 
     form.post(route('inspections.store'), {

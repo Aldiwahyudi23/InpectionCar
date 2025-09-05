@@ -19,8 +19,15 @@ class Region extends Model
         'city',
         'province',
         'is_active',
+        'settings',
     ];
 
+     protected $casts = [
+        'settings' => 'array',
+        'is_active' => 'boolean',
+        'deleted_at' => 'datetime',
+    ];
+    
     /**
      * Coordinator of this region (one-to-one).
      */

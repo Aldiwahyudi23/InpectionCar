@@ -39,10 +39,33 @@ class ComponentResource extends Resource
                     ->default(true)
                     ->inline(false), // Label di atas toggle
 
-                Forms\Components\Textarea::make('description')
-                    ->label('Description')
-                    ->rows(3),
+                Forms\Components\RichEditor::make('description')
+                    ->label('Deskripsi')
+                    ->toolbarButtons([
+                        'attachFiles',
+                        'blockquote',
+                        'bold',
+                        'bulletList',
+                        'codeBlock',
+                        'h2',
+                        'h3',
+                        'italic',
+                        'link',
+                        'orderedList',
+                        'redo',
+                        'strike',
+                        'underline',
+                        'undo',
+                    ])
+                    ->fileAttachmentsDirectory('descriptions') // Folder untuk upload file
+                    ->placeholder('Masukkan deskripsi Komponen di sini...')
+                    ->helperText('Deskripsi tambahan tentang komponen. Format HTML akan dipertahankan.')
+                    ->columnSpanFull(),
 
+                Forms\Components\FileUpload::make('file_path')
+                    ->label('File Gambar')
+                    ->image()
+                    ->directory('component-images'), // simpan di storage/app/public
 
                 Forms\Components\Hidden::make('order')
                     ->required()

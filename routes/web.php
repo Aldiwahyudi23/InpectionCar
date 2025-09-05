@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\OtpController;
 use App\Http\Controllers\DataCar\CarController;
 use App\Http\Controllers\Inspection\InspectionController;
+use App\Http\Controllers\Menu\Home\CoordinatorController;
 use App\Http\Controllers\Menu\Home\HomeController;
 use App\Http\Controllers\Menu\Job\JobController;
 use Illuminate\Foundation\Application;
@@ -11,6 +12,7 @@ use Inertia\Inertia;
 
 # Buat symbolic link manual
 // ln -s /home/u516139464/domains/cekmobil.online/public_html/storage/app/public /home/u516139464/domains/cekmobil.online/public_html/public/storage
+// ln -s /home/u516139464/domains/keluargamahaya.com/public_html/cekmobil/storage/app/public /home/u516139464/domains/keluargamahaya.com/public_html/cekmobil/public/storage
 
 // Route::get('/', function () {
 //     return Inertia::render('Welcome', [
@@ -34,16 +36,20 @@ Route::post('/resend-otp', [OtpController::class, 'resendOtp'])->name('resend-ot
 Route::get('/error/403', function () {
     return inertia('Error/403');
 })->name('error.403');
+Route::get('/region-inactive', function () {
+    return inertia('Inactive');
+})->name('account.inactive');
 
 Route::get('/', function () {
     return redirect()->route('login'); // Redirect langsung ke login
 });
 
 Route::middleware([
-    'auth:sanctum',
+    'auth:sanctum',  
     config('jetstream.auth_session'),
     'verified',
-    'role_spatie:Admin,Inspektor,Kordinator',
+    'role_spatie:Admin|inspector|coordinator',
+    'region.active',
 ])->group(function () {
     Route::get('/dashboard', [HomeController::class,'index'])->name('dashboard');
 
@@ -129,5 +135,18 @@ Route::middleware([
     Route::post('/api/models', [CarController::class, 'storeModel']);
     Route::post('/api/types', [CarController::class, 'storeType']);
     Route::post('/api/car-details', [CarController::class, 'storeCarDetail'])->name('car-details.store');
+
+    //=========================== Bantuan ==============================
+    Route::get('/bantuan', [HomeController::class, 'bantuan'])->name('bantuan.index');
+
+     // Dashboard Coordinator
+    // Route::get('/dashboard', [CoordinatorController::class, 'dashboard'])->name('dashboard');
+    
+    // Inspections
+    Route::get('/coordinator/inspections', [CoordinatorController::class, 'index'])->name('coordinator.inspections.index');
+    Route::get('/coordinator/inspections/{inspection}', [CoordinatorController::class, 'show'])->name('coordinator.inspections.show');
+    Route::post('/coordinator/inspections/{inspection}/assign', [CoordinatorController::class, 'assign'])->name('coordinator.inspections.assign');
+    Route::post('/coordinator/inspections/{inspection}/update-status', [CoordinatorController::class, 'updateStatus'])->name('coordinator.inspections.update-status');
+
 });
 

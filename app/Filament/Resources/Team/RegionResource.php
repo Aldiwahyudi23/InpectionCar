@@ -76,6 +76,71 @@ class RegionResource extends Resource
                             ->placeholder('Contoh: Jawa Barat'),
                     ])
                     ->columns(2),
+
+                    Forms\Components\Section::make('Pengaturan Pembagian Pendapatan')
+                        ->schema([
+
+                            // Persen Owner
+                            Forms\Components\TextInput::make('settings.income_owner')
+                                ->label('Income Owner (%)')
+                                ->numeric()
+                                ->default(50)
+                                ->reactive()
+                                ->minValue(0)
+                                ->maxValue(100)
+                                ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                    // hitung ulang coordinator
+                                    $set('settings.income_coordinator', 100 - (int)$state);
+
+                                    // update hasil pembagian
+                                    $nominal = (int) $get('nominal');
+                                    $set('owner_amount', $nominal * ($state / 100));
+                                    $set('coordinator_amount', $nominal * ((100 - (int)$state) / 100));
+                                })
+                                ->suffix('%')
+                                ->required(),
+
+                            // Persen Coordinator (readonly)
+                            Forms\Components\TextInput::make('settings.income_coordinator')
+                                ->label('Income Coordinator (%)')
+                                ->numeric()
+                                ->reactive()
+                                ->disabled()
+                                ->dehydrated(true)
+                                ->suffix('%'),
+
+                            // Nominal input (panjang full)
+                            Forms\Components\TextInput::make('nominal')
+                                ->label('Nominal (Rp)')
+                                ->numeric()
+                                ->prefix('Rp')
+                                ->columnSpanFull()
+                                ->reactive()
+                                ->dehydrated(false)
+                                ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                    $owner = (int) $get('settings.income_owner');
+                                    $coordinator = 100 - $owner;
+
+                                    $set('owner_amount', (int)$state * ($owner / 100));
+                                    $set('coordinator_amount', (int)$state * ($coordinator / 100));
+                                }),
+
+                            // Hasil Owner
+                            Forms\Components\TextInput::make('owner_amount')
+                                ->label('Hasil Owner (Rp)')
+                                ->prefix('Rp')
+                                ->disabled()
+                                ->dehydrated(false),
+
+                            // Hasil Coordinator
+                            Forms\Components\TextInput::make('coordinator_amount')
+                                ->label('Hasil Coordinator (Rp)')
+                                ->prefix('Rp')
+                                ->disabled()
+                                ->dehydrated(false),
+                        ])
+                        ->columns(2), // persen pakai 2 kolom, nominal & hasil full
+
             ]);
     }
 

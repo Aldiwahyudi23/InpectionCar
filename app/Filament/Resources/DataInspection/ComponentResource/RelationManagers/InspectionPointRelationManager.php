@@ -34,13 +34,38 @@ class InspectionPointRelationManager extends RelationManager
                         //     }
                         ),
 
-
-                    Forms\Components\Textarea::make('description')
-                        ->label('Description'),
                     Forms\Components\Toggle::make('is_active')
                         ->required()
                         ->label('Is Active')
                         ->default(true),
+
+                    Forms\Components\RichEditor::make('description')
+                        ->label('Deskripsi')
+                        ->toolbarButtons([
+                        'attachFiles',
+                        'blockquote',
+                        'bold',
+                        'bulletList',
+                        'codeBlock',
+                        'h2',
+                        'h3',
+                        'italic',
+                        'link',
+                        'orderedList',
+                        'redo',
+                        'strike',
+                        'underline',
+                        'undo',
+                    ])
+                        ->fileAttachmentsDirectory('descriptions') // Folder untuk upload file
+                        ->placeholder('Masukkan deskripsi Komponen di sini...')
+                        ->helperText('Deskripsi tambahan tentang komponen. Format HTML akan dipertahankan.')
+                        ->columnSpanFull(),
+
+                    Forms\Components\FileUpload::make('file_path')
+                        ->label('File Gambar')
+                        ->image()
+                        ->directory('points-images'), // simpan di storage/app/public
                 ])
             ]);
     }
@@ -79,8 +104,8 @@ class InspectionPointRelationManager extends RelationManager
                 }),
             ])
             ->actions([
-               Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+              Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

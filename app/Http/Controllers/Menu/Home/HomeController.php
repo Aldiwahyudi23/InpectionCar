@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Menu\Home;
 
 use App\Http\Controllers\Controller;
+use App\Models\DataInspection\Component;
 use App\Models\DataInspection\Inspection;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -93,4 +94,52 @@ class HomeController extends Controller
     {
         //
     }
+
+    public function bantuan(Request $request)
+   {
+        $search = $request->query('search');
+        
+         $components = Component::with(['inspection_point' => function($query) use ($search) {
+                if ($search) {
+                    $query->where(function($q) use ($search) {
+                        $q->where('name', 'like', '%'.$search.'%')
+                          ->orWhere('description', 'like', '%'.$search.'%');
+                    });
+                }
+            }])
+            ->when($search, function($query) use ($search) {
+                return $query->where(function($q) use ($search) {
+                    $q->where('name', 'like', '%'.$search.'%')
+                      ->orWhere('description', 'like', '%'.$search.'%')
+                      ->orWhereHas('inspection_point', function($subQ) use ($search) {
+                          $subQ->where('name', 'like', '%'.$search.'%')
+                               ->orWhere('description', 'like', '%'.$search.'%');
+                      });
+                });
+            })
+            ->orderBy('name')
+            ->get();
+
+
+        // // Membersihkan HTML tags untuk pencarian
+        // if ($search) {
+        //     $components->each(function($component) {
+        //         $component->description = strip_tags($component->description);
+        //         $component->inspection_point->each(function($point) {
+        //             $point->description = strip_tags($point->description);
+        //         });
+        //     });
+        // }
+
+        if ($request->wantsJson()) {
+            return response()->json($components);
+        }
+
+        return inertia('FrontEnd/Menu/Home/Bantuan', [
+            'components' => $components,
+            'filters' => $request->all(['search'])
+        ]);
+    }
+
+
 }

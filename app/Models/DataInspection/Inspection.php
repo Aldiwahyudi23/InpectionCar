@@ -18,6 +18,8 @@ class Inspection extends Model
     protected $table = 'inspections';
 
     protected $fillable = [
+        'submitted_by',
+        'submitted_at',
         'user_id',
         'plate_number',
         'car_id',
@@ -34,6 +36,7 @@ class Inspection extends Model
     protected $casts = [
         'inspection_date' => 'datetime',
         'approved_at' => 'datetime',
+        'submitted_at' => 'datetime',
     ];
 
     public function getSettingsAttribute($value)

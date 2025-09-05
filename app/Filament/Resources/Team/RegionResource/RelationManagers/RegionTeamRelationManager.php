@@ -55,6 +55,40 @@ class RegionTeamRelationManager extends RelationManager
                         'paused' => 'Dibekukan',
                     ])
                     ->default('active'),
+
+            Forms\Components\Section::make('Tagihan Inspector')
+                ->schema([
+
+                    // Harga jika diajukan oleh user sendiri
+                    Forms\Components\TextInput::make('settings.inspection_price_self')
+                        ->label('Harga (Self Submission)')
+                        ->numeric()
+                        ->prefix('Rp')
+                        ->required()
+                        ->reactive()
+                        ->dehydrateStateUsing(fn ($state) => str_replace('.', '', $state))
+                        ->afterStateHydrated(function ($set, $state) {
+                            if ($state !== null) {
+                                $set('settings.inspection_price_self', number_format($state, 0, ',', '.'));
+                            }
+                        }),
+
+                    // Harga jika diajukan oleh pihak lain
+                    Forms\Components\TextInput::make('settings.inspection_price_external')
+                        ->label('Harga (External Submission)')
+                        ->numeric()
+                        ->prefix('Rp')
+                        ->required()
+                        ->reactive()
+                        ->dehydrateStateUsing(fn ($state) => str_replace('.', '', $state))
+                        ->afterStateHydrated(function ($set, $state) {
+                            if ($state !== null) {
+                                $set('settings.inspection_price_external', number_format($state, 0, ',', '.'));
+                            }
+                        }),
+                ])
+                ->columns(2), // biar rapi, 2 kolom
+
             ]);
     }
 

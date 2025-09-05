@@ -21,7 +21,13 @@ class RegionTeam extends Model
         'region_id',
         'user_id',
         'status',
-        'description'
+        'description',
+        'settings',
+    ];
+
+     protected $casts = [
+        'settings' => 'array',
+        'deleted_at' => 'datetime',
     ];
 
     public function user()
@@ -32,5 +38,11 @@ class RegionTeam extends Model
     {
         return $this->belongsTo(Region::class, 'region_id');
     }
+
+    public function region()
+{
+    return $this->belongsTo(Region::class);
+}
+
 
 }

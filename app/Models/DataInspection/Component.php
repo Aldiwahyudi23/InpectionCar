@@ -15,7 +15,8 @@ class Component extends Model
         'name',
         'description', // 'menu' or 'damage'
         'order',
-        'is_active'
+        'is_active',
+        'file_path'
     ];
 
     public $sortable = [

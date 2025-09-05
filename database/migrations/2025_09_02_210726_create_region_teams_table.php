@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->enum('status', ['active', 'inactive','paused'])->default('active'); // Status
             $table->longtext('description')->nullable();
+            $table->json('settings')->nullable(); // Kolom untuk menyimpan konfigurasi dinamis
             $table->timestamps();
             $table->softDeletes();
         });

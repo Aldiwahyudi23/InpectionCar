@@ -22,6 +22,7 @@ class InspectionPoint extends Model
         'description',
         'order',
         'is_active',
+        'file_path'
     ];
 
     /**

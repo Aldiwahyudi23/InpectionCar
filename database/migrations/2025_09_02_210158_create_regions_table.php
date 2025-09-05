@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('city')->nullable();               // City
             $table->string('province')->nullable();           // Province
             $table->boolean('is_active')->default(true);
+            $table->json('settings')->nullable(); // Kolom untuk menyimpan konfigurasi dinamis
             $table->timestamps();
             $table->softDeletes();
 
