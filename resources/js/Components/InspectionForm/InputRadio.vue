@@ -1,7 +1,10 @@
 <template>
-  <div class="mt-2 space-y-4">
+  <div class="mt-2 space-y-2">
     <!-- Radio Options - Grid Layout untuk keseragaman -->
-    <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 w-full">
+       <div 
+   class="grid gap-2 w-full mt-2"
+  :class="`grid-cols-${Math.min(options.length, 3)}`"
+    >
       <label
         v-for="(option, index) in options"
         :key="index"
@@ -31,7 +34,7 @@
     <!-- Display saved data - Hanya muncul jika radio memiliki settings -->
     <div 
       v-if="modelValue && selectedOption && hasSettings(selectedOption)" 
-      class="mt-4 p-4 border rounded-lg bg-gray-50"
+      class="p-2 rounded-lg bg-gray-50"
     >
       <div class="flex justify-between items-start">
         <h4 class="text-sm font-medium text-gray-700">Detail : </h4>
@@ -46,7 +49,7 @@
       <!-- Display images -->
       <div
         v-if="images.length > 0 && selectedOption.settings?.show_image_upload"
-        class="mt-3"
+        class="mt-2"
       >
         <div class="flex gap-2 overflow-x-auto" style="scrollbar-width: none">
           <div

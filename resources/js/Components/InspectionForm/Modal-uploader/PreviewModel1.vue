@@ -28,6 +28,7 @@
             </svg>
           </button>
           <button
+           v-if="currentImage && currentImage.isNew"
             @click="rotateImage"
             class="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
           >
@@ -82,7 +83,6 @@
       </div>
 
       <div class="flex flex-col gap-3 p-4 bg-black bg-opacity-70 shadow-inner">
-
         <div class="flex justify-between items-center w-full">
           <button v-if="currentImage && !currentImage.isNew" @click="removeCurrentImage" class="px-3 py-2 rounded-lg text-white font-medium flex items-center gap-1 transition-colors hover:text-red-400" :disabled="isUploading">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -150,7 +150,8 @@ const props = defineProps({
   point: Object
 });
 
-const emit = defineEmits(['close', 'saveImages', 'removePreviewImage', 'triggerAddMorePhotos']);
+// Tambahkan event 'update:images' untuk sinkronisasi data
+const emit = defineEmits(['close', 'saveImages', 'removePreviewImage', 'triggerAddMorePhotos', 'update:images']);
 
 const currentPreviewIndex = ref(0);
 const editableImages = ref([]);
@@ -169,9 +170,10 @@ const currentImage = computed(() => {
 watch(
   () => props.images,
   (newImages) => {
-    // Salin images ke editableImages untuk manipulasi lokal
-    editableImages.value = newImages.map((img) => ({ ...img }));
-    // Jika tidak ada gambar, tutup modal
+    editableImages.value = newImages.map((img) => ({
+      ...img,
+      rotation: img.rotation || 0,
+    }));
     if (newImages.length === 0 && props.show) {
       cancelPreview();
     }
@@ -184,7 +186,6 @@ watch(
   () => props.show,
   (isShowing) => {
     if (isShowing && props.images.length > 0) {
-      // Atur indeks ke nilai initialIndex yang dikirim dari parent
       currentPreviewIndex.value = props.initialIndex;
     }
   }
@@ -202,7 +203,13 @@ const getImageSrc = (image) => {
  */
 const rotateImage = () => {
   if (currentImage.value) {
-    currentImage.value.rotation = (currentImage.value.rotation + 90) % 360;
+    // Memperbarui rotasi secara lokal
+    const newRotation = (currentImage.value.rotation + 90) % 360;
+    editableImages.value[currentPreviewIndex.value].rotation = newRotation;
+    
+    // Emit event untuk memperbarui data di parent component
+    // Ini adalah langkah kunci untuk mengatasi masalah
+    emit('update:images', editableImages.value);
   }
 };
 
@@ -273,24 +280,22 @@ const removeCurrentImage = () => {
   if (currentImage.value && !props.isUploading) {
     const imageToRemove = currentImage.value;
     
-    // Emit event untuk menghapus gambar ke komponen parent
-    emit('removePreviewImage', imageToRemove);
-
-    // Hapus dari editableImages secara lokal
     const indexToRemove = editableImages.value.findIndex(img => 
       (img.isNew && imageToRemove.isNew && img.preview === imageToRemove.preview) || 
       (!img.isNew && !imageToRemove.isNew && img.id === imageToRemove.id)
     );
     if (indexToRemove !== -1) {
+      emit('removePreviewImage', imageToRemove);
       editableImages.value.splice(indexToRemove, 1);
+      
+      // Emit event untuk memperbarui data di parent setelah menghapus
+      emit('update:images', editableImages.value);
     }
 
-    // Sesuaikan indeks saat ini
     if (currentPreviewIndex.value >= editableImages.value.length) {
       currentPreviewIndex.value = Math.max(0, editableImages.value.length - 1);
     }
     
-    // Tutup modal jika tidak ada gambar lagi
     if (editableImages.value.length === 0) {
       emit('close');
     }

@@ -267,12 +267,27 @@ class InspectionController extends Controller
                     'note' => $validated['note'],
                 ]
             );
+            // menambil data atau nama dari point_id 
+            $point = InspectionPoint::find($validated['point_id']);
 
-            // return response()->json([
-            //     'success' => true,
-            //     'result' => $result,
-            // ]);
-            // Untuk success
+            //Untuk mengupdate otomatis setiap ada perubahan di result 
+            $inspect = Inspection::find($validated['inspection_id']);
+            //jika point name nya warna maka ambil nilai note nya
+            if($point->name === "Warna"){
+                $inspect->color = $validated['note'];
+            }
+            if($point->name === "No Rangka"){
+            $inspect->noka = $validated['note'];
+            }
+             if($point->name === "No Mesin"){
+            $inspect->nosin = $validated['note'];
+             }
+             if($point->name === "Jarak Tempuh (KM)"){
+            $inspect->km =$validated['note'];
+             }
+
+            $inspect->update();
+
             return redirect()->back()->with('success', 'Data saved successfully');
         } catch (\Exception $e) {
             return response()->json([
@@ -285,8 +300,8 @@ class InspectionController extends Controller
         public function updateConclusion(Request $request, Inspection $inspection)
     {
         $validated = $request->validate([
-            'flooded' => 'required|in:yes,no',
-            'collision' => 'required|in:yes,no',
+            'flooded' => 'nullable|in:yes,no',
+            'collision' => 'nullable|in:yes,no',
             'collision_severity' => 'nullable|required_if:collision,yes|in:light,heavy',
             'conclusion_note' => 'nullable|string|max:1000',
         ]);

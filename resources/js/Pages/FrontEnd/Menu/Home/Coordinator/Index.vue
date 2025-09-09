@@ -1,27 +1,27 @@
 <template>
     <AppLayout title="Buat Inspeksi Baru">
-        <Head title="Coordinator Dashboard" />
+        <Head title="Dashboard Koordinator" />
         <!-- Kontainer utama untuk konten halaman -->
         <div class="flex-1 overflow-y-auto">
             <!-- Header -->
             <header class="bg-white shadow-md p-4 md:p-6 flex items-center justify-between">
-                <h1 class="text-2xl font-bold text-gray-900">Dashboard Coordinator</h1>
+                <h1 class="text-2xl font-bold text-gray-900">Dashboard Koordinator</h1>
                 <div class="flex items-center space-x-4 text-sm text-gray-600">
                     <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
                     </svg>
-                    <span>Region: {{ region.name }}</span>
+                    <span>Wilayah: {{ region.name }}</span>
                 </div>
             </header>
 
-            <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <!-- Filter Section -->
-                <div class="px-4 sm:px-0 mb-6">
-                    <div class="bg-white overflow-hidden shadow-lg rounded-2xl p-6">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">Filter Inspections</h3>
-                        <!-- Container untuk Status & Date Range -->
+            <main class="max-w-4xl mx-auto py-4 sm:px-4 lg:px-4">
+                <!-- Bagian Filter -->
+                <div class="px-4 sm:px-0 mb-4">
+                    <div class="bg-white overflow-hidden shadow-lg rounded-2xl p-4">
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Saring Inspeksi</h3>
+                        <!-- Kontainer untuk Status & Rentang Tanggal -->
                         <div class="grid grid-cols-2 sm:grid-cols-2 gap-4 mb-4">
-                            <!-- Status Filter -->
+                            <!-- Filter Status -->
                             <div>
                                 <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
                                 <select 
@@ -30,71 +30,103 @@
                                     @change="updateFilters"
                                     class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                                 >
-                                    <option value="">All Status</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="in_progress">In Progress</option>
-                                    <option value="completed">Completed</option>
-                                    <option value="rejected">Rejected</option>
+                                    <option value="">Semua Status</option>
+                                    <option value="draft">Dibuat</option>
+                                    <option value="in_progress">Dalam Proses</option>
+                                    <option value="pending">Tertunda</option>
+                                    <option value="pending_review">Menunggu Tinjauan</option>
+                                    <option value="approved">Disetujui</option>
+                                    <option value="rejected">Ditolak</option>
+                                    <option value="revision">Revisi</option>
+                                    <option value="completed">Selesai</option>
+                                    <option value="cancelled">Dibatalkan</option>
                                 </select>
                             </div>
-                            <!-- Date Range Filter -->
+                            <!-- Filter Rentang Tanggal -->
                             <div>
-                                <label for="date" class="block text-sm font-medium text-gray-700">Date Range</label>
+                                <label for="date" class="block text-sm font-medium text-gray-700">Rentang Tanggal</label>
                                 <select 
                                     id="date" 
                                     v-model="filters.dateRange"
                                     @change="updateFilters"
                                     class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                                 >
-                                    <option value="all">All Time</option>
+                                    <option value="all">Sepanjang Waktu</option>
                                     <option value="today">Hari Ini</option>
                                     <option value="week">Minggu Ini</option>
                                     <option value="month">Bulan Ini</option>
                                 </select>
                             </div>
                         </div>
-                        <!-- Search Input (Full Width) -->
+                        <!-- Input Pencarian (Lebar Penuh) -->
                         <div>
-                            <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
+                            <label for="search" class="block text-sm font-medium text-gray-700">Cari</label>
                             <input 
                                 type="text" 
                                 id="search" 
                                 v-model="filters.search"
                                 @input="debouncedUpdateFilters"
-                                placeholder="Search by car or inspector..."
+                                placeholder="Cari berdasarkan mobil atau inspektur..."
                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                             >
                         </div>
                     </div>
                 </div>
 
-                <!-- Stats Overview -->
-                <div class="px-4 sm:px-0 mb-6">
-                    <div class="flex flex-col gap-5">
-                        <!-- Total Inspections Card (Full Width) -->
-                        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
-                            <dt class="text-sm font-medium opacity-80">Total Inspections</dt>
-                            <dd class="mt-1 text-3xl font-semibold">{{ stats.total }}</dd>
+                <!-- Gambaran Umum Statistik -->
+                <div class="px-4 sm:px-0 mb-4">
+                    <div class="flex flex-col gap-4">
+                        <!-- Kartu Total Inspeksi (Lebar Penuh) -->
+                        <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                            <dt class="text-sm font-medium opacity-80">Total Inspeksi</dt>
+                            <dd class="text-3xl font-semibold">{{ stats.total }}</dd>
                         </div>
-                        <!-- Other Stats Cards (Side-by-Side) -->
-                        <div class="grid grid-cols-3 sm:grid-cols-3 gap-4">
-                            <div class="bg-white p-6 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
-                                <dt class="text-sm font-medium text-gray-500 truncate">Pending</dt>
-                                <dd class="mt-1 text-2xl font-semibold text-yellow-600">{{ stats.pending }}</dd>
+                        <!-- Kartu Statistik Lainnya (Bersebelahan) -->
+                        <div class="grid grid-cols-3 sm:grid-cols-3 gap-2">
+                            <div class="bg-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                                <dt class="text-sm font-medium text-gray-500 truncate">Dibuat</dt>
+                                <dd class="text-2xl font-semibold text-yellow-600">{{ stats.draft }}</dd>
                             </div>
-                            <div class="bg-white p-6 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
-                                <dt class="text-sm font-medium text-gray-500 truncate">In Progress</dt>
-                                <dd class="mt-1 text-2xl font-semibold text-blue-600">{{ stats.in_progress }}</dd>
+                            <div class="bg-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                                <dt class="text-sm font-medium text-gray-500 truncate">Dalam Proses</dt>
+                                <dd class="text-2xl font-semibold text-blue-600">{{ stats.in_progress }}</dd>
                             </div>
-                            <div class="bg-white p-6 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
-                                <dt class="text-sm font-medium text-gray-500 truncate">Completed</dt>
-                                <dd class="mt-1 text-2xl font-semibold text-green-600">{{ stats.completed }}</dd>
+                            <div class="bg-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                                <dt class="text-sm font-medium text-gray-500 truncate">Tertunda</dt>
+                                <dd class="text-2xl font-semibold text-yellow-600">{{ stats.pending }}</dd>
+                            </div>
+                            <div class="bg-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                                <dt class="text-sm font-medium text-gray-500 truncate">Ditinjauan</dt>
+                                <dd class="text-2xl font-semibold text-yellow-600">{{ stats.pending_review }}</dd>
+                            </div>
+                            <div class="bg-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                                <dt class="text-sm font-medium text-gray-500 truncate">Disetujui</dt>
+                                <dd class="text-2xl font-semibold text-yellow-600">{{ stats.approved }}</dd>
+                            </div>
+                            <div class="bg-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                                <dt class="text-sm font-medium text-gray-500 truncate">Ditolak</dt>
+                                <dd class="text-2xl font-semibold text-yellow-600">{{ stats.rejected }}</dd>
+                            </div>
+                            <div class="bg-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                                <dt class="text-sm font-medium text-gray-500 truncate">Revisi</dt>
+                                <dd class="text-2xl font-semibold text-yellow-600">{{ stats.revision }}</dd>
+                            </div>
+                            <div class="bg-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                                <dt class="text-sm font-medium text-gray-500 truncate">Dibatalkan</dt>
+                                <dd class="text-2xl font-semibold text-yellow-600">{{ stats.cancelled }}</dd>
+                            </div>
+
+
+
+                            <div class="bg-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                                <dt class="text-sm font-medium text-gray-500 truncate">Selesai</dt>
+                                <dd class="text-2xl font-semibold text-green-600">{{ stats.completed }}</dd>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Inspections Table -->
+                <!-- Tabel Inspeksi -->
                 <div class="px-4 sm:px-0">
                     <div class="bg-white shadow-lg overflow-hidden rounded-2xl">
                         <div class="flex flex-col">
@@ -105,19 +137,19 @@
                                             <thead class="bg-gray-50">
                                                 <tr>
                                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Car Details
+                                                        Detail Mobil
                                                     </th>
                                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Inspector
+                                                        Inspektur
                                                     </th>
                                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Inspection Date
+                                                        Tanggal Inspeksi
                                                     </th>
                                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                         Status
                                                     </th>
                                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Actions
+                                                        Tindakan
                                                     </th>
                                                 </tr>
                                             </thead>
@@ -145,25 +177,25 @@
                                                         </span>
                                                     </td>
                                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                        <Link :href="route('coordinator.inspections.show', inspection.id)" class="text-blue-600 hover:text-blue-900 mr-3">View</Link>
-                                                        <button v-if="inspection.status === 'pending'" @click="assignInspection(inspection.id)" class="text-green-600 hover:text-green-900">Assign</button>
+                                                        <Link :href="route('coordinator.inspections.show', inspection.id)" class="text-blue-600 hover:text-blue-900 mr-3">Lihat</Link>
+                                                        <button v-if="inspection.status === 'pending'" @click="assignInspection(inspection.id)" class="text-green-600 hover:text-green-900">Tugaskan</button>
                                                     </td>
                                                 </tr>
                                             </tbody>
                                         </table>
                                     </div>
-                                    <!-- Pagination -->
+                                    <!-- Halaman -->
                                     <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4">
                                         <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                                             <div>
                                                 <p class="text-sm text-gray-700">
-                                                    Showing
+                                                    Menampilkan
                                                     <span class="font-medium">{{ inspections.from }}</span>
-                                                    to
+                                                    sampai
                                                     <span class="font-medium">{{ inspections.to }}</span>
-                                                    of
+                                                    dari
                                                     <span class="font-medium">{{ inspections.total }}</span>
-                                                    results
+                                                    hasil
                                                 </p>
                                             </div>
                                             <div>
@@ -240,10 +272,15 @@ const formatTime = (dateString) => {
 // Format status
 const formatStatus = (status) => {
     const statusMap = {
-        'pending': 'Pending',
-        'in_progress': 'In Progress',
-        'completed': 'Completed',
-        'rejected': 'Rejected'
+        'draft': 'Dibuat',
+        'in_progress': 'Dalam Proses',
+        'pending': 'Tertunda',
+        'pending_review': 'Menunggu Tinjauan',
+        'approved': 'Disetujui',
+        'rejected': 'Ditolak',
+        'revision': 'Revisi',
+        'completed': 'Selesai',
+        'cancelled': 'Dibatalkan'
     };
     return statusMap[status] || status;
 };
@@ -251,10 +288,15 @@ const formatStatus = (status) => {
 // Status class
 const statusClass = (status) => {
     const classMap = {
-        'pending': 'bg-yellow-100 text-yellow-800',
+        'draft': 'bg-gray-100 text-gray-800',
         'in_progress': 'bg-blue-100 text-blue-800',
+        'pending': 'bg-yellow-100 text-yellow-800',
+        'pending_review': 'bg-purple-100 text-purple-800',
+        'approved': 'bg-green-100 text-green-800',
+        'rejected': 'bg-red-100 text-red-800',
+        'revision': 'bg-orange-100 text-orange-800',
         'completed': 'bg-green-100 text-green-800',
-        'rejected': 'bg-red-100 text-red-800'
+        'cancelled': 'bg-red-100 text-red-800'
     };
     return classMap[status] || 'bg-gray-100 text-gray-800';
 };

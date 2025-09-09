@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\DataInspection\AppMenuResource\RelationManagers;
 
+use App\Models\DataInspection\InspectionPoint;
 use App\Models\DataInspection\MenuPoint;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -24,25 +25,23 @@ class MenuPointRelationManager extends RelationManager
         return $form
             ->schema([
             
-                Forms\Components\Select::make('inspection_point_id')
-    ->label('Inspection Point')
-    ->relationship('inspection_point', 'name', function (Builder $query) use ($ownerRecord) {
-        // Ambil category_id dari AppMenu (ownerRecord)
-        $categoryId = $ownerRecord->category_id;
-        
-        // Dapatkan semua inspection_point_id yang sudah digunakan 
-        // oleh app_menus yang memiliki category_id yang sama
-        $usedInspectionPointIds = MenuPoint::whereHas('app_menu', function ($query) use ($categoryId) {
-                $query->where('category_id', $categoryId);
-            })
-            ->pluck('inspection_point_id');
-        
-        // Filter: inspection point yang belum digunakan dalam category yang sama
-        $query->whereNotIn('id', $usedInspectionPointIds);
-    })
-    ->searchable()
-    ->preload()
-    ->required(),
+            Forms\Components\Select::make('inspection_point_id')
+                ->label('Inspection Point')
+                ->relationship('inspection_point', 'name', function (Builder $query) use ($ownerRecord) {
+                    $categoryId = $ownerRecord->category_id;
+
+                    $usedInspectionPointIds = MenuPoint::whereHas('app_menu', function ($query) use ($categoryId) {
+                            $query->where('category_id', $categoryId);
+                        })
+                        ->pluck('inspection_point_id');
+
+                    $query->whereNotIn('id', $usedInspectionPointIds);
+                })
+                ->getOptionLabelUsing(fn ($value): ?string => InspectionPoint::find($value)?->name) // 👈 ini kunci
+                ->searchable()
+                ->preload()
+                ->required(),
+
 
             Forms\Components\Select::make('input_type')
                 ->label('Tipe Input')

@@ -1,5 +1,5 @@
 <template>
-  <div class="mt-2 space-y-4">
+  <div class="mt-2 space-y-2">
     <!-- Jika belum ada data tampil tombol tambah -->
     <div v-if="!modelValue && imageValues.length === 0 && !notesValue" class="flex flex-wrap gap-3">
       <div 
@@ -16,7 +16,7 @@
     </div>
 
     <!-- Jika sudah ada data tampil display -->
-    <div v-else class="p-4 border rounded-lg bg-gray-50">
+    <div v-else class="p-2 ">
       <div class="flex justify-between items-start">
         <h4 class="text-sm font-medium text-gray-700">Detail :</h4>
         <button
@@ -28,7 +28,7 @@
       </div>
 
       <!-- Display Images -->
-      <div v-if="imageValues.length > 0" class="mt-3">
+      <div v-if="imageValues.length > 0" class="mt-2">
         <div class="flex gap-2 overflow-x-auto scrollbar-hide">
           <div
             v-for="(image, index) in imageValues"
@@ -49,7 +49,10 @@
 
       <!-- Display Radio (non-editable) -->
 
-    <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 w-full mt-4">
+    <div 
+   class="grid gap-2 w-full mt-2"
+  :class="`grid-cols-${Math.min(options.length, 3)}`"
+    >
       <label
         v-for="(option, index) in options"
         :key="index"
@@ -152,6 +155,11 @@ const selectedOption = computed(() =>
 const getImageSrc = (image) => {
   return image.preview || (image.image_path ? `/${image.image_path}` : image);
 };
+
+// watch for props changes
+watch(() => props.notes, (val) => {
+  notesValue.value = val;
+});
 
 const openOptionModal = () => {
   tempRadioValue.value = props.modelValue || '';

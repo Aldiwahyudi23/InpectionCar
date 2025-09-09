@@ -150,7 +150,7 @@ const handleDownload = (route) => {
                 Catatan
               </p>
               <p class="text-sm text-gray-800">
-                {{ inspection.notes ?? '-' }}
+                <div v-html="inspection.notes || '-'"></div>
               </p>
             </div>
           </div>

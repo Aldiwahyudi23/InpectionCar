@@ -134,14 +134,38 @@ class CoordinatorController extends Controller
             'total' => Inspection::whereHas('user', function($q) use ($userIds) {
                 $q->whereIn('user_id', $userIds);
             })->count(),
-            
-            'pending' => Inspection::whereHas('user', function($q) use ($userIds) {
+        
+            'draft' => Inspection::whereHas('user', function($q) use ($userIds) {
                 $q->whereIn('user_id', $userIds);
-            })->where('status', 'pending')->count(),
+            })->where('status', 'draft')->count(),
             
             'in_progress' => Inspection::whereHas('user', function($q) use ($userIds) {
                 $q->whereIn('user_id', $userIds);
             })->where('status', 'in_progress')->count(),
+
+            'pending' => Inspection::whereHas('user', function($q) use ($userIds) {
+                $q->whereIn('user_id', $userIds);
+            })->where('status', 'pending')->count(),
+
+            'pending_review' => Inspection::whereHas('user', function($q) use ($userIds) {
+                $q->whereIn('user_id', $userIds);
+            })->where('status', 'pending_review')->count(),
+
+            'approved' => Inspection::whereHas('user', function($q) use ($userIds) {
+                $q->whereIn('user_id', $userIds);
+            })->where('status', 'approved')->count(),
+
+            'rejected' => Inspection::whereHas('user', function($q) use ($userIds) {
+                $q->whereIn('user_id', $userIds);
+            })->where('status', 'rejected')->count(),
+            
+            'revision' => Inspection::whereHas('user', function($q) use ($userIds) {
+                $q->whereIn('user_id', $userIds);
+            })->where('status', 'revision')->count(),
+            
+            'cancelled' => Inspection::whereHas('user', function($q) use ($userIds) {
+                $q->whereIn('user_id', $userIds);
+            })->where('status', 'cancelled')->count(),
             
             'completed' => Inspection::whereHas('user', function($q) use ($userIds) {
                 $q->whereIn('user_id', $userIds);

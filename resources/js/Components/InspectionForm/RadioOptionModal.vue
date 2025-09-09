@@ -6,6 +6,65 @@
     @close="$emit('close')"
   >
     <div class="space-y-4">
+
+                  <!-- Input Text -->
+      <div v-if="point.input_type === 'text'" class="mt-2">
+        <input-text
+           :model-value="notesValue"
+          :required="point.settings?.is_required"
+          :min-length="point.settings?.min_length"
+          :max-length="point.settings?.max_length"
+          :allowSpace="point.settings?.allow_space"
+          :textTransform="point.settings?.text_transform"
+          :placeholder="point.settings?.placeholder || 'Masukan text'"
+          :error="error"
+           @update:modelValue="$emit('update:notesValue', $event)"
+          @save="$emit('saveText', $event)"
+        />
+      </div>
+
+      <!-- Input Number -->
+      <div v-if="point.input_type === 'number'" class="mt-2">
+        <input-number
+           :model-value="notesValue"
+          :required="point.settings?.is_required"
+          :min="point.settings?.min"
+          :max="point.settings?.max"
+          :step="point.settings?.step || 1"
+          :placeholder="point.settings?.placeholder || 'Masukan number'"
+          :error="error"
+            @update:modelValue="$emit('update:notesValue', $event)"
+          @save="$emit('saveNumber', $event)"
+        />
+      </div>
+
+      <!-- Input Account -->
+      <div v-if="point.input_type === 'account'" class="mt-2">
+        <input-account
+           :model-value="notesValue"
+          :required="point.settings?.is_required"
+          :placeholder="point.settings?.placeholder || 'Masukkan nilai'"
+          :error="error"
+          :point-id="pointId"
+          :settings="point.settings"
+            @update:modelValue="$emit('update:notesValue', $event)"
+          @save="$emit('saveAccount', $event)"
+        />
+      </div>
+
+      <!-- Input Date -->
+      <div v-if="point.input_type === 'date'" class="mt-2">
+        <input-date
+           :model-value="notesValue"
+          :required="point.settings?.is_required"
+          :min-date="point.settings?.min_date"
+          :max-date="point.settings?.max_date"
+          :error="error"
+          @update:modelValue="$emit('update:notesValue', $event)"
+          @save="$emit('saveDate', $event)"
+        />
+      </div>
+
       <!-- imageTOradio -->
       <div v-if="point.input_type === 'imageTOradio'" class="mt-2">
         <h4 class="text-sm font-medium text-gray-700 mb-2">
@@ -26,7 +85,10 @@
       </div>
 
       <!-- Radio Options -->
-      <div v-if="options.length" class="grid grid-cols-2 gap-2">
+      <div v-if="options.length" 
+      class="grid gap-2 w-full mt-2"
+      :class="`grid-cols-${Math.min(options.length, 3)}`"
+        >
         <label
           v-for="(option, index) in options"
           :key="index"
@@ -138,6 +200,10 @@ import { computed } from 'vue';
 import InputImage from './InputImage.vue';
 import Textarea from './InputTextarea.vue';
 import BottomSheetModal from './BottomSheetModal.vue';
+import InputAccount from './InputAccount.vue';
+import InputDate from './InputDate.vue';
+import InputNumber from './InputNumber.vue';
+import InputText from './InputText.vue';
 
 const props = defineProps({
   show: Boolean,
@@ -164,7 +230,11 @@ const emit = defineEmits([
   'save',
   'hapus',
   'saveTextarea',
-  'saveImage'
+  'saveImage',
+  'saveText',
+  'saveNumber',
+  'saveAccount',
+  'saveDate',
 ]);
 
 const hapusPoint = (pointId) => emit("hapus", pointId);
@@ -175,6 +245,30 @@ const selectedOption = computed(() =>
 
 // ✅ Validasi hanya input yang tampil (aktif)
 const isFormValid = computed(() => {
+  // Jika ada text aktif
+  if (props.point.input_type === 'text') {
+    if (!props.notesValue?.trim()) return false;
+    if (props.point.settings.min_length && props.notesValue.length < props.point.settings.min_length) return false;
+    if (props.point.settings.max_length && props.notesValue.length > props.point.settings.max_length) return false;
+  }
+
+  if (props.point.input_type === 'number') {
+    if (!props.notesValue?.trim()) return false;
+    if (props.point.settings.min && props.notesValue.length < props.point.settings.min) return false;
+    if (props.point.settings.max && props.notesValue.length > props.point.settings.max) return false;
+  }
+  if (props.point.input_type === 'account') {
+    if (!props.notesValue?.trim()) return false;
+    if (props.point.settings.min_value && props.notesValue.length < props.point.settings.min_value) return false;
+    if (props.point.settings.max_value && props.notesValue.length > props.point.settings.max_value) return false;
+  }
+
+  if (props.point.input_type === 'date') {
+    if (!props.notesValue?.trim()) return false;
+    if (props.point.settings.min_date && props.notesValue.length < props.point.settings.min_date) return false;
+    if (props.point.settings.max_date && props.notesValue.length > props.point.settings.max_date) return false;
+  }
+
   // Jika ada imageTOradio aktif
   if (props.point.input_type === 'imageTOradio') {
     if (props.imagesValue.length === 0) return false;
@@ -201,3 +295,5 @@ const isFormValid = computed(() => {
   return true;
 });
 </script>
+
+

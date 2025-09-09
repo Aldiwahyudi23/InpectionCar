@@ -77,7 +77,10 @@
         <!-- Kesimpulan Inspeksi -->
         <div v-if="inspection.notes" class="conclusion p-4 bg-gray-50 border-l-4 border-gray-800 rounded-lg">
           <h3 class="text-lg font-bold mb-2 text-gray-800">Kesimpulan Inspeksi:</h3>
-          <p class="m-0 text-gray-600">{{ inspection.notes }}</p>
+          <p class="m-0 text-gray-600">
+            <div v-html="inspection.notes || '-'"></div>
+
+          </p>
         </div>
       </div>
 

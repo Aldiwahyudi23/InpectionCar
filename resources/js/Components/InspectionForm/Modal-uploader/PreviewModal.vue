@@ -28,6 +28,7 @@
             </svg>
           </button>
           <button
+           v-if="currentImage && currentImage.isNew"
             @click="rotateImage"
             class="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
           >

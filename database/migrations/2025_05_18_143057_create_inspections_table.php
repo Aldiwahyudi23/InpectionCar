@@ -18,8 +18,9 @@ return new class extends Migration
         $table->foreignId('user_id')->constrained('users');
         $table->foreignId('category_id')->constrained('categories');
         $table->foreignId('car_id')->nullable()->constrained('car_details');
-        $table->string('plate_number')->nullable();
         $table->string('car_name')->nullable();
+        $table->string('plate_number')->nullable();
+        $table->string('km')->nullable();
         $table->string('color')->nullable();
         $table->string('noka')->nullable();
         $table->string('nosin')->nullable();

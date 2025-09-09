@@ -211,7 +211,7 @@
     @if($inspection->notes)
     <div class="conclusion">
         <h3>Kesimpulan Inspeksi:</h3>
-        <p>{{ $inspection->notes }}</p>
+        <p>{!! $inspection->notes !!}</p>
     </div>
     @endif
 
