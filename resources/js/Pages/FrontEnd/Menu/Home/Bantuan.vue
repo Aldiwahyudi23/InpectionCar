@@ -178,6 +178,10 @@ import debounce from 'lodash/debounce'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { Head } from '@inertiajs/vue3';
 
+import { usePWA } from '@/Composables/usePWA';
+
+const { canInstall, installApp, isOnline } = usePWA();
+
 const props = defineProps({
   components: {
     type: Array,

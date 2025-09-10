@@ -8,11 +8,16 @@ use App\Http\Controllers\Menu\Home\HomeController;
 use App\Http\Controllers\Menu\Job\JobController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Spatie\Browsershot\Browsershot;
 
 # Buat symbolic link manual
 // ln -s /home/u516139464/domains/cekmobil.online/public_html/storage/app/public /home/u516139464/domains/cekmobil.online/public_html/public/storage
 // ln -s /home/u516139464/domains/keluargamahaya.com/public_html/cekmobil/storage/app/public /home/u516139464/domains/keluargamahaya.com/public_html/cekmobil/public/storage
+
+//mkdir -p storage/app/public/reports
+
 
 // Route::get('/', function () {
 //     return Inertia::render('Welcome', [
@@ -110,6 +115,12 @@ Route::middleware([
     Route::get('/inspections/{id}/download-approve-pdf', [InspectionController::class, 'downloadApprovePdf'])
         ->name('inspections.download.approved.pdf');
 
+
+        Route::get('/inspections/{id}/preview', [InspectionController::class, 'previewReport'])
+    ->name('inspections.preview');
+
+
+    
     Route::post('/inspections/{encryptedIds}/send-email', [InspectionController::class, 'sendEmail'])
     ->name('inspections.send.email'); //belum berfungsi
 
@@ -149,4 +160,25 @@ Route::middleware([
     Route::post('/coordinator/inspections/{inspection}/update-status', [CoordinatorController::class, 'updateStatus'])->name('coordinator.inspections.update-status');
 
 });
+
+Route::get('/test-pdf', function () {
+    $folder = 'public/reports';
+    $filename = 'test.pdf';
+    $path = storage_path("app/{$folder}/{$filename}");
+
+    // 🔑 Pastikan folder reports ada
+    if (!Storage::exists($folder)) {
+        Storage::makeDirectory($folder, 0775, true);
+    }
+
+    // 🔑 Generate PDF
+    Browsershot::html('<h1 style="color:blue;">Hello Aldi 🚗</h1><p>PDF test berhasil!</p>')
+        ->format('A4')
+        ->margins(10, 10, 10, 10)
+        ->save($path);
+
+    // 🔑 Download hasilnya
+    return response()->download($path);
+});
+
 

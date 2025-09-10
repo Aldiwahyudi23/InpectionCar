@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Laporan Inspeksi</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Inspeksi Kendaraan</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: Arial, Helvetica, sans-serif;
             font-size: 13px;
             color: #333;
             margin: 0;
@@ -13,25 +14,18 @@
         }
 
         .header {
-            display: flex;
-            flex-direction: column;
             margin-bottom: 20px;
-            align-items: flex-start;
-            gap: 20px;
-        }
-
-        .header .main-header-content {
             display: flex;
-            align-items: center;
-            gap: 20px;
-            width: 100%;
+            align-items: flex-start;
         }
 
         .header img {
             width: 250px;
             height: 250px;
             object-fit: cover;
+            margin-right: 20px;
             border: 1px solid #ccc;
+            border-radius: 8px;
         }
 
         .car-info {
@@ -41,7 +35,7 @@
 
         .car-info h2 {
             margin: 0 0 5px 0;
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
         }
 
@@ -52,7 +46,7 @@
         }
 
         .car-info td {
-            padding: 3px 6px;
+            padding: 5px 8px;
             vertical-align: top;
             border: 1px solid #ddd;
         }
@@ -60,79 +54,64 @@
         .car-info td:first-child {
             width: 30%;
             font-weight: bold;
+            background-color: #f7f7f7;
         }
 
-        .section {
-            margin-bottom: 20px;
-            /* Memaksa setiap section dimulai di halaman baru */
-            page-break-before: always;
+        .conclusion {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #555;
+            border-radius: 4px;
+        }
+
+        /* Komponen */
+        .component-block {
+            margin-top: 25px;
+            border-radius: 8px;
+            overflow: hidden;
+            page-break-inside: avoid;
+            border: 1px solid #ddd;
         }
 
         .component-title {
             font-weight: bold;
-            font-size: 14px;
-            /* Menambahkan jarak dari judul komponen ke konten di bawahnya */
-            margin-bottom: 15px;
-            background-color: #f5f5f5;
-            padding: 5px 10px;
-            border-left: 3px solid #333;
+            font-size: 16px;
+            padding: 10px 15px;
+            color: white;
+            background-color: #4338CA;
+        }
+
+        .component-content {
+            padding: 15px;
+            background-color: #fff;
         }
 
         .point {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            margin-left: 15px;
-            margin-bottom: 10px;
-            padding: 5px 0;
-            border-bottom: 1px dotted #eee;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px dotted #ccc;
+            page-break-inside: avoid;
+        }
+
+        .point:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .point-info {
+            margin-bottom: 5px;
         }
 
         .point-name {
-            min-width: 150px;
             font-weight: bold;
-            flex-shrink: 0;
-        }
-
-        .point-content {
-            flex-grow: 1;
+            display: block;
         }
 
         .point-note {
-            margin: 5px 0;
             font-style: italic;
-            color: #555;
-        }
-
-        .images {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .images img {
-            width: 120px;
-            height: 120px;
-            object-fit: cover;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-        }
-
-        .photo-component .images {
-            justify-content: flex-start;
-            gap: 5px;
-            margin-top: 15px; /* Jarak spesifik dari judul komponen "Foto Kendaraan" */
-        }
-
-        .photo-component .images img {
-            aspect-ratio: 1/1;
-            height: auto;
-            width: calc(25% - 6px);
-        }
-
-        .photo-component .point {
-            display: none;
+            color: #777;
         }
 
         .status-badge {
@@ -140,8 +119,6 @@
             padding: 2px 8px;
             border-radius: 3px;
             font-size: 12px;
-            margin-right: 8px;
-            margin-bottom: 10px;
         }
 
         .status-good {
@@ -159,74 +136,54 @@
             color: #856404;
         }
 
-        .inspection-images {
-            display: flex;
-            flex-wrap: wrap;
-            margin-top: 15px;
-            gap: 5px;
+        /* Table untuk foto */
+        .photo-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
         }
 
-        .inspection-images img {
-            aspect-ratio: 1/1;
-            height: auto;
-            width: calc(20% - 6px);
-            object-fit: cover;
+        .photo-table td {
+            width: 25%;
+            padding: 5px;
+            text-align: center;
+            vertical-align: top;
             border: 1px solid #ddd;
-            border-radius: 3px;
         }
 
-        .conclusion {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border-left: 4px solid #333;
+        .photo-table img {
+            width: 100%;
+            max-height: 150px;
+            object-fit: cover;
             border-radius: 4px;
         }
 
-        .textarea-note {
-            margin: 5px 0;
-            font-style: italic;
-            color: #555;
+        .img-placeholder {
+            width: 100%;
+            height: 150px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f9f9f9;
+            font-size: 10px;
+            text-align: center;
         }
 
-        /* --- Perbaikan untuk tampilan PDF --- */
+        /* Cetak PDF */
         @media print {
-            .header {
-                flex-direction: row;
-                align-items: flex-start;
-                gap: 20px;
-            }
-
-            .header .main-header-content {
-                display: flex;
-                align-items: center;
-                gap: 20px;
-                width: auto;
-                flex-grow: 1;
-            }
-            .header img {
-                 margin-right: 0;
-            }
-            .header h2 {
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
                 margin: 0;
+                padding: 20px;
             }
-
-            .car-info {
-                margin-top: 0;
-                margin-left: 20px;
+            .header {
+                page-break-after: always;
             }
-            
-            #inspection-title {
-                page-break-before: always;
-                margin-top: 0;
-            }
-
-            .point {
+            table, tr, td {
                 page-break-inside: avoid;
-            }
-            
-            .section:not(:first-of-type) {
-                page-break-before: always;
             }
         }
     </style>
@@ -234,136 +191,127 @@
 <body>
 
     <div class="header">
-        <div class="main-header-content">
-            @if($coverImage && file_exists(public_path($coverImage->image_path)))
-                <img src="{{ public_path($coverImage->image_path) }}" alt="Foto Utama">
-            @else
-                <div style="width:250px; height:250px; border:1px solid #ccc; display:flex; align-items:center; justify-content:center;">
-                    <span>Gambar tidak tersedia</span>
-                </div>
-            @endif
-            <div class="car-info">
-                <h2>{{ $inspection->car_name }}</h2>
-                @if ($inspection->car_id)    
-                <table>
-                    <tr><td>Nomor Polisi</td><td>{{ $inspection->plate_number }}</td></tr>
-                    <tr><td>Merek</td><td>{{ $inspection->car->brand->name }}</td></tr>
-                    <tr><td>Model</td><td>{{ $inspection->car->model->name }}</td></tr>
-                    <tr><td>Tipe</td><td>{{ $inspection->car->type->name }}</td></tr>
-                    <tr><td>CC</td><td>{{ $inspection->car->cc }}</td></tr>
-                    <tr><td>Bahan Bakar</td><td>{{ $inspection->car->fuel_type }}</td></tr>
-                    <tr><td>Transmisi</td><td>{{ $inspection->car->transmission }}</td></tr>
-                    <tr><td>Periode Model</td><td>{{ $inspection->car->production_period ?? '-' }}</td></tr>
-                    <tr><td>Tahun Pembuatan</td><td>{{ $inspection->car->year }}</td></tr>
-                </table>
-                @endif
+        @if($coverImage && $coverImage->image_path && file_exists(public_path($coverImage->image_path)))
+            <img src="{{ public_path($coverImage->image_path) }}" alt="Foto Utama">
+        @else
+            <div class="img-placeholder" style="width:250px; height:250px; font-size:12px;">
+                Gambar tidak tersedia
             </div>
-        </div>
-
-        @if($inspection->notes)
-        <div class="conclusion">
-            <h3>Kesimpulan Inspeksi:</h3>
-            <p>{{ $inspection->notes }}</p>
-        </div>
         @endif
+
+        <div class="car-info">
+            <h2>Laporan Inspeksi Kendaraan</h2>
+            <h3 style="margin: 5px 0 15px;">{{ $inspection->car_name }}</h3>
+            @if ($inspection->car_id)
+            <table>
+                <tr><td>Nomor Polisi</td><td>{{ $inspection->plate_number }}</td></tr>
+                <tr><td>Merek</td><td>{{ $inspection->car->brand->name }}</td></tr>
+                <tr><td>Model</td><td>{{ $inspection->car->model->name }}</td></tr>
+                <tr><td>Tipe</td><td>{{ $inspection->car->type->name }}</td></tr>
+                <tr><td>CC</td><td>{{ $inspection->car->cc }}</td></tr>
+                <tr><td>Bahan Bakar</td><td>{{ $inspection->car->fuel_type }}</td></tr>
+                <tr><td>Transmisi</td><td>{{ $inspection->car->transmission }}</td></tr>
+                <tr><td>Periode Model</td><td>{{ $inspection->car->production_period ?? '-' }}</td></tr>
+                <tr><td>Tahun Pembuatan</td><td>{{ $inspection->car->year }}</td></tr>
+            </table>
+            @endif
+        </div>
     </div>
 
-    <h2 id="inspection-title" style="border-bottom: 2px solid #333; padding-bottom: 5px;">Hasil Inspeksi</h2>
+    @if($inspection->notes)
+    <div class="conclusion">
+        <h3>Kesimpulan Inspeksi:</h3>
+        <p>{!! $inspection->notes !!}</p>
+    </div>
+    @endif
 
-    @foreach($inspection_points->groupBy('component.name') as $componentName => $points)
-        <div class="section {{ $componentName == 'Foto Kendaraan' ? 'photo-component' : '' }}">
+    @foreach($menu_points->groupBy('inspection_point.component.name') as $componentName => $points)
+        <div class="component-block">
             <div class="component-title">{{ $componentName ?? 'Tanpa Komponen' }}</div>
 
-            @if($componentName == 'Foto Kendaraan')
-                <div class="images">
-                    @foreach($points as $point)
-                        @if($point->images && $point->images->count())
-                            @foreach($point->images as $img)
-                                @if(file_exists(public_path($img->image_path)))
-                                    <img src="{{ public_path($img->image_path) }}" alt="Foto Kendaraan">
-                                @else
-                                    <div style="width:calc(25% - 15px); height:180px; border:1px solid #ddd; display:flex; align-items:center; justify-content:center; margin:5px;">
-                                        <span style="font-size:10px;">Gambar tidak ditemukan</span>
-                                    </div>
+            <div class="component-content">
+                @if($componentName == 'Foto Kendaraan')
+                    <table class="photo-table">
+                        <tr>
+                            @foreach($points as $point)
+                                @if($point->inspection_point->images && $point->inspection_point->images->count())
+                                    @foreach($point->inspection_point->images as $index => $img)
+                                        <td>
+                                            @if($img->image_path && file_exists(public_path($img->image_path)))
+                                                <img src="{{ public_path($img->image_path) }}" alt="Foto Kendaraan">
+                                            @else
+                                                <div class="img-placeholder">Gambar tidak ditemukan</div>
+                                            @endif
+                                        </td>
+                                        @if(($index+1) % 4 == 0) </tr><tr> @endif
+                                    @endforeach
                                 @endif
                             @endforeach
-                        @endif
-                    @endforeach
-                </div>
-            @else
-                @foreach($points as $point)
-                    @php
-                        $settings = $point->settings ?? [];
-                        $resul = $point->results->first();
-                        $selected = $resul->status ?? null;
-                        $selectedOption = collect($settings['radios'] ?? [])->firstWhere('value', $selected);
-                        $showImageUpload = $selectedOption['settings']['show_image_upload'] ?? false;
-                        $showTextarea = $selectedOption['settings']['show_textarea'] ?? false;
-                        $inputType = $point->input_type ?? '';
-                        $hasResult = $point->results && $point->results->count() > 0;
-                        $hasImage = $point->images && $point->images->count() > 0;
-                        $showImages = (($inputType === 'image') || ($inputType === 'imageTOradio') || ($inputType === 'radio' && $showImageUpload)) && $hasImage;
-                        $symbol = $settings['currency_symbol'] ?? 'Rp';
-                        $thousand = $settings['thousands_separator'] ?? '.';
-                        $decimal = $settings['decimal_separator'] ?? ',';
-                    @endphp
+                        </tr>
+                    </table>
+                @else
+                    @foreach($points as $point)
+                        @php
+                            $result = $point->inspection_point->results->first();
+                            $hasResult = $result && (!empty($result->status) || !empty($result->note));
+                            $hasImage = $point->inspection_point->images && $point->inspection_point->images->count() > 0;
 
-                    @if(!$hasResult && !$hasImage)
-                        @continue
-                    @endif
-                    
-                    <div class="point">
-                        <span class="point-name">{{ $point->name ?? '-' }}</span> 
-                        <div class="point-content">
-                            @if($point->results && $point->results->count())
-                                @php
-                                    $result = $point->results->first();
-                                    $hasStatus = !empty($result->status);
-                                    $hasNote = !empty($result->note);
-                                    $statusClass = 'status-warning';
-                                    if (in_array(strtolower($result->status), ['normal', 'ada', 'baik', 'good', 'ok'])) {
-                                        $statusClass = 'status-good';
-                                    } elseif (in_array(strtolower($result->status), ['tidak normal', 'tidak ada', 'rusak', 'bad', 'not ok'])) {
-                                        $statusClass = 'status-bad';
-                                    }
-                                @endphp
-                                
-                                @if(in_array($inputType, ['radio', 'imageTOradio']) && $hasStatus)
+                            if (!$hasResult && !$hasImage) {
+                                continue;
+                            }
+
+                            $inputType = $point->input_type ?? '';
+                            $selected = $result->status ?? null;
+                            $settings = $point->settings ?? [];
+                            $selectedOption = collect($settings['radios'] ?? [])->firstWhere('value', $selected);
+                            $showImageUpload = $selectedOption['settings']['show_image_upload'] ?? false;
+                            $showTextarea = $selectedOption['settings']['show_textarea'] ?? false;
+                            $showImages = (in_array($inputType, ['image', 'imageTOradio']) || ($inputType === 'radio' && $showImageUpload)) && $hasImage;
+
+                            $statusClass = 'status-warning';
+                            if (in_array(strtolower($selected), ['normal', 'ada', 'baik', 'good', 'ok'])) {
+                                $statusClass = 'status-good';
+                            } elseif (in_array(strtolower($selected), ['tidak normal', 'tidak ada', 'rusak', 'bad', 'not ok'])) {
+                                $statusClass = 'status-bad';
+                            }
+                        @endphp
+
+                        <div class="point">
+                            <div class="point-info">
+                                <span class="point-name">
+                                    {{ $point->inspection_point->name ?? '-' }}
+                                </span>
+                                @if(in_array($inputType, ['radio', 'imageTOradio']) && !empty($result->status))
                                     <span class="status-badge {{ $statusClass }}">{{ $result->status }}</span>
                                 @endif
-                                
-                                @if(in_array($inputType, ['text', 'number', 'date', 'textarea']) && $hasNote)
-                                    <div class="point-note">{{ $result->note }}</div>
+                                @if(!$showImages && !empty($result->note))
+                                    <span class="point-note">{{ $result->note }}</span>
                                 @endif
+                            </div>
 
-                                @if(in_array($inputType, ['account']) && $hasNote)
-                                    <div class="point-note">
-                                        {{ $symbol . ' ' . number_format($result->note, 0, $decimal, $thousand) }}
-                                    </div>
+                            @if($showImages)
+                                <table class="photo-table">
+                                    <tr>
+                                        @foreach($point->inspection_point->images as $index => $img)
+                                            <td>
+                                                @if($img->image_path && file_exists(public_path($img->image_path)))
+                                                    <img src="{{ public_path($img->image_path) }}" alt="image">
+                                                @else
+                                                    <div class="img-placeholder">Gambar tidak ditemukan</div>
+                                                @endif
+                                            </td>
+                                            @if(($index+1) % 4 == 0) </tr><tr> @endif
+                                        @endforeach
+                                    </tr>
+                                </table>
+                                @if(!empty($result->note))
+                                    <div class="point-note" style="margin-top: 10px;">{{ $result->note }}</div>
                                 @endif
                             @endif
                         </div>
-                    </div>
-                    
-                    @if($showImages)
-                        <div class="inspection-images">
-                            @foreach($point->images as $img)
-                                @if(file_exists(public_path($img->image_path)))
-                                    <img src="{{ public_path($img->image_path) }}" alt="image">
-                                @else
-                                    <div style="width:calc(20% - 8px); height:90px; border:1px solid #ddd; display:flex; align-items:center; justify-content:center;">
-                                        <span style="font-size:10px;">Gambar tidak ditemukan</span>
-                                    </div>
-                                @endif
-                            @endforeach
-                        </div>
-                    @endif
-                    
-                    @if($showTextarea && $hasNote)
-                        <div class="textarea-note">{{ $result->note }}</div>
-                    @endif
-                @endforeach
-            @endif
+                    @endforeach
+                @endif
+            </div>
         </div>
     @endforeach
 

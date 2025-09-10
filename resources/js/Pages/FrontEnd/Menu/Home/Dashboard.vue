@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Head, Link, usePage} from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
+
 // Props dari controller
 const props = defineProps({
     monthlyApprovedCount: Number,

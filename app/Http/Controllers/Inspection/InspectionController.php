@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use Spatie\Browsershot\Browsershot;
 
 class InspectionController extends Controller
 {
@@ -611,10 +612,9 @@ class InspectionController extends Controller
             'encryptedIds' => $encryptedIds,
         ]);
 
-        // return view('inspection.report.report1', compact('inspection', 'menu_points', 'coverImage')); 
+        // return view('inspection.report.report2', compact('inspection', 'menu_points', 'coverImage')); 
     }
 
-// Belum di pake 
 
 public function downloadPdf($id)
 {
@@ -684,32 +684,33 @@ public function downloadPdf($id)
             Storage::disk('public')->makeDirectory($directory, 0755, true);
         }
         
-        $filePath = $directory . '/' . $filename;
+        // $filePath = $directory . '/' . $filename;
         
-        // Simpan file ke storage
-        Storage::disk('public')->put($filePath, $pdf->output());
+        // // Simpan file ke storage
+        // Storage::disk('public')->put($filePath, $pdf->output());
         
-        // Update inspection status dan file path
-        $inspection->update([
-            'status' => 'approved',
-            'file' => $filePath,
-            'approved_at' => now(),
-        ]);
-        $inspection->addLog('approved', 'Laporan sudah di setujui');
+        // // Update inspection status dan file path
+        // $inspection->update([
+        //     'status' => 'approved',
+        //     'file' => $filePath,
+        //     'approved_at' => now(),
+        // ]);
+        // $inspection->addLog('approved', 'Laporan sudah di setujui');
 
         // Return download response
-        // return $pdf->download('inspection_report_'.$inspection->car_name.'_('. $inspection->plate_number.').pdf');
-         $encryptId = Crypt::encrypt($inspection->id);
+        return $pdf->download('inspection_report_'.$inspection->car_name.'_('. $inspection->plate_number.').pdf');
+    //      $encryptId = Crypt::encrypt($inspection->id);
 
-            // Redirect ke halaman review
-    return redirect()->route('inspections.review', ['id' => $encryptId])
-        ->with('success', 'Inspeksi berhasil dikirim untuk review');
+    //         // Redirect ke halaman review
+    // return redirect()->route('inspections.review', ['id' => $encryptId])
+    //     ->with('success', 'Inspeksi berhasil dikirim untuk review');
 
     } catch (\Exception $e) {
         Log::error('Error generating PDF: ' . $e->getMessage());
         return redirect()->back()->with('error', 'Gagal generate laporan PDF: ' . $e->getMessage());
     }
 }
+
 
 public function sendEmail($id, Request $request)
 {

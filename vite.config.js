@@ -1,13 +1,26 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import vue from '@vitejs/plugin-vue';
-import { VitePWA } from 'vite-plugin-pwa';
+import path from 'path';
 
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js'],
-            refresh: true,
+            input: [
+                'resources/css/app.css', 
+                'resources/js/app.js'
+            ],
+            refresh: [
+                {
+                    paths: [
+                        'resources/views/**',
+                        'resources/js/Pages/**',
+                        'resources/js/Layouts/**',
+                        'resources/js/Components/**',
+                    ],
+                    config: { delay: 300 }
+                }
+            ],
         }),
         vue({
             template: {
@@ -17,107 +30,38 @@ export default defineConfig({
                 },
             },
         }),
-        VitePWA({
-            registerType: 'autoUpdate',
-            includeAssets: ['favicon.ico', 'apple-touch-icon.jpg', 'masked-icon.svg'],
-            manifest: {
-                name: 'Car Inspection App',
-                short_name: 'CarInspect',
-                description: 'Aplikasi Inspeksi Kendaraan Mobile',
-                theme_color: '#6366F1',
-                background_color: '#ffffff',
-                display: 'standalone',
-                orientation: 'portrait', // Portrait untuk mobile
-                scope: '/',
-                start_url: '/',
-                categories: ['business', 'productivity'],
-                icons: [
-                    {
-                        src: '/icons/icon-72x72.jpg',
-                        sizes: '72x72',
-                        type: 'image/jpg',
-                        purpose: 'any maskable'
-                    },
-                    {
-                        src: '/icons/icon-96x96.jpg',
-                        sizes: '96x96',
-                        type: 'image/jpg',
-                        purpose: 'any maskable'
-                    },
-                    {
-                        src: '/icons/icon-128x128.jpg',
-                        sizes: '128x128',
-                        type: 'image/jpg',
-                        purpose: 'any maskable'
-                    },
-                    {
-                        src: '/icons/icon-144x144.jpg',
-                        sizes: '144x144',
-                        type: 'image/jpg',
-                        purpose: 'any maskable'
-                    },
-                    {
-                        src: '/icons/icon-152x152.jpg',
-                        sizes: '152x152',
-                        type: 'image/jpg',
-                        purpose: 'any maskable'
-                    },
-                    {
-                        src: '/icons/icon-192x192.jpg',
-                        sizes: '192x192',
-                        type: 'image/jpg',
-                        purpose: 'any maskable'
-                    },
-                    {
-                        src: '/icons/icon-384x384.jpg',
-                        sizes: '384x384',
-                        type: 'image/jpg',
-                        purpose: 'any maskable'
-                    },
-                    {
-                        src: '/icons/icon-512x512.jpg',
-                        sizes: '512x512',
-                        type: 'image/jpg',
-                        purpose: 'any maskable'
-                    }
-                ]
-            },
-            workbox: {
-                globPatterns: ['**/*.{js,css,html,ico,jpg,svg,woff2}'],
-                runtimeCaching: [
-                    {
-                        urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-                        handler: 'CacheFirst',
-                        options: {
-                            cacheName: 'google-fonts-cache',
-                            expiration: {
-                                maxEntries: 10,
-                                maxAgeSeconds: 60 * 60 * 24 * 365
-                            },
-                            cacheableResponse: {
-                                statuses: [0, 200]
-                            }
-                        }
-                    }
-                ]
-            }
-        })
     ],
-    // Optimasi untuk mobile
+    resolve: {
+        alias: {
+            '@': '/resources/js',
+            'ziggy-js': path.resolve('vendor/tightenco/ziggy/dist/vue.es.js'),
+        },
+        extensions: ['.js', '.vue', '.json']
+    },
     build: {
-        chunkSizeWarningLimit: 1000, // Reduce warning size
+        chunkSizeWarningLimit: 1000,
         rollupOptions: {
             output: {
                 manualChunks: {
-                    'vendor': ['vue', '@inertiajs/vue3'],
-                    'chartjs': ['chart.js']
+                    vendor: ['vue', '@inertiajs/vue3'],
                 }
             }
         }
     },
-    resolve: {
-        alias: {
-            '@': '/resources/js',
-        },
+    server: {
+        host: '127.0.0.1',
+        port: 5173,
+        strictPort: true,
+        hmr: {
+            host: '127.0.0.1',
+            protocol: 'ws'
+        }
     },
+    optimizeDeps: {
+        include: [
+            'vue',
+            '@inertiajs/vue3',
+            'axios'
+        ]
+    }
 });

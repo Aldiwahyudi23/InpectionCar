@@ -99,6 +99,8 @@ $inspectionPoints = [
         ['name' => 'Buku Service', 'description' => 'Buku service dan riwayat perawatan kendaraan', 'order' => 17],
         ['name' => 'Jarak Tempuh (KM)', 'description' => 'Jarak Tempuh Kendaraan ', 'order' => 18],
         ['name' => 'Warna', 'description' => 'Warna Kendaraan', 'order' => 19],
+        ['name' => 'PKB', 'description' => 'Nominal Pajak', 'order' => 20],
+        ['name' => 'Nama Pemilik', 'description' => 'Pemilik Kendaraan', 'order' => 20],
     ],
 
     // Foto Kendaraan - OK
@@ -172,6 +174,7 @@ $inspectionPoints = [
         ['name' => 'Thermostat', 'description' => 'Fungsi thermostat dalam mengatur sirkulasi coolant', 'order' => 16],
         ['name' => 'Coolant Reservoir', 'description' => 'Level dan kondisi cairan coolant di reservoir', 'order' => 17],
         ['name' => 'Kipas Radiator', 'description' => 'Fungsi motor kipas radiator dan sensor suhu', 'order' => 18],
+        ['name' => 'Mesin', 'description' => 'Mesin', 'order' => 19],
     ],
 
     // Transmisi - OK
@@ -190,7 +193,7 @@ $inspectionPoints = [
 
     // Kelistrikan - Perbaikan order number untuk AC
     'Kelistrikan' => [
-        ['name' => 'Lampu Utama (Headlamp)', 'd escription' => 'Fungsi lampu jauh (high beam) dan dekat (low beam)', 'order' => 1],
+        ['name' => 'Lampu Utama (Headlamp)', 'description' => 'Fungsi lampu jauh (high beam) dan dekat (low beam)', 'order' => 1],
         ['name' => 'Lampu Sein (Turn Signal)', 'description' => 'Fungsi lampu sein depan, belakang, dan side mirror', 'order' => 2],
         ['name' => 'Lampu Rem (Stop Lamp)', 'description' => 'Fungsi lampu rem dan lampu stop (brake light)', 'order' => 3],
         ['name' => 'Lampu Mundur (Reverse Light)', 'description' => 'Fungsi lampu putih mundur', 'order' => 4],
@@ -220,6 +223,7 @@ $inspectionPoints = [
         ['name' => 'Power Seat', 'description' => 'Fungsi adjustmen elektrik pada jok (jika ada)', 'order' => 28],
         ['name' => 'Steering Switch', 'description' => 'Fungsi tombol pada kemudi (audio, cruise, telp)', 'order' => 29],
         ['name' => 'Parking Sensor & Camera', 'description' => 'Fungsi sensor parkir dan kamera belakang', 'order' => 30],
+        ['name' => 'Instrumen Cluster', 'description' => 'Fungsi sensor parkir dan kamera belakang', 'order' => 31],
     ],
     
     // AC - Fitur khusus sistem pendingin udara
@@ -280,6 +284,7 @@ $inspectionPoints = [
         ['name' => 'Pilar B Kanan', 'description' => 'Kondisi pilar B kanan', 'order' => 11],
         ['name' => 'Pilar C Kiri', 'description' => 'Kondisi pilar C kiri', 'order' => 12],
         ['name' => 'Pilar C Kanan', 'description' => 'Kondisi pilar C kanan', 'order' => 13],
+        ['name' => 'Pilar End Panel', 'description' => 'Kondisi pilar belakang', 'order' => 14],
     ],
 
     // Validasi Banjir - OK
