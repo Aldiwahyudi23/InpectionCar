@@ -3,7 +3,6 @@
     <div class="bg-indigo-200 px-6 py-2 border-b">
       <h3 class="text-xl font-semibold text-indigo-700">Kesimpulan Inspeksi</h3>
     </div>
-    <!-- Banjir -->
     <div class="p-4 space-y-4-6">
       <label class="block text-sm font-medium text-gray-700 mb-3">
         Apakah kendaraan pernah terkena banjir?
@@ -34,7 +33,6 @@
       </div>
     </div>
 
-    <!-- Tabrakan -->
     <div class="p-4 space-y-4-6">
       <label class="block text-sm font-medium text-gray-700 mb-3">
         Apakah kendaraan pernah mengalami tabrakan?
@@ -64,9 +62,10 @@
         </label>
       </div>
 
-      <!-- Tingkat Kerusakan -->
       <div v-if="form.collision === 'yes'" class="p-4 space-y-4">
-        <label class="block text-sm font-medium text-gray-700 mb-3">Tingkat kerusakan:</label>
+        <label class="block text-sm font-medium text-gray-700 mb-3">
+          Tingkat kerusakan: <span class="text-red-500">*</span>
+        </label>
         <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 w-full">
           <label
             v-for="option in severityOptions"
@@ -94,11 +93,9 @@
       </div>
     </div>
 
-    <!-- Catatan - TEXT EDITOR -->
     <div class="p-4 space-y-4">
       <label class="block text-sm font-medium text-gray-700 mb-2">Catatan Kesimpulan</label>
       
-      <!-- Toolbar Sederhana -->
       <div class="flex gap-1 mb-2 p-2 bg-gray-100 rounded-md">
         <button
           type="button"
@@ -142,7 +139,6 @@
         </button>
       </div>
 
-      <!-- Text Editor -->
       <div
         ref="editorRef"
         contenteditable="true"
@@ -178,8 +174,6 @@ const isEditing = ref(false)
 // Helper function untuk parse settings dengan aman
 const parseSettings = (settings) => {
   if (!settings) return {};
-  
-  // Jika settings adalah string, coba parse sebagai JSON
   if (typeof settings === 'string') {
     try {
       return JSON.parse(settings) || {};
@@ -188,30 +182,24 @@ const parseSettings = (settings) => {
       return {};
     }
   }
-  
-  // Jika settings sudah object, return langsung
   if (typeof settings === 'object' && settings !== null) {
     return settings;
   }
-  
   return {};
 }
 
-// Ambil data conclusion dari settings yang sudah di-parse
 const conclusionSettings = computed(() => {
   const settings = parseSettings(props.inspection.settings);
   return settings.conclusion || {};
 });
 
-// Gunakan ref untuk reactive state
 const form = ref({
   flooded: conclusionSettings.value.flooded || '',
   collision: conclusionSettings.value.collision || '',
   collision_severity: conclusionSettings.value.collision_severity || '',
-  conclusion_note: props.inspection.notes || '' // Ambil dari inspection.note, bukan settings
+  conclusion_note: props.inspection.notes || ''
 })
 
-// Options untuk radio
 const floodOptions = [
   { value: 'yes', label: 'Ya' },
   { value: 'no', label: 'Tidak' }
@@ -224,10 +212,9 @@ const collisionOptions = [
 
 const severityOptions = [
   { value: 'light', label: 'Ringan' },
-  { value: 'heavy', label: 'Berat' }
+  { value: 'heavy', label: 'Berat' },
 ]
 
-// Inisialisasi editor
 onMounted(() => {
   initializeForm();
   nextTick(() => {
@@ -235,14 +222,12 @@ onMounted(() => {
   });
 });
 
-// Initialize editor content
 const initializeEditor = () => {
   if (editorRef.value && form.value.conclusion_note) {
     editorRef.value.innerHTML = form.value.conclusion_note;
   }
 }
 
-// Handle input pada editor
 const handleEditorInput = debounce(() => {
   if (editorRef.value) {
     form.value.conclusion_note = editorRef.value.innerHTML;
@@ -250,20 +235,17 @@ const handleEditorInput = debounce(() => {
   }
 }, 500)
 
-// Handle enter key untuk paragraf
 const handleEnterKey = (event) => {
   event.preventDefault();
   document.execCommand('insertParagraph', false, null);
 }
 
-// Handle paste event untuk membersihkan formatting
 const handlePaste = (event) => {
   event.preventDefault();
   const text = (event.clipboardData || window.clipboardData).getData('text/plain');
   document.execCommand('insertText', false, text);
 }
 
-// Format text
 const formatText = (format) => {
   if (!editorRef.value) return;
   
@@ -284,7 +266,6 @@ const formatText = (format) => {
   handleEditorInput();
 }
 
-// Insert bullet list
 const insertBulletList = () => {
   if (!editorRef.value) return;
   
@@ -293,7 +274,6 @@ const insertBulletList = () => {
   handleEditorInput();
 }
 
-// Clear formatting
 const clearFormatting = () => {
   if (!editorRef.value) return;
   
@@ -303,7 +283,6 @@ const clearFormatting = () => {
   handleEditorInput();
 }
 
-// Save content ketika editor kehilangan fokus
 const saveContent = () => {
   isEditing.value = false;
   if (editorRef.value) {
@@ -312,9 +291,10 @@ const saveContent = () => {
   }
 }
 
-// Fungsi untuk menyimpan data ke server
 const saveToServer = debounce(() => {
-  // Siapkan data untuk dikirim
+  const selection = window.getSelection();
+  const savedRange = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+  
   const dataToSend = {
     flooded: form.value.flooded,
     collision: form.value.collision,
@@ -328,6 +308,24 @@ const saveToServer = debounce(() => {
     {
       preserveScroll: true,
       preserveState: true,
+      onSuccess: () => {
+        nextTick(() => {
+          if (savedRange && editorRef.value) {
+            const newSelection = window.getSelection();
+            newSelection.removeAllRanges();
+            newSelection.addRange(savedRange);
+            editorRef.value.focus();
+            
+            if (savedRange.collapsed) {
+              const range = document.createRange();
+              range.selectNodeContents(editorRef.value);
+              range.collapse(false);
+              newSelection.removeAllRanges();
+              newSelection.addRange(range);
+            }
+          }
+        });
+      },
       onError: (errors) => {
         console.error('Error saving conclusion:', errors);
       }
@@ -335,7 +333,6 @@ const saveToServer = debounce(() => {
   )
 }, 500)
 
-// Watch untuk perubahan pada radio buttons
 watch([
   () => form.value.flooded,
   () => form.value.collision,
@@ -344,7 +341,6 @@ watch([
   saveToServer()
 })
 
-// Inisialisasi form saat component mounted
 const initializeForm = () => {
   const settings = parseSettings(props.inspection.settings);
   const conclusion = settings.conclusion || {};
@@ -357,7 +353,6 @@ const initializeForm = () => {
   };
 };
 
-// Watch untuk perubahan props.inspection
 watch(() => props.inspection, () => {
   initializeForm();
   nextTick(() => {

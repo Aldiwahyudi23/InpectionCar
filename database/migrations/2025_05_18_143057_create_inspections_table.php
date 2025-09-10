@@ -40,7 +40,7 @@ return new class extends Migration
         ])->default('draft'); // Hapus ->change() karena ini bukan alter table
         
         $table->json('settings')->nullable(); // Kolom untuk menyimpan konfigurasi dinamis
-        $table->text('notes')->nullable();
+        $table->string('code')->unique()->nullable();
         $table->text('file')->nullable();
         $table->string('code')->nullable();
         $table->timestamps();

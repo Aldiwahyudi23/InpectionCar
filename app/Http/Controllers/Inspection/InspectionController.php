@@ -15,6 +15,8 @@ use App\Models\DataInspection\InspectionResult;
 use App\Models\DataInspection\MenuPoint;
 use App\Models\Team\RegionTeam;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -23,7 +25,11 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Mpdf\Mpdf;
+use setasign\Fpdi\PdfParser\StreamReader;
+use setasign\FpdiProtection\FpdiProtection;
 use Spatie\Browsershot\Browsershot;
 
 class InspectionController extends Controller
@@ -143,69 +149,61 @@ class InspectionController extends Controller
             abort(404, 'ID Inspeksi Tidak Valid');
         }
     }
-    // app/Http/Controllers/InspectionController.php
-    public function store(Request $request)
-    {
-        // Perbaikan: Jika dijadwalkan, gabungkan tanggal dan waktu menjadi satu field
-            if ($request->input('is_scheduled')) {
-                $scheduledAt = $request->input('scheduled_at_date') . ' ' . $request->input('scheduled_at_time');
-                $request->merge(['scheduled_at' => $scheduledAt]);
-            }
 
-        // Validasi data yang masuk dari form
-            $validated = $request->validate([
-                'plate_number' => 'required|string|max:20',
-                'category_id' => 'required|exists:categories,id',
-                'is_scheduled' => 'required|boolean',
-                'scheduled_at' => 'nullable|date', // Digunakan jika is_scheduled true
-                'inspector_id' => 'nullable', // Digunakan jika is_scheduled true
-                'car_id' => 'nullable',
-                'car_name' => 'required_without:car_id|nullable|string|max:100',
-            ]);
 
-            $carId = $validated['car_id'] ?? null;
-
-        
-
-            // Siapkan data dasar untuk inspeksi
-            $inspectionData = [
-                'user_id' => $validated['inspector_id'],
-                'submitted_by' => Auth::user()->id,
-                'submitted_at' => now(), // Gunakan waktu sekarang
-                'plate_number' => $validated['plate_number'],
-                'category_id' => $validated['category_id'],
-                'car_id' => $carId,
-                'car_name' => $validated['car_name'] ?? null,
-                'status' => $validated['is_scheduled'] ? 'draft' : 'in_progress',
-            ];
-
-            // Atur waktu jadwal atau waktu mulai sekarang
-            if ($validated['is_scheduled']) {
-                $inspectionData['inspection_date'] = $validated['scheduled_at'];
-            } else {
-                $inspectionData['inspection_date'] = now(); // Gunakan waktu sekarang
-                // Anda bisa mengatur status menjadi 'in_progress' atau 'completed'
-                $inspectionData['status'] = 'in_progress';
-            }
-
-            // Buat entri inspeksi baru di database
-            $inspection = Inspection::create($inspectionData);
-
-            $inspection->addLog('created', 'Inspection baru dibuat');
-
-            // Tentukan respons berdasarkan status jadwal
-            if ($validated['is_scheduled']) {
-                // Jika dijadwalkan, kembali ke halaman sebelumnya dengan pesan sukses
-                return redirect()->route('job.index')
-                    ->with('success', 'Inspeksi berhasil dijadwalkan.');
-            } else {
-                // Encrypt semua ID di backend
-                    $inspection = Crypt::encrypt($inspection->id);
-                // Jika mulai inspeksi sekarang, redirect ke halaman start dengan ID inspeksi
-                return redirect()->route('inspections.start', ['inspection' => $inspection]);
-            }
-
+public function store(Request $request)
+{
+    if ($request->input('is_scheduled')) {
+        $scheduledAt = $request->input('scheduled_at_date') . ' ' . $request->input('scheduled_at_time');
+        $request->merge(['scheduled_at' => $scheduledAt]);
     }
+
+    $validated = $request->validate([
+        'plate_number' => 'required|string|max:20',
+        'category_id' => 'required|exists:categories,id',
+        'is_scheduled' => 'required|boolean',
+        'scheduled_at' => 'nullable|date',
+        'inspector_id' => 'nullable',
+        'car_id' => 'nullable',
+        'car_name' => 'required_without:car_id|nullable|string|max:100',
+    ]);
+
+    $carId = $validated['car_id'] ?? null;
+
+    // 🔑 Generate random secure code (10 karakter alfanumerik)
+    $randomCode = Str::upper(Str::random(10));
+
+    $inspectionData = [
+        'user_id'       => $validated['inspector_id'],
+        'submitted_by'  => Auth::id(),
+        'submitted_at'  => now(),
+        'plate_number'  => $validated['plate_number'],
+        'category_id'   => $validated['category_id'],
+        'car_id'        => $carId,
+        'car_name'      => $validated['car_name'] ?? null,
+        'status'        => $validated['is_scheduled'] ? 'draft' : 'in_progress',
+        'code'          => $randomCode, // simpan ke DB
+    ];
+
+    if ($validated['is_scheduled']) {
+        $inspectionData['inspection_date'] = $validated['scheduled_at'];
+    } else {
+        $inspectionData['inspection_date'] = now();
+        $inspectionData['status'] = 'in_progress';
+    }
+
+    $inspection = Inspection::create($inspectionData);
+
+    $inspection->addLog('created', 'Inspection baru dibuat');
+
+    if ($validated['is_scheduled']) {
+        return redirect()->route('job.index')
+            ->with('success', 'Inspeksi berhasil dijadwalkan.');
+    } else {
+        $encryptedId = Crypt::encrypt($inspection->id);
+        return redirect()->route('inspections.start', ['inspection' => $encryptedId]);
+    }
+}
 
     /**
      * Display the specified resource.
@@ -612,7 +610,7 @@ class InspectionController extends Controller
             'encryptedIds' => $encryptedIds,
         ]);
 
-        // return view('inspection.report.report2', compact('inspection', 'menu_points', 'coverImage')); 
+        // return view('inspection.report.report1', compact('inspection', 'menu_points', 'coverImage')); 
     }
 
 
@@ -684,32 +682,33 @@ public function downloadPdf($id)
             Storage::disk('public')->makeDirectory($directory, 0755, true);
         }
         
-        // $filePath = $directory . '/' . $filename;
+        $filePath = $directory . '/' . $filename;
         
-        // // Simpan file ke storage
-        // Storage::disk('public')->put($filePath, $pdf->output());
+        // Simpan file ke storage
+        Storage::disk('public')->put($filePath, $pdf->output());
         
-        // // Update inspection status dan file path
-        // $inspection->update([
-        //     'status' => 'approved',
-        //     'file' => $filePath,
-        //     'approved_at' => now(),
-        // ]);
-        // $inspection->addLog('approved', 'Laporan sudah di setujui');
+        // Update inspection status dan file path
+        $inspection->update([
+            'status' => 'approved',
+            'file' => $filePath,
+            'approved_at' => now(),
+        ]);
+        $inspection->addLog('approved', 'Laporan sudah di setujui');
 
         // Return download response
-        return $pdf->download('inspection_report_'.$inspection->car_name.'_('. $inspection->plate_number.').pdf');
-    //      $encryptId = Crypt::encrypt($inspection->id);
+        // return $pdf->download('inspection_report_'.$inspection->car_name.'_('. $inspection->plate_number.').pdf');
+         $encryptId = Crypt::encrypt($inspection->id);
 
-    //         // Redirect ke halaman review
-    // return redirect()->route('inspections.review', ['id' => $encryptId])
-    //     ->with('success', 'Inspeksi berhasil dikirim untuk review');
+            // Redirect ke halaman review
+    return redirect()->route('inspections.review', ['id' => $encryptId])
+        ->with('success', 'Inspeksi berhasil dikirim untuk review');
 
     } catch (\Exception $e) {
         Log::error('Error generating PDF: ' . $e->getMessage());
         return redirect()->back()->with('error', 'Gagal generate laporan PDF: ' . $e->getMessage());
     }
 }
+
 
 
 public function sendEmail($id, Request $request)
