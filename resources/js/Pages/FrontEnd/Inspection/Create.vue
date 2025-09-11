@@ -8,7 +8,7 @@
                     <p class="text-gray-600">Isi detail kendaraan dan jadwal untuk memulai inspeksi.</p>
                 </div>
 
-                <!-- Notifikasi Error -->
+                <!-- Notifikasi Error dari Backend -->
                 <div v-if="form.errors.form_error" class="mb-4 text-sm text-red-600 bg-red-100 p-3 rounded-md">
                     {{ form.errors.form_error }}
                 </div>
@@ -48,6 +48,16 @@
                             maxlength="3"
                         >
                     </div>
+
+                    <!-- Pesan Validasi Plat Nomor -->
+                    <div v-if="inspectionValidationMessage" class="mt-2 text-sm text-red-600">
+                        {{ inspectionValidationMessage }}
+                    </div>
+                    
+                    <!-- Pesan Riwayat Inspeksi -->
+                    <div v-if="inspectionCountMessage" class="mt-2 text-sm text-green-600">
+                        {{ inspectionCountMessage }}
+                    </div>
                 </div>
 
                 <!-- Form Input Car Name with Auto-complete -->
@@ -75,13 +85,13 @@
                         </div>
 
                         <!-- Search Suggestions Dropdown -->
-                        <div 
-                            v-if="showSuggestions" 
+                        <div
+                            v-if="showSuggestions"
                             class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
                         >
                             <div v-if="filteredCars.length > 0">
-                                <div 
-                                    v-for="car in filteredCars" 
+                                <div
+                                    v-for="car in filteredCars"
                                     :key="car.id"
                                     class="px-4 py-2 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                                     @mousedown="selectCar(car)"
@@ -100,7 +110,6 @@
                         </div>
                     </div>
                 </div>
-
             
                 <!-- Select Kategori Inspeksi -->
                 <div class="mb-6">
@@ -120,7 +129,7 @@
                     </select>
                 </div>
 
-              
+            
                 <!-- Toggle Jadwal -->
                 <div class="mb-6 flex items-center justify-between">
                     <label for="schedule-toggle" class="text-sm font-medium text-gray-700">Jadwalkan Inspeksi?</label>
@@ -157,7 +166,7 @@
                         >
                     </div>
 
-                      <!-- SELECT INSPECTOR_ID (Hanya untuk Admin & Coordinator) -->
+                    <!-- SELECT INSPECTOR_ID (Hanya untuk Admin & Coordinator) -->
                     <div v-if="roles.includes('Admin') || roles.includes('coordinator')" class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-2" for="inspector">
                             Pilih Inspektor
@@ -181,7 +190,7 @@
                 <div class="mt-6 flex justify-end">
                     <button
                         @click="submitInspection"
-                        :disabled="!isFormValid || form.processing"
+                        :disabled="!isFormValid || form.processing || isPlateInvalid"
                         :class="{
                             'px-6 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed': true,
                             'bg-gradient-to-r from-indigo-700 to-sky-600  border border-transparent text-white hover:bg-blue-700': !form.is_scheduled,
@@ -202,18 +211,18 @@
                     <div v-if="carImages.length > 0">
                         <h3 class="text-sm font-medium text-gray-700 mb-3">Gambar Mobil:</h3>
                         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                            <div 
-                                v-for="(image, index) in carImages" 
+                            <div
+                                v-for="(image, index) in carImages"
                                 :key="image.id || index"
                                 class="relative group cursor-pointer"
                                 @click="openLightbox(index)"
                             >
-                                <img 
-                                    :src="getImageSrc(image)" 
+                                <img
+                                    :src="getImageSrc(image)"
                                     :alt="image.name || 'Car Image'"
                                     class="w-full h-24 object-cover rounded-lg border border-gray-200 transition-transform duration-200 group-hover:scale-105"
                                 >
-                                <div 
+                                <div
                                     v-if="image.note"
                                     class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center p-2"
                                 >
@@ -231,8 +240,8 @@
                 <div v-if="showLightbox" class="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4" @click="closeLightbox">
                     <div class="relative max-w-4xl max-h-full w-full h-full flex items-center justify-center">
                         <!-- Close Button -->
-                        <button 
-                            @click="closeLightbox" 
+                        <button
+                            @click="closeLightbox"
                             class="absolute top-4 right-4 z-10 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-70 transition-colors"
                         >
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -241,9 +250,9 @@
                         </button>
 
                         <!-- Navigation Arrows -->
-                        <button 
+                        <button
                             v-if="carImages.length > 1"
-                            @click.stop="prevImage" 
+                            @click.stop="prevImage"
                             class="absolute left-4 z-10 text-white bg-black bg-opacity-50 rounded-full p-3 hover:bg-opacity-70 transition-colors"
                         >
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -251,9 +260,9 @@
                             </svg>
                         </button>
 
-                        <button 
+                        <button
                             v-if="carImages.length > 1"
-                            @click.stop="nextImage" 
+                            @click.stop="nextImage"
                             class="absolute right-4 z-10 text-white bg-black bg-opacity-50 rounded-full p-3 hover:bg-opacity-70 transition-colors"
                         >
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -262,8 +271,8 @@
                         </button>
 
                         <!-- Image Display -->
-                        <img 
-                            :src="getImageSrc(carImages[currentImageIndex])" 
+                        <img
+                            :src="getImageSrc(carImages[currentImageIndex])"
                             :alt="'Car Image ' + (currentImageIndex + 1)"
                             class="max-w-full max-h-full object-contain"
                             @click.stop
@@ -295,6 +304,7 @@ const props = defineProps({
     CarDetail: Array,
     Category: Array,
     team: Array,
+    inspection: Array,
 });
 
 // State form Inertia
@@ -328,13 +338,18 @@ const filteredCars = ref([]);
 const selectedCar = ref(null);
 const carImages = ref([]);
 
+// State untuk validasi plat nomor baru
+const inspectionValidationMessage = ref('');
+const isPlateInvalid = ref(false);
+const inspectionCountMessage = ref('');
+
 // State untuk lightbox
 const showLightbox = ref(false);
 const currentImageIndex = ref(0);
 
 // --- Logic Plate Number ---
 const combinePlateNumber = () => {
-    const combinedPlate = `${plateAreaCode.value}${plateNumber.value}${plateSuffix.value}`;
+    const combinedPlate = `${plateAreaCode.value}${plateNumber.value}${plateSuffix.value}`.toUpperCase();
     form.plate_number = combinedPlate;
 };
 
@@ -361,7 +376,9 @@ const isFormValid = computed(() => {
     }
     // Validasi jika dijadwalkan
     if (form.is_scheduled) {
-        return form.scheduled_at_date && form.scheduled_at_time;
+        if (!form.scheduled_at_date || !form.scheduled_at_time) {
+            return false;
+        }
     }
     // Validasi tambahan untuk inspector_id
     // Cek jika roles adalah Admin atau Coordinator, maka inspector_id harus ada
@@ -536,6 +553,50 @@ watchEffect(() => {
         // If they are Admin/Coordinator, we reset the value
         // to null, so they are required to select an inspector.
         form.inspector_id = user?.id || null;
+    }
+});
+
+// --- NEW LOGIC FOR PLATE NUMBER VALIDATION ---
+watch(() => form.plate_number, (newPlateNumber) => {
+    // Reset state
+    inspectionValidationMessage.value = '';
+    isPlateInvalid.value = false;
+    inspectionCountMessage.value = '';
+    form.car_id = null;
+    form.car_name = '';
+    carSearchQuery.value = '';
+
+    if (newPlateNumber.length >= 6) {
+        const existingInspections = props.inspection.filter(i => i.plate_number === newPlateNumber);
+        
+        if (existingInspections.length > 0) {
+            // Check for inspections with a "blocking" status
+            const blockingStatuses = ['draft', 'in_progress', 'pending', 'pending_review', 'revision'];
+            const blockingInspection = existingInspections.find(i => blockingStatuses.includes(i.status));
+
+            if (blockingInspection) {
+                // Found a blocking inspection
+                isPlateInvalid.value = true;
+                inspectionValidationMessage.value = `Nomor plat ini sedang dalam proses inspeksi dengan status: ${blockingInspection.status.replace(/_/g, ' ').toUpperCase()}. Silakan selesaikan inspeksi tersebut terlebih dahulu.`;
+            } else {
+                // No blocking inspections, so find the latest completed one
+                const completedInspections = existingInspections.filter(i => ['approved', 'rejected', 'completed', 'cancelled'].includes(i.status));
+                
+                if (completedInspections.length > 0) {
+                    // Sort by creation date to get the most recent one
+                    completedInspections.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                    const latestInspection = completedInspections[0];
+
+                    // Pre-fill the form with data from the latest inspection
+                    form.car_id = latestInspection.car_id;
+                    form.car_name = latestInspection.car_name;
+                    carSearchQuery.value = latestInspection.car_name;
+                    selectCar(latestInspection.car); // Re-use selectCar logic
+
+                    inspectionCountMessage.value = `Nomor plat ini sudah pernah diperiksa ${completedInspections.length} kali sebelumnya.`;
+                }
+            }
+        }
     }
 });
 

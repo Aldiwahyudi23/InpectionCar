@@ -670,6 +670,10 @@ class MenuPointRelationManager extends RelationManager
                     ['value' => 'Cat mengelupas', 'label' => 'Cat Mengelupas'],
                     ['value' => 'Warna tidak sama dengan bagian lain', 'label' => 'Warna Beda'],
                     ['value' => 'Permukaan berlubang', 'label' => 'Lubang'],
+                    ['value' => 'Sudah dempulan', 'label' => 'Dempul'],
+                    ['value' => 'Piting/celah tidak persisi', 'label' => 'piting'],
+                    ['value' => 'Cet meler', 'label' => 'Meler'],
+                    ['value' => 'Cet bintik', 'label' => 'Bintik'],
                 ]
             ],
             'interior' => [
@@ -685,11 +689,23 @@ class MenuPointRelationManager extends RelationManager
             'mesin' => [
                 'label' => 'Kerusakan Mesin',
                 'options' => [
-                    ['value' => 'Mesin berisik', 'label' => 'Berisik'],
-                    ['value' => 'Oli bocor', 'label' => 'Bocor Oli'],
+                    ['value' => 'Suara terdengar Kasar', 'label' => 'Kasar'],
+                    ['value' => 'Mesin Ngelitrik kurang Tenaga', 'label' => 'Ngelitrik'],
+                    ['value' => 'Ada bunyi di bagian luar bearing/van-belt', 'label' => 'Bunyi'],
+                    ['value' => 'Ada bagian yang terlihat basah oli Rembes', 'label' => 'Rembes'],
                     ['value' => 'Mesin sulit start', 'label' => 'Sulit Start'],
-                    ['value' => 'Tenaga berkurang', 'label' => 'Tenaga Turun'],
                     ['value' => 'Asap putih dari knalpot', 'label' => 'Asap Putih'],
+                    ['value' => 'Mesin Goyang tidak stabil atau Pincang ', 'label' => 'Pincang'],
+                    ['value' => 'Idle / Lamsam tidak stabil ', 'label' => 'Idle error'],
+                    ['value' => 'Mesin mengalami panas berlebih', 'label' => 'Overheat'],
+                    ['value' => 'Level air radiator kurang', 'label' => 'Air Radiator Kurang'],
+                    ['value' => 'Bunyi ketukan dari klep', 'label' => 'Bunyi Klep'],
+                    ['value' => 'Asap hitam dari knalpot', 'label' => 'Asap Hitam'],
+                    
+                    ['value' => 'Level oli mesin kurang', 'label' => 'Oli Kurang'],
+                    ['value' => 'Kondisi dalam mesin sudah ngerak ', 'label' => 'Ngerak'],
+                    ['value' => 'Mesin sudah berlumpur/Slug (Jorok jarang ganti oli/oli palsu)', 'label' => 'Slug'],
+                    ['value' => 'Oli kental tidak biasanya', 'label' => 'Kekentalan'],
                 ]
             ],
             'kelistrikan' => [
@@ -717,24 +733,34 @@ class MenuPointRelationManager extends RelationManager
                     ['value' => 'Velg tergores atau penyok', 'label' => 'Velg Rusak'],
                     ['value' => 'Ban botak', 'label' => 'Ban Botak'],
                     ['value' => 'Velg retak', 'label' => 'Velg Retak'],
+                    ['value' => 'Velg bukan yang asli', 'label' => 'Gantian'],
+                    ['value' => 'Ban tipis', 'label' => 'Tipis'],
+                    ['value' => 'Tebal namun sudah Getas', 'label' => 'Tebal Getas'],
                 ]
             ],
             'rangka_depan' => [
                 'label' => 'Rangka Depan (Bulkhead)',
                 'options' => [
-                    ['value' => 'Bekas tabrakan depan', 'label' => 'Bekas Tabrak Depan'],
-                    ['value' => 'Frame bengkok', 'label' => 'Frame Bengkok'],
-                    ['value' => 'Bekas perbaikan las', 'label' => 'Bekas Las'],
-                    ['value' => 'Bantalan mesin retak atau pecah', 'label' => 'Bantalan Mesin Rusak'],
+                    ['value' => 'Ada bagian yang keriting bekas perbaikan', 'label' => 'Kriting'],
+                    ['value' => 'Frame bengkok', 'label' => 'Bengkok'],
+                    ['value' => 'Ada bagian yang penyok', 'label' => 'Penyok'],
+                    ['value' => 'Bekas perbaikan las lasan', 'label' => 'Bekas Las'],
+                    ['value' => 'Fame atau Komponen Gantian', 'label' => 'Gantian'],
+                    ['value' => 'Sudah di cet ulang', 'label' => 'Repaint'],
+                    ['value' => 'Sudah dempulan ', 'label' => 'Dempul'],
+                    ['value' => 'Ada penyok/melengkung di bagian bawah bekas gasruk ', 'label' => 'Gasruk'],
+                    ['value' => 'Tidak ada efek kebagian lain', 'label' => 'Tidak Efek'],
                 ]
             ],
             'pilar' => [
                 'label' => 'Pilar',
                 'options' => [
-                    ['value' => 'Pilar bengkok akibat tabrakan', 'label' => 'Pilar Bengkok'],
-                    ['value' => 'Terdapat bekas perbaikan las', 'label' => 'Bekas Las'],
-                    ['value' => 'Permukaan berkarat', 'label' => 'Berkarat'],
-                    ['value' => 'Ada lubang akibat korosi', 'label' => 'Korosi'],
+                    ['value' => 'Ada bagian yang keriting bekas perbaikan', 'label' => 'Kriting'],
+                    ['value' => 'Terdapat bekas perbaikan las lasan', 'label' => 'Bekas Las'],
+                    ['value' => 'Permukaan berkarat (Pemakaian)', 'label' => 'karat pemakaian'],
+                    ['value' => 'Ada bagian yang penyok', 'label' => 'Penyok'],
+                    ['value' => 'Lidah Pilar sudah dempulan ', 'label' => 'Dempul'],
+                    ['value' => 'Bagian luar dempulan', 'label' => 'Dempul Bagian Luar'],
                 ]
             ],
             'kaki_kaki' => [
@@ -778,6 +804,16 @@ class MenuPointRelationManager extends RelationManager
                     ['value' => 'Transmisi manual sulit masuk gigi', 'label' => 'Gigi Sulit Masuk'],
                     ['value' => 'Transmisi otomatis hentakan kasar', 'label' => 'Hentakan Kasar'],
                     ['value' => 'Oli transmisi bocor', 'label' => 'Oli Transmisi Bocor'],
+                ]
+            ],
+            'banjir' => [
+                'label' => 'Banjir',
+                'options' => [
+                    ['value' => 'Ada karat oksidasi tidak menyeluruh', 'label' => 'Oksidasi'],
+                    ['value' => 'Karat cukup tebal ', 'label' => 'Karat Tebal'],
+                    ['value' => 'Flooring terlihat Lusuh', 'label' => 'Flooring Lusuh'],
+                    ['value' => 'Tercium bau apek', 'label' => 'Bau'],
+                    ['value' => 'Soket berjamur', 'label' => 'Jamuran'],
                 ]
             ],
         ];

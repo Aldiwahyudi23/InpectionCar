@@ -55,11 +55,19 @@ class InspectionController extends Controller
         $team = RegionTeam::with(['user','regions'])
         ->where('status','active')
         ->get();
+        $inspection = Inspection::with(
+             'car',
+            'car.brand',
+            'car.model',
+            'car.type',
+            'category',
+        )->get();
 
         return Inertia::render('FrontEnd/Inspection/Create', [
             'CarDetail' => $CarDetail,
             'Category' => $Category,
             'team' => $team,
+            'inspection' => $inspection,
         ]);
     }
     
@@ -90,7 +98,7 @@ class InspectionController extends Controller
             // Update status jika draft
             if ($inspection->status === 'draft') {
                 $inspection->update(['status' => 'in_progress']);
-                $inspection->addLog('in_progress', 'Mulai Inspeksi');
+                $inspection->addLog('in_progress', 'Memulai Inspeksi');
             }
 
             // Ambil semua AppMenu dengan relasi
@@ -194,12 +202,14 @@ public function store(Request $request)
 
     $inspection = Inspection::create($inspectionData);
 
-    $inspection->addLog('created', 'Inspection baru dibuat');
-
+    
     if ($validated['is_scheduled']) {
+        $inspection->addLog('created', 'membuat data inspection');
         return redirect()->route('job.index')
-            ->with('success', 'Inspeksi berhasil dijadwalkan.');
+        ->with('success', 'Inspeksi berhasil dijadwalkan.');
     } else {
+        $inspection->addLog('created', 'Membuat data Inspeksi');
+        $inspection->addLog('in_progress', 'Memulai Inspeksi');
         $encryptedId = Crypt::encrypt($inspection->id);
         return redirect()->route('inspections.start', ['inspection' => $encryptedId]);
     }
@@ -301,7 +311,7 @@ public function store(Request $request)
         $validated = $request->validate([
             'flooded' => 'nullable|in:yes,no',
             'collision' => 'nullable|in:yes,no',
-            'collision_severity' => 'nullable|required_if:collision,yes|in:light,heavy',
+            'collision_severity' => 'nullable|in:light,heavy',
             'conclusion_note' => 'nullable|string|max:1000',
         ]);
 
@@ -504,7 +514,7 @@ public function store(Request $request)
         $inspection->update([
             'status' => 'pending_review',
         ]);
-        $inspection->addLog('finish', 'Sudah selesai Inspection');
+        $inspection->addLog('finish', 'Menyelesaikan Inspeksi');
 
         $encryptId = Crypt::encrypt($inspection->id);
         // Redirect ke halaman review
@@ -693,7 +703,7 @@ public function downloadPdf($id)
             'file' => $filePath,
             'approved_at' => now(),
         ]);
-        $inspection->addLog('approved', 'Laporan sudah di setujui');
+        $inspection->addLog('approved', 'Menyetujui Hasil Inspeksi dan Report di buat Otomatis');
 
         // Return download response
         // return $pdf->download('inspection_report_'.$inspection->car_name.'_('. $inspection->plate_number.').pdf');
@@ -740,7 +750,7 @@ public function sendEmail($id, Request $request)
         
         $filePath = storage_path('app/public/' . $inspection->file);
         
-        $inspection->addLog('download', 'Report sudah di download');
+        $inspection->addLog('download', 'Mendownload Laporan PDF');
             // Kirim file untuk diunduh
             return response()->download($filePath, 'laporan-inspeksi-' . $inspection->plate_number . '.pdf');
         
@@ -760,7 +770,7 @@ public function sendEmail($id, Request $request)
                 'status' => 'revision',
             ]);
 
-            $inspection->addLog('revision', 'User revisi Inspeksi ');
+            $inspection->addLog('revision', 'Merevisi Inspeksi ');
             
             $inspectionID = Crypt::encrypt($inspection->id);
             return redirect()->route('inspections.start', ['inspection' => $inspectionID])->with('success', 'Inspeksi berhasil dibatalkan');
@@ -781,7 +791,7 @@ public function sendEmail($id, Request $request)
                 'notes' => $request->reason
             ]);
 
-             $inspection->addLog('cancelled',description:  'Inspection di batalkan');
+             $inspection->addLog('cancelled',description:  'Membatalkan Inspeksi');
             
             return redirect()->back()->with('success', 'Inspeksi berhasil dibatalkan');
             

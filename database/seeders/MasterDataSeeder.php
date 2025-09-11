@@ -328,6 +328,7 @@ $inspectionPoints = [
         ['name' => 'Universal Joint (Propeller Shaft)', 'description' => 'Kondisi dan kelonggaran U-joint propeller shaft', 'order' => 28],
         ['name' => 'Carrier Bearing', 'description' => 'Kondisi carrier bearing propeller shaft', 'order' => 29],
         ['name' => 'Differential', 'description' => 'Kondisi, kebocoran oli, dan suara pada gardan', 'order' => 30],
+         ['name' => 'Roda Cadangan', 'description' => 'Kondisi ban dan velg belakang kanan', 'order' => 31],
     ],
 
     // Chassis - OK

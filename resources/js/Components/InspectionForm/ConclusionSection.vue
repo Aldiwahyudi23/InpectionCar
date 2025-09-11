@@ -6,6 +6,7 @@
     <div class="p-4 space-y-4-6">
       <label class="block text-sm font-medium text-gray-700 mb-3">
         Apakah kendaraan pernah terkena banjir?
+         <span class="text-red-500">*</span>
       </label>
       <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 w-full">
         <label
@@ -36,6 +37,7 @@
     <div class="p-4 space-y-4-6">
       <label class="block text-sm font-medium text-gray-700 mb-3">
         Apakah kendaraan pernah mengalami tabrakan?
+        <span class="text-red-500">*</span>
       </label>
       <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 w-full">
         <label
@@ -63,8 +65,8 @@
       </div>
 
       <div v-if="form.collision === 'yes'" class="p-4 space-y-4">
-        <label class="block text-sm font-medium text-gray-700 mb-3">
-          Tingkat kerusakan: <span class="text-red-500">*</span>
+        <label class="block text-sm font-medium text-gray-700 mb-3">Tingkat kerusakan:
+          <span class="text-red-500">*</span>
         </label>
         <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 w-full">
           <label
@@ -93,7 +95,7 @@
       </div>
     </div>
 
-    <div class="p-4 space-y-4">
+    <div class="p-4 space-y-2">
       <label class="block text-sm font-medium text-gray-700 mb-2">Catatan Kesimpulan</label>
       
       <div class="flex gap-1 mb-2 p-2 bg-gray-100 rounded-md">
@@ -121,7 +123,7 @@
         >
           <u>U</u>
         </button>
-        <button
+        <!-- <button
           type="button"
           @click="insertBulletList()"
           class="p-2 rounded hover:bg-gray-200 transition-colors"
@@ -136,13 +138,13 @@
           title="Clear Formatting"
         >
           🗑️ Clear
-        </button>
+        </button> -->
       </div>
 
       <div
         ref="editorRef"
         contenteditable="true"
-        class="w-full min-h-[120px] p-3 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 prose max-w-none"
+        class="w-full min-h-[120px] p-2 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 prose max-w-none"
         :class="{ 'bg-white': !isEditing, 'bg-blue-50': isEditing }"
         @input="handleEditorInput"
         @blur="saveContent"
@@ -170,6 +172,7 @@ const props = defineProps({
 
 const editorRef = ref(null)
 const isEditing = ref(false)
+let savedRange = null;
 
 // Helper function untuk parse settings dengan aman
 const parseSettings = (settings) => {
@@ -188,11 +191,13 @@ const parseSettings = (settings) => {
   return {};
 }
 
+// Ambil data conclusion dari settings yang sudah di-parse
 const conclusionSettings = computed(() => {
   const settings = parseSettings(props.inspection.settings);
   return settings.conclusion || {};
 });
 
+// Gunakan ref untuk reactive state
 const form = ref({
   flooded: conclusionSettings.value.flooded || '',
   collision: conclusionSettings.value.collision || '',
@@ -200,6 +205,7 @@ const form = ref({
   conclusion_note: props.inspection.notes || ''
 })
 
+// Options untuk radio
 const floodOptions = [
   { value: 'yes', label: 'Ya' },
   { value: 'no', label: 'Tidak' }
@@ -212,9 +218,10 @@ const collisionOptions = [
 
 const severityOptions = [
   { value: 'light', label: 'Ringan' },
-  { value: 'heavy', label: 'Berat' },
+  { value: 'heavy', label: 'Berat' }
 ]
 
+// Inisialisasi editor
 onMounted(() => {
   initializeForm();
   nextTick(() => {
@@ -222,34 +229,49 @@ onMounted(() => {
   });
 });
 
+// Initialize editor content
 const initializeEditor = () => {
   if (editorRef.value && form.value.conclusion_note) {
     editorRef.value.innerHTML = form.value.conclusion_note;
   }
 }
 
+// Handle input pada editor
 const handleEditorInput = debounce(() => {
   if (editorRef.value) {
+    // Simpan posisi kursor sebelum memperbarui data
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+      savedRange = selection.getRangeAt(0);
+    }
+
     form.value.conclusion_note = editorRef.value.innerHTML;
     saveToServer();
   }
 }, 500)
 
+// Handle enter key untuk paragraf
 const handleEnterKey = (event) => {
   event.preventDefault();
   document.execCommand('insertParagraph', false, null);
 }
 
+// Handle paste event untuk membersihkan formatting
 const handlePaste = (event) => {
   event.preventDefault();
   const text = (event.clipboardData || window.clipboardData).getData('text/plain');
   document.execCommand('insertText', false, text);
 }
 
+// Format text
 const formatText = (format) => {
   if (!editorRef.value) return;
   
   editorRef.value.focus();
+  const selection = window.getSelection();
+  if (selection.rangeCount > 0) {
+    savedRange = selection.getRangeAt(0);
+  }
   
   switch (format) {
     case 'bold':
@@ -266,23 +288,36 @@ const formatText = (format) => {
   handleEditorInput();
 }
 
+// Insert bullet list
 const insertBulletList = () => {
   if (!editorRef.value) return;
   
   editorRef.value.focus();
+  const selection = window.getSelection();
+  if (selection.rangeCount > 0) {
+    savedRange = selection.getRangeAt(0);
+  }
+  
   document.execCommand('insertUnorderedList', false, null);
   handleEditorInput();
 }
 
+// Clear formatting
 const clearFormatting = () => {
   if (!editorRef.value) return;
   
   editorRef.value.focus();
+  const selection = window.getSelection();
+  if (selection.rangeCount > 0) {
+    savedRange = selection.getRangeAt(0);
+  }
+  
   document.execCommand('removeFormat', false, null);
   document.execCommand('unlink', false, null);
   handleEditorInput();
 }
 
+// Save content ketika editor kehilangan fokus
 const saveContent = () => {
   isEditing.value = false;
   if (editorRef.value) {
@@ -291,10 +326,8 @@ const saveContent = () => {
   }
 }
 
+// Fungsi untuk menyimpan data ke server
 const saveToServer = debounce(() => {
-  const selection = window.getSelection();
-  const savedRange = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
-  
   const dataToSend = {
     flooded: form.value.flooded,
     collision: form.value.collision,
@@ -310,19 +343,15 @@ const saveToServer = debounce(() => {
       preserveState: true,
       onSuccess: () => {
         nextTick(() => {
-          if (savedRange && editorRef.value) {
-            const newSelection = window.getSelection();
-            newSelection.removeAllRanges();
-            newSelection.addRange(savedRange);
-            editorRef.value.focus();
+          if (editorRef.value) {
+            const range = document.createRange();
+            const selection = window.getSelection();
             
-            if (savedRange.collapsed) {
-              const range = document.createRange();
-              range.selectNodeContents(editorRef.value);
-              range.collapse(false);
-              newSelection.removeAllRanges();
-              newSelection.addRange(range);
-            }
+            // Pindahkan kursor ke akhir teks
+            range.selectNodeContents(editorRef.value);
+            range.collapse(false);
+            selection.removeAllRanges();
+            selection.addRange(range);
           }
         });
       },
@@ -333,6 +362,7 @@ const saveToServer = debounce(() => {
   )
 }, 500)
 
+// Watch untuk perubahan pada radio buttons
 watch([
   () => form.value.flooded,
   () => form.value.collision,
@@ -341,6 +371,7 @@ watch([
   saveToServer()
 })
 
+// Inisialisasi form saat component mounted
 const initializeForm = () => {
   const settings = parseSettings(props.inspection.settings);
   const conclusion = settings.conclusion || {};
@@ -353,6 +384,7 @@ const initializeForm = () => {
   };
 };
 
+// Watch untuk perubahan props.inspection
 watch(() => props.inspection, () => {
   initializeForm();
   nextTick(() => {
