@@ -43,11 +43,15 @@ class UserResource extends Resource
                 ->dehydrateStateUsing(fn (string $state): string => Hash::make($state))
                 ->dehydrated(fn (string | null $state): bool => filled($state))
                 ->required(fn (string $operation): bool => $operation === 'create')
-                ->default('cekMobilcusss'), // Mengatur nilai default
+                ->default('cekMobil123'), // Mengatur nilai default
             Forms\Components\Select::make('roles')
                 ->relationship('roles', 'name')
                 ->preload()
                 ->required(),
+             Forms\Components\Toggle::make('is_active')
+                    ->label('Status Aktif')
+                    ->default(true)
+                    ->inline(false), // Label di atas toggle
         ]);
     }
 
@@ -68,6 +72,9 @@ class UserResource extends Resource
             Tables\Columns\TextColumn::make('numberPhone')
                 ->label('Nomor Telepon')
                 ->searchable(),
+             Tables\Columns\IconColumn::make('is_active')
+                    ->label('Aktif')
+                    ->boolean(),
             Tables\Columns\IconColumn::make('email_verified_at')
                 ->label('Email Terverifikasi')
                 ->icon(fn ($record): string => $record->email_verified_at ? 'heroicon-o-check-circle' : 'heroicon-o-x-circle')

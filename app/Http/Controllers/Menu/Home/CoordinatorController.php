@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\DataInspection\Inspection;
 use App\Models\Team\Region;
 use App\Models\Team\RegionTeam;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -209,10 +212,22 @@ class CoordinatorController extends Controller
             // }
         ]);
 
+
+     
+
+            // 5. Ambil data user (inspektur) berdasarkan ID yang ditemukan
+            $inspectors = User::whereIn('id', $userIds)
+                               ->get(['id', 'name', 'email']);
+        
+
+        // dd($inspectors);
          $inspection->load(['logs.user']); // load 
+        $encryptedIds = Crypt::encrypt($inspection->id);
 
         return Inertia::render('FrontEnd/Menu/Home/Coordinator/Show', [
             'inspection' => $inspection,
+            'encryptedIds' => $encryptedIds,
+            'inspectors' => $inspectors,
             'region' => [
                 'id' => $user->region_id,
                 'name' => $user->region->name ?? 'Unknown Region'
@@ -223,28 +238,45 @@ class CoordinatorController extends Controller
     /**
      * Assign inspection to inspector
      */
-    public function assign(Request $request, Inspection $inspection)
+ public function assign(Request $request, $inspection)
     {
-        // Authorization check
-        $user = $request->user();
-        if ($inspection->inspector->region_id !== $user->region_id) {
-            abort(403, 'Unauthorized action.');
-        }
 
+            $id = Crypt::decrypt($inspection);
+            $inspection = Inspection::with([
+                'car',
+                'car.brand',
+                'car.model',
+                'car.type',
+                'category',
+            ])->findOrFail($id);
+
+         $scheduledAt = $request->input('scheduled_at_date') . ' ' . $request->input('scheduled_at_time');
+        $request->merge(['scheduled_at' => $scheduledAt]);
+
+        // Validate the request, including the new 'scheduled_at' field
         $validator = Validator::make($request->all(), [
-            'inspector_id' => 'required|exists:users,id'
+            'inspector_id' => 'required|exists:users,id',
+            'scheduled_at' => 'required|date',
         ]);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator);
         }
 
+        // Find the user (inspector) to be assigned
+        $inspector = User::find($request->inspector_id);
+        
+        // Update the inspection with the new inspector and scheduled time
         $inspection->update([
-            'user_id' => $request->inspector_id,
-            'status' => 'assigned'
+            'user_id'      => $request->inspector_id,
+            // 'status'       => 'pending', // Set status to 'pending' after assignment
+            'inspection_date' => $request['scheduled_at'], // Parse the date string into a Carbon instance
         ]);
 
-        return redirect()->back()->with('success', 'Inspection assigned successfully.');
+        // Add a log entry for the assignment
+        $inspection->addLog('assign', 'Menugaskan inspeksi ke ' . $inspector->name );
+
+        return redirect()->back()->with('success', 'Inspeksi berhasil ditugaskan.');
     }
 
     /**

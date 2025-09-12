@@ -171,7 +171,7 @@ import debounce from 'lodash/debounce'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { Head } from '@inertiajs/vue3';
 
-import { usePWA } from '@/Composables/usePWA';
+import { usePWA } from '@/composables/usePWA';
 
 const { canInstall, installApp, isOnline } = usePWA();
 

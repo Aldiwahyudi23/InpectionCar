@@ -12,7 +12,7 @@
 </template>
 
 <script setup>
-import { usePWA } from '@/Composables/usePWA';
+import { usePWA } from '@/composables/usePWA';
 
 const { canInstall, isAppInstalled, installApp } = usePWA();
 </script>

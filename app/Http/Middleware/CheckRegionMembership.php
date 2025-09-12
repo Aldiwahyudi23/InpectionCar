@@ -30,8 +30,8 @@ class CheckRegionMembership
 
         if (!$regionTeam) {
             // kalau user buka selain halaman inactive, arahkan ke inactive
-            if (!$request->routeIs('account.inactive')) {
-                return redirect()->route('account.inactive');
+            if (!$request->routeIs('region.inactive')) {
+                return redirect()->route('region.inactive');
             }
         } 
 

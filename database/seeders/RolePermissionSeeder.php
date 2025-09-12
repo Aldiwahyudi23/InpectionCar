@@ -11,76 +11,133 @@ class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
-        // Reset cached roles and permissions
+        // Reset cache peran dan izin
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Create permissions
-        $permissions = [
-            // User Management
-            'view users',
-            'create users',
-            'edit users',
-            'delete users',
-            
-            // Inspection Management
+        // Daftar semua izin dari aplikasi utama
+        $appPermissions = [
+            'access dashboard',
             'view inspections',
+            'start inspections',
             'create inspections',
-            'edit inspections',
-            'delete inspections',
-            'approve inspections',
-            'reject inspections',
-            
-            // Report Management
-            'view reports',
-            'generate reports',
-            'export reports',
-            
-            // Configuration
-            'manage settings',
-            'manage categories',
-            'manage components',
-            
-            // Dashboard
-            'view dashboard',
-            'view admin dashboard',
-            'view inspector dashboard',
+            'cancel inspections',
+            'store inspection results',
+            'update vehicle details',
+            'update conclusion',
+            'upload images',
+            'delete images',
+            'final submit inspections',
+            'review inspections',
+            'download pdf reports',
+            'send email reports',
+            'view cars',
+            'create cars',
+            'manage brands',
+            'manage models',
+            'manage types',
+            'manage car details',
+            'view bantuan',
             'view coordinator dashboard',
+            'assign inspections',
+            'update inspection status',
         ];
 
-        foreach ($permissions as $permission) {
+        // Daftar semua model Filament yang membutuhkan izin CRUD
+        $filamentModels = [
+            'user',
+            'brand',
+            'model',
+            'type',
+            'detailmobil',
+            'user session',
+            'permission',
+            'role',
+            'region',
+            'region team',
+            'data inspeksi',
+            'komponent',
+            'inspection point',
+            'kategori',
+            'app menu',
+            'menu point',
+        ];
+
+        // Daftar semua izin CRUD
+        $crudActions = ['view', 'create', 'update', 'delete'];
+
+        // Siapkan array untuk izin Filament
+        $filamentPermissions = [];
+        foreach ($filamentModels as $model) {
+            foreach ($crudActions as $action) {
+                $filamentPermissions[] = 'filament ' . $action . ' ' . $model;
+            }
+        }
+
+        // Gabungkan semua izin menjadi satu array
+        $allPermissions = array_merge($appPermissions, $filamentPermissions);
+
+        // Buat semua izin yang terdaftar di database
+        foreach ($allPermissions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
 
-        // Create roles and assign permissions
-        $adminRole = Role::firstOrCreate(['name' => 'Admin']);
-        $adminPermissions = [
-            'view users', 'create users', 'edit users', 'delete users',
-            'view inspections', 'create inspections', 'edit inspections', 'delete inspections', 'approve inspections', 'reject inspections',
-            'view reports', 'generate reports', 'export reports',
-            'manage settings', 'manage categories', 'manage components',
-            'view dashboard', 'view admin dashboard',
-        ];
-        $adminRole->syncPermissions($adminPermissions);
+        // --- Buat Peran dan Berikan Izin ---
 
+        // 1. Peran Admin
+        $adminRole = Role::firstOrCreate(['name' => 'Admin']);
+        $adminRole->syncPermissions($allPermissions);
+
+        // 2. Peran Koordinator
         $coordinatorRole = Role::firstOrCreate(['name' => 'coordinator']);
         $coordinatorPermissions = [
-            'view inspections', 'create inspections', 'edit inspections',
-            'view reports', 'generate reports',
-            'view dashboard', 'view coordinator dashboard',
+                       'access dashboard',
+            'view inspections',
+            'start inspections',
+            'create inspections',
+            'cancel inspections',
+            'store inspection results',
+            'update vehicle details',
+            'update conclusion',
+            'upload images',
+            'delete images',
+            'final submit inspections',
+            'review inspections',
+            'download pdf reports',
+            'send email reports',
+            'view cars',
+            'create cars',
+            'manage brands',
+            'manage models',
+            'manage types',
+            'manage car details',
+            'view bantuan',
         ];
         $coordinatorRole->syncPermissions($coordinatorPermissions);
 
+        // 3. Peran Inspektor
         $inspectorRole = Role::firstOrCreate(['name' => 'inspector']);
         $inspectorPermissions = [
-            'view inspections', 'create inspections',
-            'view dashboard', 'view inspector dashboard',
-        ];
-        $inspectorRole->syncPermissions($inspectorPermissions);
-
-        $inspectorRole = Role::firstOrCreate(['name' => 'region_admin']);
-        $inspectorPermissions = [
-            'view inspections', 'create inspections',
-            'view dashboard', 'view inspector dashboard',
+            'access dashboard',
+            'view inspections',
+            'start inspections',
+            'create inspections',
+            'cancel inspections',
+            'store inspection results',
+            'update vehicle details',
+            'update conclusion',
+            'upload images',
+            'delete images',
+            'final submit inspections',
+            'review inspections',
+            'download pdf reports',
+            'send email reports',
+            'view cars',
+            'create cars',
+            'manage brands',
+            'manage models',
+            'manage types',
+            'manage car details',
+            'view bantuan',
         ];
         $inspectorRole->syncPermissions($inspectorPermissions);
 

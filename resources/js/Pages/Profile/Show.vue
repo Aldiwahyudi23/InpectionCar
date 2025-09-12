@@ -32,16 +32,10 @@ const toggleSection = (section) => {
 
 <template>
     <AppLayout title="Profil">
-        <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Profil
-            </h2>
-        </template>
-
         <div>
-            <div class="max-w-7xl mx-auto py-10 sm:px-6 lg:px-8">
+           <div class="max-w-7xl mx-auto px-4 sm:px-4 lg:px-4 py-6">
 
-                <div class="bg-white rounded-xl shadow-sm p-6 mb-4 ring-1 ring-gray-100">
+                <div class="bg-white rounded-xl shadow-sm p-2 mb-4 ring-1 ring-gray-100">
                     <div
                         class="flex justify-between items-center cursor-pointer transition-all duration-200 hover:bg-gray-50 px-4 py-2 rounded-lg -mx-4"
                         @click="toggleSection('profile')"
@@ -56,7 +50,7 @@ const toggleSection = (section) => {
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm p-6 mb-4 ring-1 ring-gray-100">
+                <div class="bg-white rounded-xl shadow-sm p-2 mb-4 ring-1 ring-gray-100">
                     <div
                         class="flex justify-between items-center cursor-pointer transition-all duration-200 hover:bg-gray-50 px-4 py-2 rounded-lg -mx-4"
                         @click="toggleSection('password')"
@@ -66,12 +60,12 @@ const toggleSection = (section) => {
                         </h3>
                         <span class="text-gray-400 transform transition-transform" :class="{'rotate-90': showPassword}">▶</span>
                     </div>
-                    <div v-if="showPassword" class="mt-4">
+                    <div v-if="showPassword" class="mt-2">
                         <UpdatePasswordForm />
                     </div>
                 </div>
 
-                <div v-if="$page.props.jetstream.canManageTwoFactorAuthentication" class="bg-white rounded-xl shadow-sm p-6 mb-4 ring-1 ring-gray-100">
+                <div v-if="$page.props.jetstream.canManageTwoFactorAuthentication" class="bg-white rounded-xl shadow-sm p-2 mb-4 ring-1 ring-gray-100">
                     <div
                         class="flex justify-between items-center cursor-pointer transition-all duration-200 hover:bg-gray-50 px-4 py-2 rounded-lg -mx-4"
                         @click="toggleSection('twoFactor')"
@@ -81,14 +75,14 @@ const toggleSection = (section) => {
                         </h3>
                         <span class="text-gray-400 transform transition-transform" :class="{'rotate-90': showTwoFactor}">▶</span>
                     </div>
-                    <div v-if="showTwoFactor" class="mt-4">
+                    <div v-if="showTwoFactor" class="mt-2">
                         <TwoFactorAuthenticationForm
                             :requires-confirmation="confirmsTwoFactorAuthentication"
                         />
                     </div>
                 </div>
-
-                <div class="bg-white rounded-xl shadow-sm p-6 mb-4 ring-1 ring-gray-100">
+<!-- 
+                <div class="bg-white rounded-xl shadow-sm p-4 mb-2 ring-1 ring-gray-100">
                     <div
                         class="flex justify-between items-center cursor-pointer transition-all duration-200 hover:bg-gray-50 px-4 py-2 rounded-lg -mx-4"
                         @click="toggleSection('sessions')"
@@ -101,10 +95,10 @@ const toggleSection = (section) => {
                     <div v-if="showSessions" class="mt-4">
                         <LogoutOtherBrowserSessionsForm :sessions="sessions" />
                     </div>
-                </div>
+                </div> -->
 
                 <template v-if="$page.props.jetstream.hasAccountDeletionFeatures">
-                    <div class="bg-white rounded-xl shadow-sm p-6 ring-1 ring-gray-100">
+                    <div class="bg-white rounded-xl shadow-sm p-2 ring-1 ring-gray-100">
                         <div
                             class="flex justify-between items-center cursor-pointer transition-all duration-200 hover:bg-gray-50 px-4 py-2 rounded-lg -mx-4"
                             @click="toggleSection('delete')"
@@ -114,7 +108,7 @@ const toggleSection = (section) => {
                             </h3>
                             <span class="text-gray-400 transform transition-transform" :class="{'rotate-90': showDelete}">▶</span>
                         </div>
-                        <div v-if="showDelete" class="mt-4">
+                        <div v-if="showDelete" class="mt-2">
                             <DeleteUserForm />
                         </div>
                     </div>

@@ -38,4 +38,22 @@ createInertiaApp({
     progress: {
         color: '#4B5563',
     },
+
+     // Ini bagian pentingnya: Penanganan Error
+    onError: (error) => {
+        // Log error untuk debugging
+        console.error(error);
+        
+        // Cek jika statusnya 403 (Forbidden)
+        if (error.status === 403) {
+            // Arahkan ke rute halaman error 403 yang sebenarnya
+            // Pastikan Anda sudah membuat rute '/403-forbidden' di routes/web.php
+            window.location.href = '/error/403';
+        }
+
+        // Jika statusnya 419 (CSRF token expired), muat ulang halaman
+        if (error.status === 419) {
+            window.location.reload();
+        }
+    },
 });

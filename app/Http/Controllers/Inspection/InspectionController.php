@@ -63,11 +63,16 @@ class InspectionController extends Controller
             'category',
         )->get();
 
+        $activeInspections = Inspection::where('user_id', Auth::user()->id)
+            ->whereIn('status', ['in_progress', 'revision'])
+            ->exists(); // Menggunakan exists() untuk cek apakah ada data
+
         return Inertia::render('FrontEnd/Inspection/Create', [
             'CarDetail' => $CarDetail,
             'Category' => $Category,
             'team' => $team,
             'inspection' => $inspection,
+            'activeInspections' => $activeInspections,
         ]);
     }
     

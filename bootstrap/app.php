@@ -1,9 +1,11 @@
 <?php
 
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Console\Scheduling\Schedule as SchedulingSchedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -20,15 +22,39 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
         // 'role' => \App\Http\Middleware\CheckRole::class,
+         // Spatie
+        'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+        'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+        'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+
         'role_spatie' => \App\Http\Middleware\CheckSpatieRole::class,
         'is_admin' => \App\Http\Middleware\EnsureIsAdmin::class,
           // middleware custom kamu
         'region.active' => \App\Http\Middleware\CheckRegionMembership::class,
+        'user.active' => \App\Http\Middleware\CheckUserStatus::class,
         
     ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+         // 🔹 Handle AuthorizationException (spatie permission / policy)
+        $exceptions->render(function (AuthorizationException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Forbidden'], 403);
+            }
+
+            return redirect()->route('error.403');
+        });
+
+        // 🔹 Handle HttpException 403
+        $exceptions->render(function (HttpException $e, $request) {
+            if ($e->getStatusCode() === 403) {
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => 'Forbidden'], 403);
+                }
+
+                return redirect()->route('error.403');
+            }
+        });
     })
     ->withSchedule(function (SchedulingSchedule $schedule) {
            $schedule->command('inspection:cleanup')->daily(); // jalan tiap hari
