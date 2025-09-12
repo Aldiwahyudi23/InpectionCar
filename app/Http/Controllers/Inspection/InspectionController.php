@@ -100,6 +100,11 @@ class InspectionController extends Controller
                 $inspection->update(['status' => 'in_progress']);
                 $inspection->addLog('in_progress', 'Memulai Inspeksi');
             }
+            // Update status jika pending
+            if ($inspection->status === 'pending') {
+                $inspection->update(['status' => 'in_progress']);
+                $inspection->addLog('in_progress', 'Memulai kembali Inspeksinya');
+            }
 
             // Ambil semua AppMenu dengan relasi
             $appMenus = AppMenu::with([
@@ -143,6 +148,9 @@ class InspectionController extends Controller
                 ->get()
                 ->groupBy('point_id');
 
+            //mengambil data id yang sudah di eccrypt
+            $inspectionID = Crypt::encrypt($inspection->id);
+            
             // Data untuk frontend
             return Inertia::render('FrontEnd/Inspection/InspectionForm', [
                 'inspection' => $inspection->load(['car', 'user']),
@@ -150,6 +158,7 @@ class InspectionController extends Controller
                 'damagePoints' => $damagePoints,
                 'existingResults' => $existingResults,
                 'existingImages' => $existingImages,
+                'inspectionId' => $inspectionID,
                 'CarDetail' => CarDetail::with(['brand', 'model', 'type'])->get(),
             ]);
 
@@ -774,6 +783,26 @@ public function sendEmail($id, Request $request)
             
             $inspectionID = Crypt::encrypt($inspection->id);
             return redirect()->route('inspections.start', ['inspection' => $inspectionID])->with('success', 'Inspeksi berhasil dibatalkan');
+            
+        } catch (DecryptException $e) {
+            abort(404);
+        }
+    }
+    public function pending($id, Request $request)
+    {
+        try {
+            $id = Crypt::decrypt($id);
+            $inspection = Inspection::findOrFail($id);
+            
+            // Update status dan simpan alasan
+            $inspection->update([
+                'status' => 'pending',
+            ]);
+
+            $inspection->addLog('pending', 'Menunda sementara Inspeksinya ');
+            
+            $inspectionID = Crypt::encrypt($inspection->id);
+            return redirect()->route('job.index')->with('success', 'Inspeksi berhasil dibatalkan');
             
         } catch (DecryptException $e) {
             abort(404);

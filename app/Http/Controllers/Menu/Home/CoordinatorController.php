@@ -81,6 +81,7 @@ class CoordinatorController extends Controller
         // Ambil region_id dari user login
         $regionId = RegionTeam::where('user_id', $user->id)->value('region_id');
 
+        $region = Region::find($regionId);
         // Ambil semua user_id yang ada di region tersebut
         $userIds = RegionTeam::where('region_id', $regionId)->pluck('user_id');
 
@@ -170,7 +171,7 @@ class CoordinatorController extends Controller
             'stats'       => $stats,
             'region'      => [
                 'id'   => $regionId,
-                'name' => $user->region->name ?? 'Unknown Region',
+                'name' => $region->name ?? 'Unknown Region',
             ],
         ]);
     }

@@ -71,6 +71,22 @@
               <td class="p-2 border border-gray-300 font-bold text-gray-700">Tahun Pembuatan</td>
               <td class="p-2 border border-gray-300 text-gray-600">{{ inspection.car?.year }}</td>
             </tr>
+            <tr class="bg-gray-50">
+              <td class="p-2 border border-gray-300 font-bold text-gray-700">Warna</td>
+              <td class="p-2 border border-gray-300 text-gray-600">{{ inspection.color }}</td>
+            </tr>
+            <tr class="bg-gray-50">
+              <td class="p-2 border border-gray-300 font-bold text-gray-700">No Rangka</td>
+              <td class="p-2 border border-gray-300 text-gray-600">{{ inspection.noka }}</td>
+            </tr>
+            <tr class="bg-gray-50">
+              <td class="p-2 border border-gray-300 font-bold text-gray-700">No Mesin</td>
+              <td class="p-2 border border-gray-300 text-gray-600">{{ inspection.nosin }}</td>
+            </tr>
+            <tr class="bg-gray-50">
+              <td class="p-2 border border-gray-300 font-bold text-gray-700">KM</td>
+              <td class="p-2 border border-gray-300 text-gray-600">{{ inspection.km }}</td>
+            </tr>
           </table>
         </div>
         
@@ -322,24 +338,34 @@ const formatNote = (point) => {
   const inputType = point.input_type || '';
   const result = point.inspection_point?.results?.[0] || {};
   const settings = point.settings || {};
-  
+
   if (inputType === 'account' && result.note) {
-    const symbol = settings.currency_symbol || 'Rp';
-    const thousand = settings.thousands_separator || '.';
-    const decimal = settings.decimal_separator || ',';
+    // 1. Bersihkan string dari karakter non-angka
+    const cleanedNote = result.note.replace(/[^\d.-]/g, '');
     
-    // Pastikan nilai adalah angka sebelum diformat
-    const value = parseFloat(result.note);
+    // 2. Pastikan nilai adalah angka yang valid
+    const value = parseFloat(cleanedNote);
+    
+    // Jika bukan angka, kembalikan nilai asli
     if (isNaN(value)) {
       return result.note;
     }
 
-    return `${symbol} ${value.toLocaleString('id-ID', {
+    // 3. Gunakan Intl.NumberFormat untuk format mata uang yang lebih baik
+    const symbol = settings.currency_symbol || 'Rp';
+    const formatter = new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 2
-    }).replace(/,/g, decimal).replace(/\./g, thousand)}`;
+    });
+
+    // Ambil string hasil format, lalu ganti simbol default
+    const formattedValue = formatter.format(value).replace('Rp', symbol);
+    return formattedValue;
   }
-  
+
+  // Jika inputType bukan 'account' atau tidak ada note, kembalikan note asli
   return result.note;
 };
 </script>

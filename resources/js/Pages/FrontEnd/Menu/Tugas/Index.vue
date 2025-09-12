@@ -3,7 +3,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { CalendarDaysIcon, ArrowRightIcon, PlusIcon, XMarkIcon } from '@heroicons/vue/24/outline';
 import { CarIcon } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { ref , computed} from 'vue';
 
 const props = defineProps({
     tasks: Array,
@@ -65,6 +65,11 @@ const submitStartInspection = () => {
         }
     });
 };
+
+// Computed property untuk memeriksa jika ada tugas 'in_progress' atau 'revision'
+const isAnyTaskActive = computed(() => {
+    return props.tasks.some(task => task.status === 'in_progress' || task.status === 'revision');
+});
 
 // mapping button text berdasarkan status
 const getButtonLabel = (status) => {
@@ -181,14 +186,17 @@ const getButtonProses = (status) => {
                                 Batal
                             </button>
 
-                            <!-- Tombol Mulai/Lanjutkan -->
+
+                              <!-- Tombol Mulai/Lanjutkan -->
                             <button
                                 @click="openModal(task)"
-                                class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white font-medium rounded-md text-sm transition-colors"
+                                :disabled="isAnyTaskActive && task.status !== 'in_progress' && task.status !== 'revision'"
+                                class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white font-medium rounded-md text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {{ getButtonLabel(task.status) }}
                                 <ArrowRightIcon class="ml-2 h-4 w-4" />
                             </button>
+                        
                         </div>
                     </div>
                 </div>
@@ -275,7 +283,7 @@ const getButtonProses = (status) => {
                         <button
                             @click="submitStartInspection"
                             type="button"
-                            :disabled="startForm.processing"
+                            :disabled="startForm.processing || isAnyTaskActive && selectedTask.status !== 'in_progress' && selectedTask.status !== 'revision'"
                             class="flex-1 inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white border border-transparent rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <span v-if="startForm.processing">{{ getButtonProses(selectedTask?.status) }}</span>

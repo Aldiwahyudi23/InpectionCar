@@ -105,6 +105,9 @@ Route::middleware([
     Route::get('/inspections/{id}/revisi', [InspectionController::class, 'revisi'])
         ->name('inspections.revisi');
 
+    Route::get('/inspections/{id}/pending', [InspectionController::class, 'pending'])
+        ->name('inspections.pending');
+
     Route::get('/inspections/{id}/review-pdf', [InspectionController::class, 'reviewPdf'])
         ->name('inspections.review.pdf');
 
@@ -161,24 +164,5 @@ Route::middleware([
 
 });
 
-Route::get('/test-pdf', function () {
-    $folder = 'public/reports';
-    $filename = 'test.pdf';
-    $path = storage_path("app/{$folder}/{$filename}");
-
-    // 🔑 Pastikan folder reports ada
-    if (!Storage::exists($folder)) {
-        Storage::makeDirectory($folder, 0775, true);
-    }
-
-    // 🔑 Generate PDF
-    Browsershot::html('<h1 style="color:blue;">Hello Aldi 🚗</h1><p>PDF test berhasil!</p>')
-        ->format('A4')
-        ->margins(10, 10, 10, 10)
-        ->save($path);
-
-    // 🔑 Download hasilnya
-    return response()->download($path);
-});
 
 

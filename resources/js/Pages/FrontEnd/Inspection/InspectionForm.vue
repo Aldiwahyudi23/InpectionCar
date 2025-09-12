@@ -113,8 +113,25 @@
 
 
 
-    <!-- Tombol Simpan Final -->
+    <!-- Tombol Simpan Final
     <div v-if="activeCategory === 'conclusion'" class="flex justify-end gap-4 mt-2 p-4 bg-white rounded-xl shadow-md">
+      <Link
+            :href="route('inspections.pending', inspectionId)"
+            :disabled="isLoading"
+            @click="handleAction(route('inspections.pending', inspectionId), 'pending')"
+            class="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600"
+            :class="{ 'opacity-50 cursor-not-allowed': isLoading && currentAction === 'pending' }"
+          >
+            <span v-if="isLoading && currentAction === 'pending'" class="flex items-center">
+              <svg class="animate-spin h-5 w-5 text-white mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Memproses...
+            </span>
+            <span v-else>Tunda</span>
+          </Link>
+     
       <button
         type="button"
         @click="submitAll"
@@ -127,7 +144,87 @@
         </svg>
         <span>{{ form.processing ? 'Mengirim...' : 'Final Kirim Inspeksi' }}</span>
       </button>
-    </div>
+    </div> -->
+
+    <!-- Tombol Simpan Final -->
+<div
+  v-if="activeCategory === 'conclusion'"
+  class="flex justify-end gap-4 mt-2 p-4 bg-white rounded-xl shadow-md"
+>
+  <!-- Tombol Pending -->
+  <Link
+    :href="route('inspections.pending', inspectionId)"
+    as="button"
+    type="button"
+    :disabled="isLoading && currentAction === 'pending'"
+    @click.prevent="handleAction(route('inspections.pending', inspectionId), 'pending')"
+    class="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium rounded-md shadow-sm bg-yellow-500 text-white hover:bg-yellow-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+  >
+    <template v-if="isLoading && currentAction === 'pending'">
+      <svg
+        class="animate-spin h-4 w-4 text-white mr-2"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        />
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 
+             5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 
+             5.824 3 7.938l3-2.647z"
+        />
+      </svg>
+      <span>Memproses...</span>
+    </template>
+    <template v-else>
+      <span>Tunda</span>
+    </template>
+  </Link>
+
+  <!-- Tombol Final -->
+  <button
+    type="button"
+    @click="submitAll"
+    :disabled="!allMenusComplete || form.processing"
+    class="w-full inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+  >
+    <svg
+      v-if="form.processing"
+      class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle
+        class="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        stroke-width="4"
+      />
+      <path
+        class="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 
+           5.373 0 12h4zm2 5.291A7.962 7.962 0 
+           014 12H0c0 3.042 1.135 5.824 3 
+           7.938l3-2.647z"
+      />
+    </svg>
+    <span>{{ form.processing ? 'Mengirim...' : 'Final Kirim Inspeksi' }}</span>
+  </button>
+</div>
+
 
     <!-- Floating Button untuk Damage Points -->
     <button
@@ -219,7 +316,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { useForm, usePage, router } from '@inertiajs/vue3';
+import { useForm, usePage, Link, router } from '@inertiajs/vue3';
 import { debounce } from 'lodash';
 import VehicleDetails from '@/Components/InspectionForm/VehicleDetails.vue';
 import CategorySection from '@/Components/InspectionForm/CategorySection.vue';
@@ -229,12 +326,15 @@ import BottomSheetModal from '@/Components/InspectionForm/BottomSheetModal.vue';
 
 const props = defineProps({
   inspection: Object,
+  inspectionId: Object,
   appMenus: Array,
   damagePoints: Array,
   existingResults: Object,
   existingImages: Object,
   CarDetail: Array,
 });
+
+
 
 // State untuk modal
 const showSearchModal = ref(false);
@@ -244,6 +344,22 @@ const selectedPoint = ref(null);
 const tempRadioValue = ref('');
 const tempNotes = ref('');
 const successMessage = ref('');
+
+const isLoading = ref(false)
+const currentAction = ref(null)
+
+// Fungsi untuk menangani aksi dengan status loading
+const handleAction = (route, actionType) => {
+  isLoading.value = true;
+  currentAction.value = actionType;
+
+  router.visit(route, {
+    onFinish: () => {
+      isLoading.value = false;
+      currentAction.value = null;
+    }
+  });
+};
 
 // Inisialisasi daftar kategori lengkap (termasuk 'vehicle' dan 'conclusion')
 const allCategories = computed(() => {

@@ -1040,9 +1040,47 @@ public function updatedSelectAll($value)
                         
                         return [                            
                             // CHECKBOX LIST UNTUK PILIH MULTIPLE POINTS
-Forms\Components\Select::make('inspection_point_ids')
-    ->label('Pilih Inspection Points')
-    ->options(function () {
+// Forms\Components\Select::make('inspection_point_ids')
+//     ->label('Pilih Inspection Points')
+//     ->options(function () {
+//         $ownerRecord = $this->getOwnerRecord();
+        
+//         // Dapatkan category_id dari app_menu
+//         $categoryId = $ownerRecord->category_id;
+        
+//         // Cari semua inspection_point_id yang sudah digunakan di category ini
+//         $usedInspectionPointIds = MenuPoint::whereHas('app_menu', function ($query) use ($categoryId) {
+//                 $query->where('category_id', $categoryId);
+//             })
+//             ->pluck('inspection_point_id');
+        
+//         // Ambil inspection points yang belum digunakan di category ini
+//         $points = InspectionPoint::whereNotIn('id', $usedInspectionPointIds)
+//             ->with('component')
+//             ->get();
+        
+//         // Group by component name dengan format optgroup
+//         $groupedOptions = [];
+//         foreach ($points->groupBy('component.name') as $componentName => $componentPoints) {
+//             $groupedOptions[$componentName] = $componentPoints->mapWithKeys(function ($point) {
+//                 return [
+//                     $point->id => $point->name . ' (' . $point->component->name . ')'
+//                 ];
+//             })->toArray();
+//         }
+        
+        
+//         return $groupedOptions;
+//     })
+//     ->multiple()
+//     ->searchable()
+//     ->required()
+//     ->maxItems(50)
+//     ->loadingMessage('Memuat data...')
+//     ->helperText('Gunakan pencarian agar tidak perlu scroll panjang'),
+
+Forms\Components\Group::make()
+    ->schema(function () {
         $ownerRecord = $this->getOwnerRecord();
         
         // Dapatkan category_id dari app_menu
@@ -1057,29 +1095,29 @@ Forms\Components\Select::make('inspection_point_ids')
         // Ambil inspection points yang belum digunakan di category ini
         $points = InspectionPoint::whereNotIn('id', $usedInspectionPointIds)
             ->with('component')
-            ->get();
+            ->get()
+             ->groupBy('component.name');
         
-        // Group by component name dengan format optgroup
-        $groupedOptions = [];
-        foreach ($points->groupBy('component.name') as $componentName => $componentPoints) {
-            $groupedOptions[$componentName] = $componentPoints->mapWithKeys(function ($point) {
-                return [
-                    $point->id => $point->name . ' (' . $point->component->name . ')'
-                ];
-            })->toArray();
+        $sections = [];
+        foreach ($points as $componentName => $componentPoints) {
+            $sections[] = Forms\Components\Section::make($componentName ?: 'No Component')
+                ->schema([
+                    Forms\Components\CheckboxList::make('inspection_point_ids')
+                        ->options($componentPoints->pluck('name', 'id'))
+                        ->searchable()
+                        ->bulkToggleable()
+                        ->gridDirection('column')
+                        ->columns(1)
+                        ->label(false) // Hide label untuk setiap section
+                ])
+                ->collapsible()
+                 ->collapsed(true) // ◀── SEMUA SECTION COLLAPSED DEFAULT
+                ->compact();
         }
         
-        
-        return $groupedOptions;
+        return $sections;
     })
-    ->multiple()
-    ->searchable()
-    ->preload()
-    ->required()
-    ->maxItems(50)
-    ->helperText('Gunakan Ctrl/Cmd + klik untuk memilih multiple items'),
-
-
+    ->columnSpanFull(),
 
                                 Forms\Components\Select::make('input_type')
                                 ->label('Tipe Input')

@@ -199,13 +199,13 @@
                                         </table>
                                     </div>
                                  <!-- Pagination Wrapper -->
-                                    <div class="bg-white px-4 flex items-center justify-between border-t border-gray-200 mt-2">
+                                    <div class="bg-white px-6 py-2 flex items-center justify-between border-t border-gray-200 mt-2">
 
                                         <!-- Mobile Pagination -->
                                         <div class="flex-1 flex justify-between sm:hidden">
                                             <Link
                                                 :href="inspections.prev_page_url ?? '#'"
-                                                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                                                class="relative inline-flex items-center px-4 py-2 border border-gray-500 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                                                 :class="{ 'opacity-50 pointer-events-none': !inspections.prev_page_url }"
                                                 preserve-state
                                             >
@@ -213,7 +213,7 @@
                                             </Link>
                                             <Link
                                                 :href="inspections.next_page_url ?? '#'"
-                                                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                                                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-500 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                                                 :class="{ 'opacity-50 pointer-events-none': !inspections.next_page_url }"
                                                 preserve-state
                                             >

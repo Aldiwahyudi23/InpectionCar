@@ -84,7 +84,7 @@
                     
                     <a
                         v-if="inspection.user.numberPhone"
-                        :href="`https://wa.me/${inspection.user.numberPhone}`"
+                        :href="`https://wa.me/62${inspection.user.numberPhone}`"
                         target="_blank"
                         class="absolute bottom-6 right-6 text-green-500 hover:text-green-600 transition-colors"
                         aria-label="Hubungi Inspektur via WhatsApp"
