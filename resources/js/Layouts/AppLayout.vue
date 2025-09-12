@@ -287,8 +287,8 @@ const toggleProfileDropdown = () => {
                     <slot />
                 <!-- </div> -->
             </main>
-  <!-- Floating Install Button untuk Mobile -->
-    <PWAInstallButton />
+  <!-- Floating Install Button untuk Mobile
+    <PWAInstallButton /> -->
 
         </div>
     </div>

@@ -1,3 +1,64 @@
+<template>
+    <AppLayout title="Dashboard">
+        <Head title="Dashboard" />
+        <!-- Kontainer utama dengan latar belakang abu-abu yang lembut -->
+        <div class="bg-slate-100 min-h-screen">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                <!-- Card Jumlah Inspeksi (Menggunakan gradasi warna tema) -->
+                <div class="bg-gradient-to-br from-indigo-700 to-sky-500 rounded-xl shadow-lg p-2 mb-4 text-center text-white">
+                    <h2 class="font-semibold text-sm opacity-80">Hasil Inspection Bulan Ini</h2>
+                    <p class="text-4xl font-bold mt-2">{{ monthlyApprovedCount }}</p>
+                    <p class="text-sm opacity-90 mt-1">Inspeksi yang disetujui</p>
+                </div>
+
+                <!-- Menu Fitur Utama -->
+                <div class="bg-white rounded-xl shadow-lg p-4 mb-4">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Fitur Utama</h3>
+                    <div class="grid grid-cols-4 md:grid-cols-4 lg:grid-cols-5 gap-y-6">
+                        <Link v-for="menu in filteredNavMenus" :key="menu.name" :href="route(menu.route)" 
+                                class="flex flex-col items-center text-gray-600 hover:text-indigo-800 transition-all duration-200 group">
+                            <div :class="['p-3 rounded-xl mb-1 transition-all duration-200 group-hover:bg-indigo-100', menu.color]">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="menu.icon" />
+                                </svg>
+                            </div>
+                            <span class="text-xs font-medium text-center mt-1">{{ menu.name }}</span>
+                        </Link>
+                    </div>
+                </div>
+
+                <!-- Inspeksi Terakhir -->
+                <div class="bg-white rounded-xl shadow-lg p-4">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Inspeksi Terakhir</h3>
+                    
+                    <div class="space-y-4" v-if="recentInspections.length > 0">
+                        <Link v-for="inspection in recentInspections" :key="inspection.id" 
+                                :href="route('job.index', inspection.id)" 
+                                class="block bg-slate-50 p-4 rounded-lg border border-slate-200 hover:bg-slate-100 transition-colors duration-200">
+                            <div class="flex justify-between items-center">
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-bold text-gray-800 truncate">{{ inspection.vehicle_name }}</p>
+                                    <p class="text-sm text-gray-500 truncate">{{ inspection.license_plate }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <span :class="['text-xs font-medium px-2.5 py-0.5 rounded-full', getStatusBadgeClass(inspection.status)]">
+                                        {{ getStatusText(inspection.status) }}
+                                    </span>
+                                    <p class="text-xs text-gray-400 mt-1">{{ inspection.created_at }}</p>
+                                </div>
+                            </div>
+                        </Link>
+                    </div>
+                    
+                    <div v-else class="text-center py-8 text-gray-500">
+                        <p>Belum ada inspeksi</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </AppLayout>
+</template>
+
 <script setup>
 import { computed } from 'vue';
 import { Head, Link, usePage} from '@inertiajs/vue3';
@@ -133,61 +194,3 @@ const getStatusText = (status) => {
     }
 };
 </script>
-
-<template>
-    <AppLayout title="Dashboard">
-        <Head title="Dashboard" />
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <!-- Card Jumlah Inspeksi -->
-            <div class="bg-white rounded-lg shadow-md p-6 mb-6 text-center">
-                <h2 class="text-gray-500 font-semibold text-sm">Hasil Inspection Bulan Ini</h2>
-                <p class="text-4xl font-bold text-gray-800 mt-2">{{ monthlyApprovedCount }}</p>
-                <p class="text-sm text-gray-500 mt-1">Inspeksi yang disetujui</p>
-            </div>
-
-            <!-- Menu Fitur Utama -->
-            <div class="bg-white rounded-lg shadow-md p-4 mb-6">
-                <h3 class="text-md font-bold text-gray-800 mb-4">Fitur Utama</h3>
-                <div class="grid grid-cols-4 sm:grid-cols-5 gap-y-6">
-                    <Link v-for="menu in filteredNavMenus" :key="menu.name" :href="route(menu.route)" 
-                            class="flex flex-col items-center text-gray-600 hover:text-gray-800 transition-colors duration-200">
-                        <div class="bg-gray-100 p-3 rounded-xl mb-1 hover:bg-gray-200 transition-colors duration-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="menu.icon" />
-                            </svg>
-                        </div>
-                        <span class="text-xs font-medium text-center">{{ menu.name }}</span>
-                    </Link>
-                </div>
-            </div>
-
-            <!-- Inspeksi Terakhir -->
-            <div class="bg-white rounded-lg shadow-md p-4">
-                <h3 class="text-lg font-bold text-gray-800 mb-4">Inspeksi Terakhir</h3>
-                
-                <div class="space-y-4" v-if="recentInspections.length > 0">
-                    <Link v-for="inspection in recentInspections" :key="inspection.id" 
-                            :href="route('job.index', inspection.id)" 
-                            class="block bg-gray-50 p-3 rounded-md border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
-                        <div class="flex justify-between items-center">
-                            <div class="flex-1 min-w-0">
-                                <p class="font-bold text-gray-800 truncate">{{ inspection.vehicle_name }}</p>
-                                <p class="text-sm text-gray-500 truncate">{{ inspection.license_plate }}</p>
-                            </div>
-                            <div class="text-right">
-                                <span :class="['text-xs font-medium px-2.5 py-0.5 rounded-full', getStatusBadgeClass(inspection.status)]">
-                                    {{ getStatusText(inspection.status) }}
-                                </span>
-                                <p class="text-xs text-gray-400 mt-1">{{ inspection.created_at }}</p>
-                            </div>
-                        </div>
-                    </Link>
-                </div>
-                
-                <div v-else class="text-center py-8 text-gray-500">
-                    <p>Belum ada inspeksi</p>
-                </div>
-            </div>
-        </div>
-    </AppLayout>
-</template>

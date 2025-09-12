@@ -8,6 +8,7 @@ use App\Models\Team\Region;
 use App\Models\Team\RegionTeam;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Inertia\Inertia;
 
@@ -72,125 +73,117 @@ class CoordinatorController extends Controller
     /**
      * Display inspections for coordinator's region
      */
+
     public function index(Request $request)
     {
         $user = $request->user();
-        // cari semua user_id yang ada di region team user ini
-        $userIds = RegionTeam::where('region_id', function ($q) use ($user) {
-        $q->select('region_id')
-          ->from('region_teams')
-          ->where('user_id', $user->id)
-          ->limit(1);
-        })
-        ->pluck('user_id');
-        
-        // Get filters from request
+
+        // Ambil region_id dari user login
+        $regionId = RegionTeam::where('user_id', $user->id)->value('region_id');
+
+        // Ambil semua user_id yang ada di region tersebut
+        $userIds = RegionTeam::where('region_id', $regionId)->pluck('user_id');
+
+        // Filters
         $filters = $request->only(['status', 'dateRange', 'search', 'perPage']);
-        
-       // ambil inspections yang user_id nya ada di region tersebut
+
+        // Query utama inspections
         $query = Inspection::with(['car', 'user'])
-            ->whereIn('user_id', $userIds);
-        
-        // Apply filters
-        if (!empty($filters['status'])) {
-            $query->where('status', $filters['status']);
-        }
-        
-        if (!empty($filters['dateRange'])) {
-            switch ($filters['dateRange']) {
-                case 'today':
-                    $query->whereDate('inspection_date', today());
-                    break;
-                case 'week':
-                    $query->whereBetween('inspection_date', [now()->startOfWeek(), now()->endOfWeek()]);
-                    break;
-                case 'month':
-                    $query->whereBetween('inspection_date', [now()->startOfMonth(), now()->endOfMonth()]);
-                    break;
-            }
-        }
-        
-        if (!empty($filters['search'])) {
-            $search = $filters['search'];
-            $query->where(function($q) use ($search) {
-                $q->whereHas('car', function($q2) use ($search) {
-                    $q2->where('car_name', 'like', "%{$search}%")
-                       ->orWhere('plate_number', 'like', "%{$search}%");
-                })->orWhereHas('user', function($q2) use ($search) {
-                    $q2->where('name', 'like', "%{$search}%")
-                       ->orWhere('email', 'like', "%{$search}%");
+            ->whereIn('user_id', $userIds)
+            ->when($filters['status'] ?? null, fn($q, $status) => $q->where('status', $status))
+            ->when($filters['dateRange'] ?? null, function ($q, $dateRange) {
+                return match ($dateRange) {
+                    'today' => $q->whereDate('inspection_date', today()),
+                    'week'  => $q->whereBetween('inspection_date', [now()->startOfWeek(), now()->endOfWeek()]),
+                    'month' => $q->whereBetween('inspection_date', [now()->startOfMonth(), now()->endOfMonth()]),
+                    default => $q,
+                };
+            })
+            ->when($filters['search'] ?? null, function($q, $search) {
+                $q->where(function($q2) use ($search) {
+                    $q2->whereHas('car', fn($carQ) => 
+                            $carQ->where('car_name', 'like', "%{$search}%")
+                                ->orWhere('plate_number', 'like', "%{$search}%")
+                        )
+                        ->orWhereHas('user', fn($userQ) => 
+                            $userQ->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%")
+                        );
                 });
             });
-        }
-        
+
         // Pagination
         $perPage = $filters['perPage'] ?? 10;
         $inspections = $query->orderBy('inspection_date', 'desc')
                             ->paginate($perPage)
                             ->withQueryString();
-        
-        // Get stats
+
+        // Encrypt semua ID inspection
+        $encryptedIds = $inspections->mapWithKeys(function($task) {
+            return [$task->id => Crypt::encrypt($task->id)];
+        });
+        // =========================
+        // Stats (ikut filter dateRange + search)
+        // =========================
+        $statsQuery = Inspection::select('status', DB::raw('count(*) as total'))
+            ->whereIn('user_id', $userIds)
+            ->when($filters['dateRange'] ?? null, function ($q, $dateRange) {
+                return match ($dateRange) {
+                    'today' => $q->whereDate('inspection_date', today()),
+                    'week'  => $q->whereBetween('inspection_date', [now()->startOfWeek(), now()->endOfWeek()]),
+                    'month' => $q->whereBetween('inspection_date', [now()->startOfMonth(), now()->endOfMonth()]),
+                    default => $q,
+                };
+            })
+            ->when($filters['search'] ?? null, function($q, $search) {
+                $q->where(function($q2) use ($search) {
+                    $q2->whereHas('car', fn($carQ) => 
+                            $carQ->where('car_name', 'like', "%{$search}%")
+                                ->orWhere('plate_number', 'like', "%{$search}%")
+                        )
+                        ->orWhereHas('user', fn($userQ) => 
+                            $userQ->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%")
+                        );
+                });
+            })
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
         $stats = [
-            'total' => Inspection::whereHas('user', function($q) use ($userIds) {
-                $q->whereIn('user_id', $userIds);
-            })->count(),
-        
-            'draft' => Inspection::whereHas('user', function($q) use ($userIds) {
-                $q->whereIn('user_id', $userIds);
-            })->where('status', 'draft')->count(),
-            
-            'in_progress' => Inspection::whereHas('user', function($q) use ($userIds) {
-                $q->whereIn('user_id', $userIds);
-            })->where('status', 'in_progress')->count(),
-
-            'pending' => Inspection::whereHas('user', function($q) use ($userIds) {
-                $q->whereIn('user_id', $userIds);
-            })->where('status', 'pending')->count(),
-
-            'pending_review' => Inspection::whereHas('user', function($q) use ($userIds) {
-                $q->whereIn('user_id', $userIds);
-            })->where('status', 'pending_review')->count(),
-
-            'approved' => Inspection::whereHas('user', function($q) use ($userIds) {
-                $q->whereIn('user_id', $userIds);
-            })->where('status', 'approved')->count(),
-
-            'rejected' => Inspection::whereHas('user', function($q) use ($userIds) {
-                $q->whereIn('user_id', $userIds);
-            })->where('status', 'rejected')->count(),
-            
-            'revision' => Inspection::whereHas('user', function($q) use ($userIds) {
-                $q->whereIn('user_id', $userIds);
-            })->where('status', 'revision')->count(),
-            
-            'cancelled' => Inspection::whereHas('user', function($q) use ($userIds) {
-                $q->whereIn('user_id', $userIds);
-            })->where('status', 'cancelled')->count(),
-            
-            'completed' => Inspection::whereHas('user', function($q) use ($userIds) {
-                $q->whereIn('user_id', $userIds);
-            })->where('status', 'completed')->count(),
+            'total'          => $statsQuery->sum(),
+            'draft'          => $statsQuery['draft'] ?? 0,
+            'in_progress'    => $statsQuery['in_progress'] ?? 0,
+            'pending'        => $statsQuery['pending'] ?? 0,
+            'pending_review' => $statsQuery['pending_review'] ?? 0,
+            'approved'       => $statsQuery['approved'] ?? 0,
+            'rejected'       => $statsQuery['rejected'] ?? 0,
+            'revision'       => $statsQuery['revision'] ?? 0,
+            'cancelled'      => $statsQuery['cancelled'] ?? 0,
+            'completed'      => $statsQuery['completed'] ?? 0,
         ];
 
         return Inertia::render('FrontEnd/Menu/Home/Coordinator/Index', [
             'inspections' => $inspections,
-            'filters' => $filters,
-            'stats' => $stats,
-            'region' => [
-                'id' => $user->region_id,
-                'name' => $user->region->name ?? 'Unknown Region'
-            ]
+            'encryptedIds' => $encryptedIds,
+            'filters'     => $filters,
+            'stats'       => $stats,
+            'region'      => [
+                'id'   => $regionId,
+                'name' => $user->region->name ?? 'Unknown Region',
+            ],
         ]);
     }
+
 
     /**
      * Show specific inspection
      */
-    public function show(Request $request, Inspection $inspection)
+    public function show(Request $request, $inspection)
     {
 
-        // $id = Crypt::decrypt($inspection);
-        // $inspection = Inspection::find($id);
+        $id = Crypt::decrypt($inspection);
+        $inspection = Inspection::find($id);
        
         // Authorization check - ensure inspection belongs to coordinator's region
         $user = $request->user();

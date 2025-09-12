@@ -19,6 +19,7 @@ class InspectionPoint extends Model
     protected $fillable = [
         'component_id',
         'name',
+        'notes',
         'description',
         'order',
         'is_active',

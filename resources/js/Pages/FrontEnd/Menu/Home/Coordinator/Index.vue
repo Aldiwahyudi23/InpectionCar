@@ -5,7 +5,7 @@
         <div class="flex-1 overflow-y-auto">
             <!-- Header -->
             <header class="bg-white shadow-md p-4 md:p-6 flex items-center justify-between">
-                <h1 class="text-2xl font-bold text-gray-900">Dashboard Koordinator</h1>
+                <h1 class="text-xl font-bold text-gray-900">Dashboard Koordinator</h1>
                 <div class="flex items-center space-x-4 text-sm text-gray-600">
                     <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
@@ -81,48 +81,62 @@
                             <dt class="text-sm font-medium opacity-80">Total Inspeksi</dt>
                             <dd class="text-3xl font-semibold">{{ stats.total }}</dd>
                         </div>
-                        <!-- Kartu Statistik Lainnya (Bersebelahan) -->
-                        <div class="grid grid-cols-3 sm:grid-cols-3 gap-2">
-                            <div class="bg-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
-                                <dt class="text-sm font-medium text-gray-500 truncate">Dibuat</dt>
+                       <div class="grid grid-cols-3 sm:grid-cols-3 gap-2">
+                            <!-- Dibuat -->
+                            <div class="bg-yellow-100 p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                                <dt class="text-sm font-medium text-gray-700 truncate">Dibuat</dt>
                                 <dd class="text-2xl font-semibold text-yellow-600">{{ stats.draft }}</dd>
                             </div>
-                            <div class="bg-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
-                                <dt class="text-sm font-medium text-gray-500 truncate">Dalam Proses</dt>
+
+                            <!-- Dalam Proses -->
+                            <div class="bg-blue-100 p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                                <dt class="text-sm font-medium text-gray-700 truncate">Dalam Proses</dt>
                                 <dd class="text-2xl font-semibold text-blue-600">{{ stats.in_progress }}</dd>
                             </div>
-                            <div class="bg-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
-                                <dt class="text-sm font-medium text-gray-500 truncate">Tertunda</dt>
-                                <dd class="text-2xl font-semibold text-yellow-600">{{ stats.pending }}</dd>
-                            </div>
-                            <div class="bg-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
-                                <dt class="text-sm font-medium text-gray-500 truncate">Ditinjauan</dt>
-                                <dd class="text-2xl font-semibold text-yellow-600">{{ stats.pending_review }}</dd>
-                            </div>
-                            <div class="bg-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
-                                <dt class="text-sm font-medium text-gray-500 truncate">Disetujui</dt>
-                                <dd class="text-2xl font-semibold text-yellow-600">{{ stats.approved }}</dd>
-                            </div>
-                            <div class="bg-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
-                                <dt class="text-sm font-medium text-gray-500 truncate">Ditolak</dt>
-                                <dd class="text-2xl font-semibold text-yellow-600">{{ stats.rejected }}</dd>
-                            </div>
-                            <div class="bg-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
-                                <dt class="text-sm font-medium text-gray-500 truncate">Revisi</dt>
-                                <dd class="text-2xl font-semibold text-yellow-600">{{ stats.revision }}</dd>
-                            </div>
-                            <div class="bg-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
-                                <dt class="text-sm font-medium text-gray-500 truncate">Dibatalkan</dt>
-                                <dd class="text-2xl font-semibold text-yellow-600">{{ stats.cancelled }}</dd>
+
+                            <!-- Tertunda -->
+                            <div class="bg-amber-100 p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                                <dt class="text-sm font-medium text-gray-700 truncate">Tertunda</dt>
+                                <dd class="text-2xl font-semibold text-amber-600">{{ stats.pending }}</dd>
                             </div>
 
+                            <!-- Ditinjau -->
+                            <div class="bg-indigo-100 p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                                <dt class="text-sm font-medium text-gray-700 truncate">Ditinjau</dt>
+                                <dd class="text-2xl font-semibold text-indigo-600">{{ stats.pending_review }}</dd>
+                            </div>
 
+                            <!-- Disetujui -->
+                            <div class="bg-green-100 p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                                <dt class="text-sm font-medium text-gray-700 truncate">Disetujui</dt>
+                                <dd class="text-2xl font-semibold text-green-600">{{ stats.approved }}</dd>
+                            </div>
 
-                            <div class="bg-white p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
-                                <dt class="text-sm font-medium text-gray-500 truncate">Selesai</dt>
-                                <dd class="text-2xl font-semibold text-green-600">{{ stats.completed }}</dd>
+                            <!-- Ditolak -->
+                            <div class="bg-red-100 p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                                <dt class="text-sm font-medium text-gray-700 truncate">Ditolak</dt>
+                                <dd class="text-2xl font-semibold text-red-600">{{ stats.rejected }}</dd>
+                            </div>
+
+                            <!-- Revisi -->
+                            <div class="bg-purple-100 p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                                <dt class="text-sm font-medium text-gray-700 truncate">Revisi</dt>
+                                <dd class="text-2xl font-semibold text-purple-600">{{ stats.revision }}</dd>
+                            </div>
+
+                            <!-- Dibatalkan -->
+                            <div class="bg-gray-100 p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                                <dt class="text-sm font-medium text-gray-700 truncate">Dibatalkan</dt>
+                                <dd class="text-2xl font-semibold text-gray-600">{{ stats.cancelled }}</dd>
+                            </div>
+
+                            <!-- Selesai -->
+                            <div class="bg-emerald-100 p-2 rounded-2xl shadow-lg text-center transition-transform transform hover:scale-105 duration-300">
+                                <dt class="text-sm font-medium text-gray-700 truncate">Selesai</dt>
+                                <dd class="text-2xl font-semibold text-emerald-600">{{ stats.completed }}</dd>
                             </div>
                         </div>
+
                     </div>
                 </div>
 
@@ -177,16 +191,38 @@
                                                         </span>
                                                     </td>
                                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                        <Link :href="route('coordinator.inspections.show', inspection.id)" class="text-blue-600 hover:text-blue-900 mr-3">Lihat</Link>
+                                                        <Link :href="route('coordinator.inspections.show', { inspection: encryptedIds[inspection.id] })" class="text-blue-600 hover:text-blue-900 mr-3">Lihat</Link>
                                                         <button v-if="inspection.status === 'pending'" @click="assignInspection(inspection.id)" class="text-green-600 hover:text-green-900">Tugaskan</button>
                                                     </td>
                                                 </tr>
                                             </tbody>
                                         </table>
                                     </div>
-                                    <!-- Halaman -->
-                                    <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4">
-                                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                 <!-- Pagination Wrapper -->
+                                    <div class="bg-white px-4 flex items-center justify-between border-t border-gray-200 mt-2">
+
+                                        <!-- Mobile Pagination -->
+                                        <div class="flex-1 flex justify-between sm:hidden">
+                                            <Link
+                                                :href="inspections.prev_page_url ?? '#'"
+                                                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                                                :class="{ 'opacity-50 pointer-events-none': !inspections.prev_page_url }"
+                                                preserve-state
+                                            >
+                                                <
+                                            </Link>
+                                            <Link
+                                                :href="inspections.next_page_url ?? '#'"
+                                                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                                                :class="{ 'opacity-50 pointer-events-none': !inspections.next_page_url }"
+                                                preserve-state
+                                            >
+                                                >
+                                            </Link>
+                                        </div>
+
+                                        <!-- Desktop Pagination -->
+                                        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                                             <div>
                                                 <p class="text-sm text-gray-700">
                                                     Menampilkan
@@ -204,15 +240,17 @@
                                                         v-for="link in inspections.links"
                                                         :key="link.label"
                                                         :href="link.url || '#'"
-                                                        :class="`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${link.active ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'} ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`"
+                                                        :class="`relative inline-flex items-center px-4 py-2 border text-sm font-medium 
+                                                            ${link.active ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'} 
+                                                            ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`"
                                                         v-html="link.label"
                                                         preserve-state
-                                                    >
-                                                    </Link>
+                                                    />
                                                 </nav>
                                             </div>
                                         </div>
                                     </div>
+
                                 </div>
                             </div>
                         </div>
@@ -232,6 +270,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 // Get props from Inertia
 const props = defineProps({
     inspections: Object,
+    encryptedIds:Object,
     filters: Object,
     stats: Object,
     region: Object
@@ -288,15 +327,15 @@ const formatStatus = (status) => {
 // Status class
 const statusClass = (status) => {
     const classMap = {
-        'draft': 'bg-gray-100 text-gray-800',
-        'in_progress': 'bg-blue-100 text-blue-800',
-        'pending': 'bg-yellow-100 text-yellow-800',
-        'pending_review': 'bg-purple-100 text-purple-800',
-        'approved': 'bg-green-100 text-green-800',
-        'rejected': 'bg-red-100 text-red-800',
-        'revision': 'bg-orange-100 text-orange-800',
-        'completed': 'bg-green-100 text-green-800',
-        'cancelled': 'bg-red-100 text-red-800'
+       'draft': 'bg-slate-400 text-white',
+        'in_progress': 'bg-blue-600 text-white',
+        'pending': 'bg-amber-500 text-white',
+        'pending_review': 'bg-indigo-500 text-white',
+        'approved': 'bg-emerald-500 text-white',
+        'rejected': 'bg-red-500 text-white',
+        'revision': 'bg-orange-500 text-white',
+        'completed': 'bg-emerald-500 text-white',
+        'cancelled': 'bg-red-500 text-white'
     };
     return classMap[status] || 'bg-gray-100 text-gray-800';
 };

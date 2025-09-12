@@ -103,7 +103,8 @@ class HomeController extends Controller
                 if ($search) {
                     $query->where(function($q) use ($search) {
                         $q->where('name', 'like', '%'.$search.'%')
-                          ->orWhere('description', 'like', '%'.$search.'%');
+                          ->orWhere('description', 'like', '%'.$search.'%')
+                          ->orWhere('notes', 'like', '%'.$search.'%');
                     });
                 }
             }])
@@ -113,7 +114,8 @@ class HomeController extends Controller
                       ->orWhere('description', 'like', '%'.$search.'%')
                       ->orWhereHas('inspection_point', function($subQ) use ($search) {
                           $subQ->where('name', 'like', '%'.$search.'%')
-                               ->orWhere('description', 'like', '%'.$search.'%');
+                               ->orWhere('description', 'like', '%'.$search.'%')
+                               ->orWhere('notes', 'like', '%'.$search.'%');
                       });
                 });
             })

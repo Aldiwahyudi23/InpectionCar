@@ -12,7 +12,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class MenuPointRelationManager extends RelationManager
+class a extends RelationManager
 {
     protected static string $relationship = 'menu_point';
 
@@ -1030,7 +1030,9 @@ public function updatedSelectAll($value)
                     ->label('Active')
                     ->default(true),
             ])
-            ->headerActions([
+
+
+                ->headerActions([
                 // ACTION UNTUK MULTIPLE CREATE
                 Tables\Actions\Action::make('createMultiple')
                     ->label('Tambah Multiple Points')
@@ -1038,50 +1040,8 @@ public function updatedSelectAll($value)
                     ->form(function () {
                         $ownerRecord = $this->getOwnerRecord();
                         
-                        return [                            
-                            // CHECKBOX LIST UNTUK PILIH MULTIPLE POINTS
-Forms\Components\Select::make('inspection_point_ids')
-    ->label('Pilih Inspection Points')
-    ->options(function () {
-        $ownerRecord = $this->getOwnerRecord();
-        
-        // Dapatkan category_id dari app_menu
-        $categoryId = $ownerRecord->category_id;
-        
-        // Cari semua inspection_point_id yang sudah digunakan di category ini
-        $usedInspectionPointIds = MenuPoint::whereHas('app_menu', function ($query) use ($categoryId) {
-                $query->where('category_id', $categoryId);
-            })
-            ->pluck('inspection_point_id');
-        
-        // Ambil inspection points yang belum digunakan di category ini
-        $points = InspectionPoint::whereNotIn('id', $usedInspectionPointIds)
-            ->with('component')
-            ->get();
-        
-        // Group by component name dengan format optgroup
-        $groupedOptions = [];
-        foreach ($points->groupBy('component.name') as $componentName => $componentPoints) {
-            $groupedOptions[$componentName] = $componentPoints->mapWithKeys(function ($point) {
-                return [
-                    $point->id => $point->name . ' (' . $point->component->name . ')'
-                ];
-            })->toArray();
-        }
-        
-        
-        return $groupedOptions;
-    })
-    ->multiple()
-    ->searchable()
-    ->preload()
-    ->required()
-    ->maxItems(50)
-    ->helperText('Gunakan Ctrl/Cmd + klik untuk memilih multiple items'),
-
-
-
-                                Forms\Components\Select::make('input_type')
+                        return [
+                            Forms\Components\Select::make('input_type')
                                 ->label('Tipe Input')
                                 ->options([
                                     'damage' => 'Kerusakan',
@@ -1110,6 +1070,41 @@ Forms\Components\Select::make('inspection_point_ids')
                             Forms\Components\Toggle::make('is_active')
                                 ->label('Status Aktif')
                                 ->default(true),
+                            
+                            // CHECKBOX LIST UNTUK PILIH MULTIPLE POINTS
+Forms\Components\Select::make('inspection_point_ids')
+    ->label('Pilih Inspection Points')
+    ->options(function () {
+        $ownerRecord = $this->getOwnerRecord();
+        
+        // Dapatkan category_id dari app_menu
+        $categoryId = $ownerRecord->category_id;
+        
+        // Cari semua inspection_point_id yang sudah digunakan di category ini
+        $usedInspectionPointIds = MenuPoint::whereHas('app_menu', function ($query) use ($categoryId) {
+                $query->where('category_id', $categoryId);
+            })
+            ->pluck('inspection_point_id');
+        
+        // Ambil inspection points yang belum digunakan di category ini
+        $points = InspectionPoint::whereNotIn('id', $usedInspectionPointIds)
+            ->with('component')
+            ->get();
+        
+        // Group by component name dengan format optgroup
+        $groupedOptions = [];
+        foreach ($points->groupBy('component.name') as $componentName => $componentPoints) {
+            $groupedOptions[$componentName] = $componentPoints->pluck('name', 'id')->toArray();
+        }
+        
+        return $groupedOptions;
+    })
+    ->multiple()
+    ->searchable()
+    ->preload()
+    ->required()
+    ->maxItems(50)
+    ->helperText('Gunakan Ctrl/Cmd + klik untuk memilih multiple items'),
                                           
                             // FIELDSET SETTINGS (SAMA SEPERTI SEBELUMNYA)
                             Forms\Components\Fieldset::make('Konfigurasi Settings')
@@ -1756,4 +1751,3 @@ Forms\Components\Select::make('inspection_point_ids')
             ]);
     }
 }
-

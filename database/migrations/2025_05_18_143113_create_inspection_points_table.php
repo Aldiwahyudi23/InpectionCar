@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('component_id')->constrained('components');
             $table->string('name');
-            $table->longText('description')->nullable();
+            $table->longText('notes')->nullable();
+            $table->string('description')->nullable();
             $table->integer('order');
             $table->boolean('is_active')->default(true);
             $table->string('file_path')->nullable(); // lokasi file gambar

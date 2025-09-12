@@ -34,13 +34,18 @@ class InspectionPointRelationManager extends RelationManager
                         //     }
                         ),
 
+                    Forms\Components\Textarea::make('description')
+                        ->label('Deskripsi')
+                        ->required()
+                        ->maxLength(255),
+
                     Forms\Components\Toggle::make('is_active')
                         ->required()
                         ->label('Is Active')
                         ->default(true),
 
-                    Forms\Components\RichEditor::make('description')
-                        ->label('Deskripsi')
+                    Forms\Components\RichEditor::make('notes')
+                        ->label('Catatan')
                         ->toolbarButtons([
                         'attachFiles',
                         'blockquote',
@@ -57,9 +62,9 @@ class InspectionPointRelationManager extends RelationManager
                         'underline',
                         'undo',
                     ])
-                        ->fileAttachmentsDirectory('descriptions') // Folder untuk upload file
-                        ->placeholder('Masukkan deskripsi Komponen di sini...')
-                        ->helperText('Deskripsi tambahan tentang komponen. Format HTML akan dipertahankan.')
+                        ->fileAttachmentsDirectory('notes') // Folder untuk upload file
+                        ->placeholder('Masukkan catatan Komponen di sini...')
+                        ->helperText('Catatan tambahan tentang komponen. Format HTML akan dipertahankan.')
                         ->columnSpanFull(),
 
                     Forms\Components\FileUpload::make('file_path')
