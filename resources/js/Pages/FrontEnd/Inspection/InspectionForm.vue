@@ -15,7 +15,7 @@
         >
           Detail Kendaraan
           <span 
-            v-if="isVehicleComplete"
+            v-if="isVehicleFormComplete"
             class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs rounded-full bg-green-500 text-white"
           >
             ✓
@@ -81,8 +81,10 @@
           v-if="activeCategory === 'vehicle'"
           :inspection="inspection"
           :CarDetail="CarDetail"
+          :allInspections="props.allInspections" 
           @update-vehicle="updateVehicleDetails"
           @save-car-details="saveNewCarDetails"
+          @update:validation="handleVehicleValidation"
         />
 
         <!-- Menu Inspeksi Biasa -->
@@ -103,7 +105,7 @@
           v-else-if="activeCategory === 'conclusion'"
           :form="form"
           :inspection-id="inspection.id"
-          :inspection="inspection"  
+          :inspection="inspection"   
           :settings="inspection.settings || {}"
           @updateConclusion="updateConclusion"
         />
@@ -332,6 +334,7 @@ const props = defineProps({
   existingResults: Object,
   existingImages: Object,
   CarDetail: Array,
+  allInspections: Array,
 });
 
 
@@ -401,13 +404,41 @@ const getVisiblePoints = (menuPoints, isDamageMenu) => {
   });
 };
 
-// Properti terhitung untuk mengecek kelengkapan menu "Detail Kendaraan"
-const isVehicleComplete = computed(() => {
-  const car = props.CarDetail;
-  const inspection = props.inspection;
-  
-  return !!inspection.plate_number && !!inspection.car_name ;
+
+// State untuk menyimpan data dari komponen anak
+const vehicleDetails = ref({
+    plate_number: props.inspection.plate_number,
+    car_id: props.inspection.car_id,
+    car_name: props.inspection.car_name
 });
+
+// State baru untuk menyimpan status validasi dari komponen anak
+const isVehicleDetailsInvalid = ref(false);
+
+// Fungsi yang dipanggil saat `update:validation` dari anak di-emit
+const handleVehicleValidation = (isInvalid) => {
+    isVehicleDetailsInvalid.value = isInvalid;
+};
+
+// --- Logika utama untuk memeriksa kelengkapan form kendaraan ---
+const isVehicleFormComplete = computed(() => {
+    // 1. Cek apakah nomor plat sudah terisi dan valid
+    const isPlateValid = vehicleDetails.value.plate_number && /^[A-Z]{1,2}\d{1,4}[A-Z]{0,3}$/.test(vehicleDetails.value.plate_number);
+    
+    // 2. Cek apakah nama mobil sudah terisi
+    const isCarNameFilled = !!vehicleDetails.value.car_name?.trim();
+    
+    // 3. Cek apakah ada validasi negatif dari komponen anak
+    const hasNoBlockingValidation = !isVehicleDetailsInvalid.value;
+    
+    // 4. Gabungkan semua validasi
+    return isPlateValid && isCarNameFilled && hasNoBlockingValidation;
+});
+
+
+
+
+
 
 // Filter damage points berdasarkan pencarian
 const filteredDamagePoints = computed(() => {
@@ -438,7 +469,7 @@ const hasPointData = (pointId) => {
 
 // Ambil nama component
 const getComponentName = (point) => {
-  return point.inspection_point?.component?.name || 'Komponen Tidak Diketahui';
+  return point.inspection_point.component?.name || 'Komponen Tidak Diketahui';
 };
 
 // Get existing data untuk point
@@ -539,6 +570,9 @@ const isMenuComplete = (menu) => {
 
   if (menu.id === 'conclusion') {
     return isConclusionComplete();
+  }
+  if (menu.id === 'vehicle') {
+    return isVehicleFormComplete();
   }
 
   const points = getVisiblePoints(menu.menu_point, false);
@@ -642,7 +676,7 @@ const conclusionStatus = computed(() => {
 
 // Check if all menus are complete
 const allMenusComplete = computed(() => {
-  const vehicleComplete = isVehicleComplete.value;
+  const vehicleComplete = isVehicleFormComplete.value;
   const regularMenusComplete = props.appMenus.every(menu => isMenuComplete(menu));
   const conclusionComplete = isConclusionComplete();
   return vehicleComplete && regularMenusComplete && conclusionComplete;

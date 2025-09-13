@@ -127,7 +127,7 @@ class InspectionController extends Controller
             ->get();
 
             // Ambil semua damage points
-            $damagePoints = MenuPoint::with(['inspection_point', 'app_menu'])
+            $damagePoints = MenuPoint::with(['inspection_point', 'inspection_point.component','app_menu'])
                 ->where('is_active', true)
                 ->whereHas('app_menu', function ($query) use ($inspection) {
                     $query->where('input_type', 'damage')
@@ -156,6 +156,14 @@ class InspectionController extends Controller
             //mengambil data id yang sudah di eccrypt
             $inspectionID = Crypt::encrypt($inspection->id);
             
+             $allInspections = Inspection::with(
+                    'car',
+                    'car.brand',
+                    'car.model',
+                    'car.type',
+                    'category',
+                )->get();
+
             // Data untuk frontend
             return Inertia::render('FrontEnd/Inspection/InspectionForm', [
                 'inspection' => $inspection->load(['car', 'user']),
@@ -164,6 +172,7 @@ class InspectionController extends Controller
                 'existingResults' => $existingResults,
                 'existingImages' => $existingImages,
                 'inspectionId' => $inspectionID,
+                'allInspections' => $allInspections,
                 'CarDetail' => CarDetail::with(['brand', 'model', 'type'])->get(),
             ]);
 

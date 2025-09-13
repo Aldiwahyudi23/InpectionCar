@@ -9,13 +9,14 @@
             <div class="space-y-2 pb-2 border-b border-gray-100 last:border-0 last:pb-0">
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                     Nomor Plat Kendaraan
+                   
                 </label>
                 <div class="flex items-center space-x-2">
                     <!-- Kode Wilayah (Huruf) -->
                     <input
                         v-model="plateAreaCode"
                         type="text"
-                        placeholder="Contoh: B"
+                        placeholder="Contoh: D"
                         class="w-1/4 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm text-center transition duration-150"
                         :class="{'border-red-500 focus:border-red-500': !isPlateNumberValid || isPlateInvalid}"
                         @input="handlePlateInput('area')"
@@ -42,18 +43,17 @@
                         @input="handlePlateInput('suffix')"
                         maxlength="3"
                     >
+
                 </div>
-                <!-- Tampilkan pesan error jika ada -->
-                    <span v-if="plateNumberError" class="text-xs text-red-500 font-normal ml-2">{{ plateNumberError }}</span>
-                    <span v-if="inspectionValidationMessage" class="text-xs text-red-500 font-normal ml-2">{{ inspectionValidationMessage }}</span>
-                    <span v-if="inspectionCountMessage" class="text-xs text-green-500 font-normal ml-2">{{ inspectionCountMessage }}</span>
+                <span v-if="plateNumberError" class="text-xs text-red-500 font-normal ml-2">{{ plateNumberError }}</span>
+               <span v-if="inspectionValidationMessage" class="text-xs text-red-500 font-normal ml-2">{{ inspectionValidationMessage }}</span>
+               <span v-if="inspectionCountMessage" class="text-xs text-green-500 font-normal ml-2">{{ inspectionCountMessage }}</span>
             </div>
 
             <!-- Form Input Car Name with Auto-complete -->
             <div class="space-y-2 pb-2 border-b border-gray-100 last:border-0 last:pb-0">
                 <label class="block text-sm font-medium text-gray-700">
                     Nama Mobil
-                   
                 </label>
                 <div class="relative">
                     <input
@@ -61,7 +61,6 @@
                         type="text"
                         placeholder="Cari atau ketik nama mobil..."
                         class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition duration-150"
-                        :class="{'border-red-500 focus:border-red-500': isCarNameInvalid}"
                         @input="searchCars"
                         @focus="showSuggestions = true"
                         @blur="handleInputBlur"
@@ -73,8 +72,7 @@
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                     </div>
-                    <!-- Bagian ini akan menampilkan validasi jika nama mobil kosong -->
-                    <span v-if="isCarNameInvalid" class="text-xs text-red-500 font-normal ml-2">Nama mobil tidak boleh kosong.</span>
+
                     <div 
                         v-if="showSuggestions" 
                         class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
@@ -102,6 +100,8 @@
                         </div>
                     </div>
                 </div>
+
+                <input type="hidden" v-model="form.car_id">
             </div>
 
             <!-- Bagian ini hanya tampil jika car_id ada -->
@@ -239,13 +239,12 @@ const emit = defineEmits(['update-vehicle', 'update:validation']);
 const form = useForm({
     plate_number: props.inspection?.plate_number || '',
     car_id: props.inspection?.car_id || null,
-    car_name: props.inspection?.car_name || ''
+    car_name: props.inspection?.car?.name || ''
 });
 
 // State untuk menyimpan nilai awal
 const initialPlateNumber = ref(props.inspection?.plate_number || '');
 const initialCarId = ref(props.inspection?.car_id || null);
-const initialCarName = ref(props.inspection?.car_name || '');
 
 // State untuk input plat nomor terpisah
 const plateAreaCode = ref('');
@@ -271,7 +270,10 @@ const currentImageIndex = ref(0);
 
 // --- Initial Setup & Parsing Data ---
 onMounted(() => {
+    // Parsing plat nomor yang sudah ada menjadi 3 bagian
     parsePlateNumber(props.inspection?.plate_number);
+
+    // Sinkronisasi data awal untuk mobil
     if (props.inspection?.car_id && props.CarDetail?.length > 0) {
         const car = props.CarDetail.find(c => c.id === props.inspection.car_id);
         if (car) {
@@ -280,10 +282,9 @@ onMounted(() => {
     } else if (!props.inspection?.car_id && props.inspection?.car_name) {
         carSearchQuery.value = props.inspection.car_name;
     }
-    window.addEventListener('keydown', handleKeydown);
 
-    // Kirim status validasi awal ke induk
-    emit('update:validation', isFormInvalid.value);
+    // Add event listener for keyboard navigation
+    window.addEventListener('keydown', handleKeydown);
 });
 
 onUnmounted(() => {
@@ -299,12 +300,15 @@ const parsePlateNumber = (plateStr) => {
         return;
     }
     const plate = plateStr.toUpperCase().trim();
+    // Regex untuk memecah plat nomor. Mengasumsikan format: Huruf Angka Huruf
     const match = plate.match(/^([A-Z]{1,2})?([0-9]{1,4})?([A-Z]{1,3})?$/);
     if (match) {
         plateAreaCode.value = match[1] || '';
         plateNumber.value = match[2] || '';
         plateSuffix.value = match[3] || '';
     } else {
+        // Fallback jika regex gagal (misal format tidak standar)
+        // Kita coba pisahkan secara manual
         let currentPart = 'area';
         let area = '';
         let number = '';
@@ -332,6 +336,7 @@ const parsePlateNumber = (plateStr) => {
 };
 
 const combinePlateNumber = () => {
+    // Gabungkan 3 bagian menjadi 1 string tunggal tanpa spasi
     const combinedPlate = `${plateAreaCode.value}${plateNumber.value}${plateSuffix.value}`;
     form.plate_number = combinedPlate;
     updateVehicleData();
@@ -350,41 +355,33 @@ const handlePlateInput = (type) => {
 
 // --- Computed Properties for Validation & Button Logic ---
 const isPlateNumberValid = computed(() => {
+    // Validasi format plat nomor: min 1 huruf, min 1-4 angka, dan optional 1-3 huruf
     const combinedPlate = form.plate_number;
     const regex = /^[A-Z]{1,2}\d{1,4}[A-Z]{0,3}$/;
     return regex.test(combinedPlate);
 });
 
-// Ini adalah properti computed yang memeriksa apakah nama mobil kosong atau tidak
-const isCarNameInvalid = computed(() => {
-    return !carSearchQuery.value || carSearchQuery.value.trim() === '';
-});
-
 const plateNumberError = computed(() => {
+    // Tampilkan pesan error jika plat tidak valid dan sudah ada isinya
     if (form.plate_number.length > 0 && !isPlateNumberValid.value) {
         return "Format plat nomor tidak valid.";
     }
     return null;
 });
 
-// Ini adalah properti computed yang memeriksa semua validasi form
-const isFormInvalid = computed(() => {
-    const isPlateEmpty = !form.plate_number || form.plate_number.trim() === '';
-    const isCarNameEmpty = !carSearchQuery.value || carSearchQuery.value.trim() === '';
-    return isPlateEmpty || isCarNameEmpty || !isPlateNumberValid.value || isPlateInvalid.value ;
-});
-
-// Ini adalah properti computed yang memeriksa apakah ada perubahan data dari nilai awal
 const isFormChanged = computed(() => {
+    // Cek apakah ada perubahan pada plat nomor atau nama kendaraan
     const plateChanged = form.plate_number !== initialPlateNumber.value;
-    const carChanged = form.car_id !== initialCarId.value || carSearchQuery.value !== initialCarName.value;
+    const carChanged = form.car_id !== initialCarId.value;
     return plateChanged || carChanged;
 });
 
-// Ini adalah properti computed yang menentukan apakah tombol 'Update' bisa diklik atau tidak
-// Tombol bisa diklik jika ada perubahan DAN tidak ada error validasi
 const canUpdate = computed(() => {
-    return isFormChanged.value && !isFormInvalid.value;
+    // Tombol bisa di-klik jika:
+    // 1. Ada perubahan pada form (plat atau kendaraan)
+    // 2. Format plat nomor yang diisi sudah valid
+    // 3. Tidak ada inspeksi lain dengan plat yang sama dalam status pengerjaan
+    return isFormChanged.value && isPlateNumberValid.value && !isPlateInvalid.value;
 });
 
 // --- Helpers ---
@@ -434,8 +431,8 @@ const selectCar = async (car) => {
     showSuggestions.value = false;
     await loadCarImages(car.id);
     updateVehicleData();
-    // Kirim status validasi ke induk
-    emit('update:validation', isFormInvalid.value);
+     // Kirim status validasi ke induk
+    emit('update:validation', canUpdate.value);
 };
 
 const getImageSrc = (image) => {
@@ -511,17 +508,35 @@ const updateVehicleDetails = () => {
     });
 };
 
-// --- LOGIKA VALIDASI BARU UNTUK NOMOR PLAT DAN MENGIRIM STATUS KE INDUK ---
-// Watcher ini akan berjalan setiap kali form.plate_number atau form.car_name berubah
-watch([() => form.plate_number, () => form.car_name], (newValues) => {
+// --- Watch inspection props ---
+watch(() => props.inspection, (newInspection) => {
+    if (!newInspection) return;
+    parsePlateNumber(newInspection.plate_number);
+    form.car_id = newInspection.car_id || null;
+    if (newInspection.car_id && props.CarDetail?.length > 0) {
+        const car = props.CarDetail.find(c => c.id === newInspection.car_id);
+        if (car) {
+            selectCar(car);
+        }
+    } else if (newInspection.car_name) {
+        carSearchQuery.value = newInspection.car_name;
+        form.car_name = newInspection.car_name;
+    }
+}, { deep: true });
+
+// --- LOGIKA VALIDASI BARU UNTUK NOMOR PLAT ---
+watch(() => form.plate_number, (newPlateNumber) => {
+    // Reset state validasi
     inspectionValidationMessage.value = '';
     isPlateInvalid.value = false;
     inspectionCountMessage.value = '';
-    
-    const newPlateNumber = newValues[0];
 
-    // Pengecekan plat nomor hanya jika tidak kosong
-    if (newPlateNumber && newPlateNumber.length >= 6) {
+        // Perubahan 2: Kirim status validasi terbaru ke induk
+    emit('update:validation', canUpdate.value);
+
+    // Hanya jalankan jika plat nomor memiliki setidaknya 6 karakter
+    if (newPlateNumber.length >= 6) {
+        // Filter inspeksi yang memiliki plat nomor yang sama, kecuali inspeksi saat ini
         const existingInspections = props.allInspections.filter(i =>
             i.plate_number === newPlateNumber && i.id !== props.inspection?.id
         );
@@ -531,15 +546,19 @@ watch([() => form.plate_number, () => form.car_name], (newValues) => {
             const blockingInspection = existingInspections.find(i => blockingStatuses.includes(i.status));
 
             if (blockingInspection) {
+                // Ditemukan inspeksi yang sedang berjalan, nonaktifkan tombol
                 isPlateInvalid.value = true;
                 inspectionValidationMessage.value = `Nomor plat ini sedang dalam proses inspeksi dengan status: ${blockingInspection.status.replace(/_/g, ' ').toUpperCase()}.`;
             } else {
+                // Tidak ada inspeksi yang sedang berjalan, cari yang terbaru
                 const completedInspections = existingInspections.filter(i => ['approved', 'rejected', 'completed', 'cancelled'].includes(i.status));
                 
                 if (completedInspections.length > 0) {
+                    // Urutkan berdasarkan tanggal pembuatan untuk mendapatkan yang terbaru
                     completedInspections.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
                     const latestInspection = completedInspections[0];
 
+                    // Isi formulir dengan data dari inspeksi terbaru
                     if (latestInspection.car_id) {
                         const car = props.CarDetail.find(c => c.id === latestInspection.car_id);
                         if (car) {
@@ -555,10 +574,9 @@ watch([() => form.plate_number, () => form.car_name], (newValues) => {
             }
         }
     }
-    
-    // Emit status validasi ke induk setelah semua pengecekan selesai
-    emit('update:validation', isFormInvalid.value);
-}, { deep: true });
+        // Perubahan 2: Kirim status validasi setelah logika di atas selesai
+    emit('update:validation', canUpdate.value);
+});
 </script>
 
 <style scoped>

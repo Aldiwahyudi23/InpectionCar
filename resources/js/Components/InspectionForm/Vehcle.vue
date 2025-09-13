@@ -9,6 +9,10 @@
             <div class="space-y-2 pb-2 border-b border-gray-100 last:border-0 last:pb-0">
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                     Nomor Plat Kendaraan
+                    <!-- Tampilkan pesan error jika ada -->
+                    <span v-if="plateNumberError" class="text-xs text-red-500 font-normal ml-2">{{ plateNumberError }}</span>
+                    <span v-if="inspectionValidationMessage" class="text-xs text-red-500 font-normal ml-2">{{ inspectionValidationMessage }}</span>
+                    <span v-if="inspectionCountMessage" class="text-xs text-green-500 font-normal ml-2">{{ inspectionCountMessage }}</span>
                 </label>
                 <div class="flex items-center space-x-2">
                     <!-- Kode Wilayah (Huruf) -->
@@ -43,17 +47,13 @@
                         maxlength="3"
                     >
                 </div>
-                <!-- Tampilkan pesan error jika ada -->
-                    <span v-if="plateNumberError" class="text-xs text-red-500 font-normal ml-2">{{ plateNumberError }}</span>
-                    <span v-if="inspectionValidationMessage" class="text-xs text-red-500 font-normal ml-2">{{ inspectionValidationMessage }}</span>
-                    <span v-if="inspectionCountMessage" class="text-xs text-green-500 font-normal ml-2">{{ inspectionCountMessage }}</span>
             </div>
 
             <!-- Form Input Car Name with Auto-complete -->
             <div class="space-y-2 pb-2 border-b border-gray-100 last:border-0 last:pb-0">
                 <label class="block text-sm font-medium text-gray-700">
                     Nama Mobil
-                   
+                    <span v-if="isCarNameInvalid" class="text-xs text-red-500 font-normal ml-2">Nama mobil tidak boleh kosong.</span>
                 </label>
                 <div class="relative">
                     <input
@@ -73,8 +73,7 @@
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                     </div>
-                    <!-- Bagian ini akan menampilkan validasi jika nama mobil kosong -->
-                    <span v-if="isCarNameInvalid" class="text-xs text-red-500 font-normal ml-2">Nama mobil tidak boleh kosong.</span>
+
                     <div 
                         v-if="showSuggestions" 
                         class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
@@ -355,9 +354,9 @@ const isPlateNumberValid = computed(() => {
     return regex.test(combinedPlate);
 });
 
-// Ini adalah properti computed yang memeriksa apakah nama mobil kosong atau tidak
 const isCarNameInvalid = computed(() => {
-    return !carSearchQuery.value || carSearchQuery.value.trim() === '';
+    // Validasi baru: nama mobil tidak boleh kosong
+    return !form.car_name || form.car_name.trim() === '';
 });
 
 const plateNumberError = computed(() => {
@@ -367,23 +366,23 @@ const plateNumberError = computed(() => {
     return null;
 });
 
-// Ini adalah properti computed yang memeriksa semua validasi form
 const isFormInvalid = computed(() => {
+    // Pengecekan baru: apakah plat kosong atau nama mobil kosong?
     const isPlateEmpty = !form.plate_number || form.plate_number.trim() === '';
-    const isCarNameEmpty = !carSearchQuery.value || carSearchQuery.value.trim() === '';
-    return isPlateEmpty || isCarNameEmpty || !isPlateNumberValid.value || isPlateInvalid.value ;
+    const isCarNameEmpty = !form.car_name || form.car_name.trim() === '';
+
+    return isPlateEmpty || isCarNameEmpty || !isPlateNumberValid.value || isPlateInvalid.value;
 });
 
-// Ini adalah properti computed yang memeriksa apakah ada perubahan data dari nilai awal
 const isFormChanged = computed(() => {
+    // Pengecekan baru: bandingkan dengan nilai awal
     const plateChanged = form.plate_number !== initialPlateNumber.value;
-    const carChanged = form.car_id !== initialCarId.value || carSearchQuery.value !== initialCarName.value;
+    const carChanged = form.car_id !== initialCarId.value || form.car_name !== initialCarName.value;
     return plateChanged || carChanged;
 });
 
-// Ini adalah properti computed yang menentukan apakah tombol 'Update' bisa diklik atau tidak
-// Tombol bisa diklik jika ada perubahan DAN tidak ada error validasi
 const canUpdate = computed(() => {
+    // Tombol bisa di-klik jika ada perubahan DAN tidak ada error validasi
     return isFormChanged.value && !isFormInvalid.value;
 });
 
@@ -512,7 +511,6 @@ const updateVehicleDetails = () => {
 };
 
 // --- LOGIKA VALIDASI BARU UNTUK NOMOR PLAT DAN MENGIRIM STATUS KE INDUK ---
-// Watcher ini akan berjalan setiap kali form.plate_number atau form.car_name berubah
 watch([() => form.plate_number, () => form.car_name], (newValues) => {
     inspectionValidationMessage.value = '';
     isPlateInvalid.value = false;
@@ -532,7 +530,7 @@ watch([() => form.plate_number, () => form.car_name], (newValues) => {
 
             if (blockingInspection) {
                 isPlateInvalid.value = true;
-                inspectionValidationMessage.value = `Nomor plat ini sedang dalam proses inspeksi dengan status: ${blockingInspection.status.replace(/_/g, ' ').toUpperCase()}.`;
+                inspectionValidationMessage.value = `Nomor plat ini sedang dalam proses inspeksi dengan status: ${blockingInspection.status.replace(/_/g, ' ').toUpperCase()}. Silakan selesaikan inspeksi tersebut terlebih dahulu.`;
             } else {
                 const completedInspections = existingInspections.filter(i => ['approved', 'rejected', 'completed', 'cancelled'].includes(i.status));
                 
