@@ -35,26 +35,40 @@ export default defineConfig({
             registerType: 'autoUpdate',
             includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
             manifest: {
-                "name": "Nama Aplikasi Anda",
-                "short_name": "Short Name",
-                "description": "Deskripsi aplikasi Anda",
-                "start_url": "/",
-                "display": "standalone",
-                "background_color": "#ffffff",
-                "theme_color": "#000000",
-                "orientation": "portrait",
-                "icons": [
+                 name: 'cek Mobil',
+                short_name: 'Inspek',
+                description: 'Aplikasi Inspek bagi karyawan tersaakiti',
+                theme_color: '#4f46e5', // Warna tema aplikasi
+                background_color: '#ffffff', // Warna background splash screen
+                display: 'standalone', // standalone, minimal-ui, fullscreen
+                orientation: 'portrait', // portrait, landscape, atau any
+                start_url: '/',
+                icons: [
                     {
-                    "src": "/pwa-192x192.png",
-                    "sizes": "192x192",
-                    "type": "image/png"
+                        src: '/pwa-192x192.png',
+                        sizes: '192x192',
+                        type: 'image/png',
+                        purpose: 'any maskable'
                     },
                     {
-                    "src": "/pwa-512x512.png",
-                    "sizes": "512x512",
-                    "type": "image/png"
+                        src: '/pwa-512x512.png',
+                        sizes: '512x512',
+                        type: 'image/png',
+                        purpose: 'any maskable'
+                    },
+                    {
+                        src: '/pwa-512x512.png',
+                        sizes: '512x512',
+                        type: 'image/png',
+                        purpose: 'maskable' // Untuk ikon yang bisa di-mask
                     }
-                ]
+                ],
+                categories: ['productivity', 'utilities'], // Kategori aplikasi
+                lang: 'id', // Bahasa default
+                dir: 'ltr', // Direction (ltr atau rtl)
+                // Untuk iOS khusus
+                appleStatusBarStyle: 'black-translucent',
+                preferRelatedApplications: false
             }
         }),
 

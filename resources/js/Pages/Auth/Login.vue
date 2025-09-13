@@ -94,8 +94,8 @@
             <InputError class="mt-2 text-sm text-red-700" :message="form.errors.password" />
           </div>
 
-          <!-- Checkbox Remember Me -->
-          <div class="flex items-center justify-between mt-4">
+          <!-- Checkbox Remember Me (HIDDEN) -->
+          <div class="hidden">
             <label class="flex items-center">
               <Checkbox 
                 v-model:checked="form.remember" 
@@ -104,7 +104,12 @@
               />
               <span class="ms-2 text-sm text-gray-700">Ingatkan saya</span>
             </label>
+          </div>
 
+          <!-- Tombol Login dan Lupa Password -->
+          <div class="flex items-center justify-between mt-4">
+            <div></div> <!-- Spacer untuk alignment -->
+            
             <Link
               v-if="canResetPassword"
               :href="route('password.request')"
@@ -166,7 +171,7 @@
 
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import Checkbox from '@/Components/Checkbox.vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
@@ -183,10 +188,18 @@ const showPassword = ref(false);
 const form = useForm({
   email: '',
   password: '',
-  remember: false,
+  remember: true, // Default value di-set true
+});
+
+// Pastikan remember selalu true
+onMounted(() => {
+  form.remember = true;
 });
 
 const submit = () => {
+  // Pastikan remember selalu true sebelum submit
+  form.remember = true;
+  
   form.transform(data => ({
     ...data,
     remember: form.remember ? 'on' : '',

@@ -7,8 +7,6 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import PWAInstallButton from './Components/PWAInstallButton.vue';
 
-// Import PWA setup
-import { usePWA } from './Composables/usePWA';
 // Import service worker
 import './registerSW';
 
