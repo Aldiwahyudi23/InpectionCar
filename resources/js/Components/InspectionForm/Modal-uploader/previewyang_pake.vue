@@ -28,7 +28,7 @@
             </svg>
           </button>
           <button
-            v-if="currentImage && currentImage.isNew"
+           v-if="currentImage && currentImage.isNew"
             @click="rotateImage"
             class="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition-colors"
           >
@@ -50,6 +50,9 @@
           :style="{
             paddingTop: aspectRatio ? (100 / aspectRatio) + '%' : '75%',
           }"
+          @touchstart="handleTouchStart"
+          @touchmove="handleTouchMove"
+          @touchend="handleTouchEnd"
         >
           <img
             v-if="currentImage"
@@ -98,6 +101,14 @@
         </div>
 
         <div class="flex gap-3 w-full">
+          <!-- <button
+            @click="cancelPreview"
+            class="flex-1 px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+            :disabled="isUploading"
+          >
+            Batal
+          </button> -->
+
           <button
             v-if="!isUploading"
             @click="saveImages"
@@ -139,11 +150,15 @@ const props = defineProps({
   point: Object
 });
 
+// Tambahkan event 'update:images' untuk sinkronisasi data
 const emit = defineEmits(['close', 'saveImages', 'removePreviewImage', 'triggerAddMorePhotos', 'update:images']);
 
 const currentPreviewIndex = ref(0);
 const editableImages = ref([]);
+const touchStartX = ref(0);
+const touchEndX = ref(0);
 
+// Computed property untuk gambar yang sedang aktif
 const currentImage = computed(() => {
   if (editableImages.value.length > 0) {
     return editableImages.value[currentPreviewIndex.value];
@@ -151,6 +166,7 @@ const currentImage = computed(() => {
   return null;
 });
 
+// Watch untuk perubahan props images
 watch(
   () => props.images,
   (newImages) => {
@@ -165,6 +181,7 @@ watch(
   { deep: true, immediate: true }
 );
 
+// Watch untuk perubahan show prop
 watch(
   () => props.show,
   (isShowing) => {
@@ -174,18 +191,31 @@ watch(
   }
 );
 
+/**
+ * Mendapatkan URL sumber gambar
+ */
 const getImageSrc = (image) => {
   return image.preview || (image.image_path ? `/${image.image_path}` : '');
 };
 
+/**
+ * Memutar gambar 90 derajat
+ */
 const rotateImage = () => {
   if (currentImage.value) {
+    // Memperbarui rotasi secara lokal
     const newRotation = (currentImage.value.rotation + 90) % 360;
     editableImages.value[currentPreviewIndex.value].rotation = newRotation;
+    
+    // Emit event untuk memperbarui data di parent component
+    // Ini adalah langkah kunci untuk mengatasi masalah
     emit('update:images', editableImages.value);
   }
 };
 
+/**
+ * Navigasi ke gambar berikutnya
+ */
 const nextImage = () => {
   currentPreviewIndex.value =
     currentPreviewIndex.value < editableImages.value.length - 1 
@@ -193,6 +223,9 @@ const nextImage = () => {
       : 0;
 };
 
+/**
+ * Navigasi ke gambar sebelumnya
+ */
 const prevImage = () => {
   currentPreviewIndex.value =
     currentPreviewIndex.value > 0 
@@ -200,18 +233,49 @@ const prevImage = () => {
       : editableImages.value.length - 1;
 };
 
+/**
+ * Menangani swipe gesture untuk navigasi gambar
+ */
+const handleTouchStart = (e) => {
+  touchStartX.value = e.touches[0].clientX;
+};
+
+const handleTouchMove = (e) => {
+  touchEndX.value = e.touches[0].clientX;
+};
+
+const handleTouchEnd = () => {
+  const minSwipeDistance = 50;
+  if (touchStartX.value - touchEndX.value > minSwipeDistance) {
+    nextImage();
+  } else if (touchEndX.value - touchStartX.value > minSwipeDistance) {
+    prevImage();
+  }
+  touchStartX.value = 0;
+  touchEndX.value = 0;
+};
+
+/**
+ * Menyimpan gambar (hanya jika tidak sedang uploading)
+ */
 const saveImages = () => {
   if (!props.isUploading) {
     emit('saveImages', editableImages.value);
   }
 };
 
+/**
+ * Membatalkan preview dan menutup modal
+ */
 const cancelPreview = () => {
   if (!props.isUploading) {
     emit('close');
   }
 };
 
+/**
+ * Menghapus gambar yang sedang dilihat
+ */
 const removeCurrentImage = () => {
   if (currentImage.value && !props.isUploading) {
     const imageToRemove = currentImage.value;
@@ -223,6 +287,8 @@ const removeCurrentImage = () => {
     if (indexToRemove !== -1) {
       emit('removePreviewImage', imageToRemove);
       editableImages.value.splice(indexToRemove, 1);
+      
+      // Emit event untuk memperbarui data di parent setelah menghapus
       emit('update:images', editableImages.value);
     }
 
@@ -236,6 +302,9 @@ const removeCurrentImage = () => {
   }
 };
 
+/**
+ * Memicu penambahan foto baru
+ */
 const triggerAddMorePhotos = () => {
   if (!props.isUploading) {
     emit('triggerAddMorePhotos');
@@ -264,6 +333,7 @@ const triggerAddMorePhotos = () => {
   }
 }
 
+/* Smooth transitions untuk semua elemen */
 button {
   transition: all 0.2s ease-in-out;
 }

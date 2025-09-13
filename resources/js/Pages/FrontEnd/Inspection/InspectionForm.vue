@@ -230,7 +230,7 @@
     <button
       v-if="!showSearchModal && !showRadioModal"
       @click="showSearchModal = true"
-      class="fixed bottom-4 right-4 z-50 p-4 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
+      class="fixed bottom-4 right-4 z-10 p-4 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
     >
       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
@@ -824,7 +824,7 @@ const setupSwipe = () => {
 };
 
 onMounted(() => {
-  setupSwipe();
+  // setupSwipe();
 });
 </script>
 

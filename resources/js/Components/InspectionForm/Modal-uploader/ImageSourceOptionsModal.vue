@@ -1,7 +1,8 @@
 <template>
   <div v-if="show" class="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
     <div class="bg-white rounded-xl p-8 w-full max-w-sm mx-auto shadow-2xl transform transition-all duration-300 scale-100 opacity-100">
-      <h3 class="text-xl font-bold text-gray-800 mb-6 text-center">Pilih Sumber Gambar</h3>
+      <h3 class="text-xl font-bold text-gray-800 mb-2 text-center">Pilih Sumber Gambar</h3>
+       <p class="text-xs text-gray-500 mt-2 text-center">Ambil Foto Maksimal: <b>{{ settings.max_files }}</b> Dengan Rasio & Ukuran: <b>{{ settings.camera_aspect_ratio }}</b> </p>
       <div class="flex flex-row space-x-4 mb-6">
         <button
           @click="$emit('open-webcam')"
@@ -29,6 +30,7 @@
           <span class="text-sm font-medium">Galeri</span>
         </button>
       </div>
+
       <div class="mt-4 text-right">
         <button
           @click="$emit('close')"
@@ -51,6 +53,17 @@ defineProps({
   show: {
     type: Boolean,
     default: false,
+  },
+    settings: {
+    type: Object,
+    default: () => ({
+      max_files: 1,
+      allowed_types: ['jpg', 'png', 'jpeg'],
+      camera_aspect_ratio: '3:4',
+      enable_flash: true,
+      enable_camera_switch: true,
+      max_size: 2048 // Default 2MB dalam KB
+    })
   },
 });
 

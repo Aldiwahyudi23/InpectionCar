@@ -2,6 +2,7 @@
   <div v-if="show" class="fixed inset-0 z-40 p-0 webcam-modal-container">
     <div class="webcam-content-box">
       <div class="webcam-header">
+         <p class="rounded-full text-white hover:bg-gray-700 transition-colors ">{{ settings.camera_aspect_ratio }}</p>
         <div class="inspection-point-name">{{ point?.name || 'Camera' }}</div>
         <button @click="closeModal" class="p-2 rounded-full text-white hover:bg-gray-700 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
