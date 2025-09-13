@@ -5,9 +5,12 @@ import { createApp, h } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
+import PWAInstallButton from './Components/PWAInstallButton.vue';
 
 // Import PWA setup
 import { usePWA } from './Composables/usePWA';
+// Import service worker
+import './registerSW';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Car Inspection';
 
@@ -18,22 +21,8 @@ createInertiaApp({
         return createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue, Ziggy)
+            .component('PWAInstallButton', PWAInstallButton)
             .mount(el);
-          // Buat instance PWA
-        const pwa = usePWA();
-        
-        const vueApp = createApp({ 
-            render: () => h(App, props) 
-        })
-           // Provide PWA functionality globally
-        vueApp.provide('pwa', pwa);
-        
-        vueApp.mount(el);
-        
-         // Initialize PWA setelah app mounted
-        pwa.initPWA();
-
-        return vueApp;
     },
     progress: {
         color: '#4B5563',

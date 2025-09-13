@@ -15,7 +15,7 @@
 import { ref, onMounted } from 'vue';
 
 export default {
-  name: 'PWAInstallButton',
+  name: 'PWAInstallPrompt',
   setup() {
     const showInstallPrompt = ref(false);
     let deferredPrompt = null;
