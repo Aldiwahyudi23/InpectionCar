@@ -3,32 +3,45 @@ import { register } from 'register-service-worker';
 if (process.env.NODE_ENV === 'production') {
   register(`${process.env.BASE_URL}service-worker.js`, {
     ready() {
-      console.log(
-        'App is being served from cache by a service worker.\n' +
-        'For more details, visit https://goo.gl/AFskqB'
-      );
+      console.log('App is being served from cache by a service worker.');
     },
     registered(registration) {
       console.log('Service worker has been registered.');
       
-      // Periodic update check (every hour)
+      // Check for updates every hour
       setInterval(() => {
         registration.update();
       }, 60 * 60 * 1000);
     },
-    cached(registration) {
+    cached() {
       console.log('Content has been cached for offline use.');
     },
-    updatefound(registration) {
+    updatefound() {
       console.log('New content is downloading.');
     },
     updated(registration) {
-      console.log('New content is available; please refresh.');
+      console.log('New content is available.');
       
-      // Bisa ditambahkan logika untuk menampilkan notifikasi update
-      // Contoh: tampilkan button untuk refresh page
-      if (confirm('Update tersedia. Muat ulang halaman sekarang?')) {
-        window.location.reload();
+      // Clear caches and reload
+      const clearCachesAndReload = () => {
+        if ('caches' in window) {
+          caches.keys().then(cacheNames => {
+            cacheNames.forEach(cacheName => {
+              caches.delete(cacheName);
+            });
+            window.location.reload();
+          });
+        } else {
+          window.location.reload();
+        }
+      };
+      
+      // Show update notification
+      if (confirm('Versi baru tersedia. Muat ulang halaman sekarang?')) {
+        clearCachesAndReload();
+      } else {
+        // Simpan informasi bahwa update tersedia
+        localStorage.setItem('sw-update-available', 'true');
       }
     },
     offline() {
@@ -38,4 +51,21 @@ if (process.env.NODE_ENV === 'production') {
       console.error('Error during service worker registration:', error);
     },
   });
+  
+  // Check for pending updates on page load
+  if (localStorage.getItem('sw-update-available') === 'true') {
+    if (confirm('Update tersedia dari kunjungan sebelumnya. Muat ulang sekarang?')) {
+      if ('caches' in window) {
+        caches.keys().then(cacheNames => {
+          cacheNames.forEach(cacheName => {
+            caches.delete(cacheName);
+          });
+          window.location.reload();
+        });
+      } else {
+        window.location.reload();
+      }
+    }
+    localStorage.removeItem('sw-update-available');
+  }
 }

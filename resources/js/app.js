@@ -42,5 +42,14 @@ createInertiaApp({
         if (error.status === 419) {
             window.location.reload();
         }
+
+        // tambahkan di app.js atau file utama
+        if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for(let registration of registrations) {
+            registration.unregister();
+            }
+        });
+        }
     },
 });

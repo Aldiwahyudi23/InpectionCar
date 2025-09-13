@@ -130,7 +130,8 @@ export default {
   bottom: 20px;
   right: 20px;
   z-index: 10000;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  /* Gradient background yang sesuai dengan navigasi */
+  background: linear-gradient(135deg, #0ea5e9 0%, #4338ca 100%);
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.1);
   padding: 20px;
@@ -254,7 +255,7 @@ export default {
 .btn-install {
   flex: 1;
   background: white;
-  color: #667eea;
+  color: #0ea5e9;
   border: none;
   padding: 12px 16px;
   border-radius: 12px;
@@ -265,11 +266,12 @@ export default {
   justify-content: center;
   gap: 8px;
   transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 6px rgba(14, 165, 233, 0.3);
 }
 
 .btn-install:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 6px 12px rgba(14, 165, 233, 0.4);
 }
 
 .btn-install svg {

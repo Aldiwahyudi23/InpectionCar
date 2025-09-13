@@ -4,6 +4,10 @@ import vue from '@vitejs/plugin-vue';
 import path from 'path';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// Definisikan warna tema di satu tempat agar konsisten
+const THEME_COLOR = '#4338ca'; // Warna indigo-700
+const BACKGROUND_COLOR = '#ffffff'; // Warna latar belakang
+
 export default defineConfig({
     plugins: [
         laravel({
@@ -34,12 +38,16 @@ export default defineConfig({
         VitePWA({
             registerType: 'autoUpdate',
             includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+            injectRegister: 'auto',
+            workbox: {
+                globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+            },
             manifest: {
                  name: 'cek Mobil',
                 short_name: 'Inspek',
                 description: 'Aplikasi Inspek bagi karyawan tersaakiti',
-                theme_color: '#4f46e5', // Warna tema aplikasi
-                background_color: '#ffffff', // Warna background splash screen
+                theme_color: THEME_COLOR, // Gunakan variabel yang sama
+                background_color: BACKGROUND_COLOR,
                 display: 'standalone', // standalone, minimal-ui, fullscreen
                 orientation: 'portrait', // portrait, landscape, atau any
                 start_url: '/',

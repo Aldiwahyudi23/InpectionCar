@@ -22,3 +22,19 @@
     background-color: rgba(59, 130, 246, 0.1);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
+
+/* resources/css/app.css atau file CSS utama Anda */
+:root {
+  --color-primary: #4338ca;
+  --color-primary-gradient: linear-gradient(135deg, #0ea5e9 0%, #4338ca 100%);
+  --color-background: #ffffff;
+}
+
+/* Gunakan variable ini di seluruh aplikasi */
+.btn-primary {
+  background: var(--color-primary);
+}
+
+.gradient-bg {
+  background: var(--color-primary-gradient);
+}

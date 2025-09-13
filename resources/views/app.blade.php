@@ -4,12 +4,11 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        <title inertia>{{ config('app.name', 'cekMobil') }}</title>
 
-         <!-- PWA Meta Tags -->
-        {{-- <meta name="theme-color" content="#6777ef"/> --}}
-           <!-- PWA Meta Tags -->
-        <meta name="theme-color" content="#4f46e5"/>
+          <!-- PWA Meta Tags - Gunakan warna yang sama -->
+        <meta name="theme-color" content="#4338ca"/>
+        <meta name="msapplication-TileColor" content="#4338ca">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
         <meta name="apple-mobile-web-app-title" content="ShortName">
