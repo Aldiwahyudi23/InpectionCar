@@ -62,7 +62,7 @@
                         placeholder="Cari atau ketik nama mobil..."
                         class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm transition duration-150"
                         :class="{'border-red-500 focus:border-red-500': isCarNameInvalid}"
-                        @input="searchCars"
+                        @input="handleCarInput"
                         @focus="showSuggestions = true"
                         @blur="handleInputBlur"
                     >
@@ -75,6 +75,30 @@
                     </div>
                     <!-- Bagian ini akan menampilkan validasi jika nama mobil kosong -->
                     <span v-if="isCarNameInvalid" class="text-xs text-red-500 font-normal ml-2">Nama mobil tidak boleh kosong.</span>
+                    
+<!-- Tampilkan pesan jika car_id tidak ada -->
+<div v-if="!form.car_id && carSearchQuery" class="mt-1 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+    <div class="flex items-start">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <div>
+            <p class="text-yellow-800 font-medium mb-1">Informasi Penting</p>
+            <p class="text-yellow-700 text-sm mb-2">
+                Anda memasukkan nama mobil secara manual. Data detail mobil (spesifikasi, gambar, deskripsi) 
+                <span class="font-semibold">tidak akan tersedia</span> dalam laporan inspeksi.
+            </p>
+            <p class="text-yellow-700 text-sm mb-2">
+                Untuk laporan yang lengkap dengan semua detail mobil, silakan pilih mobil dari hasil pencarian.
+            </p>
+            <p class="text-yellow-700 text-sm">
+                Jika tidak ingin mengubah data mobil dan anda tidak sengaja sudah menghapus atau edit, <span class="font-semibold">jangan klik tombol "Perbarui Detail Kendaraan"</span>. 
+                Sebagai gantinya, <span class="font-semibold">refresh halaman</span> untuk kembali ke data awal.
+            </p>
+        </div>
+    </div>
+</div>
+                    
                     <div 
                         v-if="showSuggestions" 
                         class="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
@@ -234,7 +258,7 @@ const props = defineProps({
     }
 });
 
-const emit = defineEmits(['update-vehicle', 'update:validation']);
+const emit = defineEmits(['update-vehicle', 'update:validation', 'update:hasUnsavedChanges']);
 
 const form = useForm({
     plate_number: props.inspection?.plate_number || '',
@@ -279,11 +303,17 @@ onMounted(() => {
         }
     } else if (!props.inspection?.car_id && props.inspection?.car_name) {
         carSearchQuery.value = props.inspection.car_name;
+        // Jika tidak ada car_id, pastikan form.car_id null
+        form.car_id = null;
     }
     window.addEventListener('keydown', handleKeydown);
 
+     // Kirim status ke parent bahwa ada perubahan yang belum disimpan
+    emit('update:hasUnsavedChanges', isFormChanged.value);
+
     // Kirim status validasi awal ke induk
     emit('update:validation', isFormInvalid.value);
+
 });
 
 onUnmounted(() => {
@@ -402,6 +432,19 @@ const formatCarName = (car) => {
     return parts.join(' ');
 };
 
+// Fungsi untuk menangani input mobil
+const handleCarInput = () => {
+    // Jika pengguna mengetik manual (bukan memilih dari dropdown), kosongkan car_id
+    if (form.car_id) {
+        form.car_id = null;
+        selectedCar.value = null;
+        carImages.value = [];
+    }
+    
+    // Lakukan pencarian
+    searchCars();
+};
+
 const searchCars = debounce(() => {
     if (!carSearchQuery.value.trim()) {
         filteredCars.value = [];
@@ -423,6 +466,10 @@ const searchCars = debounce(() => {
 const handleInputBlur = () => {
     setTimeout(() => {
         showSuggestions.value = false;
+        
+        // Setelah dropdown tertutup, pastikan car_name sesuai dengan query
+        form.car_name = carSearchQuery.value;
+        updateVehicleData();
     }, 200);
 };
 
@@ -434,6 +481,10 @@ const selectCar = async (car) => {
     showSuggestions.value = false;
     await loadCarImages(car.id);
     updateVehicleData();
+
+     // Kirim status ke parent bahwa ada perubahan yang belum disimpan
+    emit('update:hasUnsavedChanges', isFormChanged.value);
+
     // Kirim status validasi ke induk
     emit('update:validation', isFormInvalid.value);
 };
@@ -508,6 +559,22 @@ const updateVehicleDetails = () => {
     if (!props.inspection) return;
     form.post(route('inspections.updateVehicleDetails', { inspection: props.inspection.id }), {
         preserveScroll: true,
+        onSuccess: () => {
+            // PERBARUI NILAI INITIAL SETELAH BERHASIL SIMPAN
+            initialPlateNumber.value = form.plate_number;
+            initialCarId.value = form.car_id;
+            initialCarName.value = form.car_name;
+            
+            // Kirim status ke parent bahwa sudah tidak ada perubahan yang belum disimpan
+            emit('update:hasUnsavedChanges', false);
+            
+            // Optional: Tampilkan pesan sukses
+            console.log('Data berhasil disimpan!');
+        },
+        onError: (errors) => {
+            // Handle error jika perlu
+            console.error('Gagal menyimpan data:', errors);
+        }
     });
 };
 
@@ -548,6 +615,7 @@ watch([() => form.plate_number, () => form.car_name], (newValues) => {
                     } else if (latestInspection.car_name) {
                         carSearchQuery.value = latestInspection.car_name;
                         form.car_name = latestInspection.car_name;
+                        form.car_id = null; // Pastikan car_id null jika tidak ada
                     }
 
                     inspectionCountMessage.value = `Nomor plat ini sudah pernah diperiksa ${completedInspections.length} kali sebelumnya.`;
@@ -556,6 +624,9 @@ watch([() => form.plate_number, () => form.car_name], (newValues) => {
         }
     }
     
+     // Kirim status ke parent bahwa ada perubahan yang belum disimpan
+    emit('update:hasUnsavedChanges', isFormChanged.value);
+
     // Emit status validasi ke induk setelah semua pengecekan selesai
     emit('update:validation', isFormInvalid.value);
 }, { deep: true });

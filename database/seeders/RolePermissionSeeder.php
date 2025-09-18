@@ -16,68 +16,63 @@ class RolePermissionSeeder extends Seeder
 
         // Daftar semua izin dari aplikasi utama
         $appPermissions = [
-            'access dashboard',
-            'view inspections',
-            'start inspections',
-            'create inspections',
-            'cancel inspections',
-            'store inspection results',
-            'update vehicle details',
-            'update conclusion',
-            'upload images',
-            'delete images',
-            'final submit inspections',
-            'review inspections',
-            'download pdf reports',
-            'send email reports',
-            'view cars',
-            'create cars',
-            'manage brands',
-            'manage models',
-            'manage types',
-            'manage car details',
-            'view bantuan',
-            'view coordinator dashboard',
-            'assign inspections',
-            'update inspection status',
+             // Dashboard & Welcome
+            'FrontEnd.access dashboard',
+            
+            // Inspections - View
+            'FrontEnd.view inspections',
+            'FrontEnd.history inspections',
+            'FrontEnd.log inspections',
+            'FrontEnd.cancel inspections',
+            
+            // Inspections - Create
+            'FrontEnd.create inspections',
+            
+            // Inspections - Start & Process
+            'FrontEnd.start inspections',
+            'FrontEnd.final submit inspections',
+            
+            // Inspections - Review
+            'FrontEnd.review inspections',
+            'FrontEnd.revisi inspections',
+            'FrontEnd.review inspection report',
+            'FrontEnd.approve inspections report',
+            'FrontEnd.download pdf',
+            
+            // Reports & Communications
+            'FrontEnd.send email reports',
+            'FrontEnd.send whatsapp reports',
+            
+            // Cars Management
+            'FrontEnd.view cars',
+            'FrontEnd.create cars',
+            'FrontEnd.manage brands',
+            'FrontEnd.manage models',
+            'FrontEnd.manage types',
+            'FrontEnd.manage car details',
+            
+            // Bantuan
+            'FrontEnd.view bantuan',
+            
+            // Coordinator Functions
+            'FrontEnd.view coordinator dashboard',
+            'FrontEnd.coordinator assign inspections',
+            'FrontEnd.coordinator update inspection status',
+            
+            // Team Management
+            'FrontEnd.view teams',
+            'FrontEnd.add Team',
+            'FrontEnd.settings Team',
+            
+            // Transaction & Finance
+            'FrontEnd.update transaction',
+            'FrontEnd.view finance',
+            'FrontEnd.finance report',
+            'FrontEnd.finance setor'
         ];
-
-        // Daftar semua model Filament yang membutuhkan izin CRUD
-        $filamentModels = [
-            'user',
-            'brand',
-            'model',
-            'type',
-            'detailmobil',
-            'user session',
-            'permission',
-            'role',
-            'region',
-            'region team',
-            'data inspeksi',
-            'komponent',
-            'inspection point',
-            'kategori',
-            'app menu',
-            'menu point',
-        ];
-
-        // Daftar semua izin CRUD
-        $crudActions = ['view', 'create', 'update', 'delete'];
-
-        // Siapkan array untuk izin Filament
-        $filamentPermissions = [];
-        foreach ($filamentModels as $model) {
-            foreach ($crudActions as $action) {
-                $filamentPermissions[] = 'filament ' . $action . ' ' . $model;
-            }
-        }
-
-        // Gabungkan semua izin menjadi satu array
-        $allPermissions = array_merge($appPermissions, $filamentPermissions);
 
         // Buat semua izin yang terdaftar di database
-        foreach ($allPermissions as $permission) {
+        foreach ($appPermissions as $permission) {
             Permission::firstOrCreate(['name' => $permission]);
         }
 
@@ -85,59 +80,124 @@ class RolePermissionSeeder extends Seeder
 
         // 1. Peran Admin
         $adminRole = Role::firstOrCreate(['name' => 'Admin']);
-        $adminRole->syncPermissions($allPermissions);
+        $adminRole->syncPermissions($appPermissions);
+        // $adminRole->givePermissionTo(Permission::all());
 
         // 2. Peran Koordinator
         $coordinatorRole = Role::firstOrCreate(['name' => 'coordinator']);
         $coordinatorPermissions = [
-                       'access dashboard',
-            'view inspections',
-            'start inspections',
-            'create inspections',
-            'cancel inspections',
-            'store inspection results',
-            'update vehicle details',
-            'update conclusion',
-            'upload images',
-            'delete images',
-            'final submit inspections',
-            'review inspections',
-            'download pdf reports',
-            'send email reports',
-            'view cars',
-            'create cars',
-            'manage brands',
-            'manage models',
-            'manage types',
-            'manage car details',
-            'view bantuan',
+ // Dashboard & Welcome
+            'FrontEnd.access dashboard',
+            
+            // Inspections - View
+            'FrontEnd.view inspections',
+            'FrontEnd.history inspections',
+            'FrontEnd.log inspections',
+            'FrontEnd.cancel inspections',
+            
+            // Inspections - Create
+            'FrontEnd.create inspections',
+            
+            // Inspections - Start & Process
+            'FrontEnd.start inspections',
+            'FrontEnd.final submit inspections',
+            
+            // Inspections - Review
+            'FrontEnd.review inspections',
+            'FrontEnd.revisi inspections',
+            'FrontEnd.review inspection report',
+            'FrontEnd.approve inspections report',
+            'FrontEnd.download pdf',
+            
+            // Reports & Communications
+            'FrontEnd.send email reports',
+            'FrontEnd.send whatsapp reports',
+            
+            // Cars Management
+            'FrontEnd.view cars',
+            'FrontEnd.create cars',
+            'FrontEnd.manage brands',
+            'FrontEnd.manage models',
+            'FrontEnd.manage types',
+            'FrontEnd.manage car details',
+            
+            // Bantuan
+            'FrontEnd.view bantuan',
+            
+            // Coordinator Functions
+            'FrontEnd.view coordinator dashboard',
+            'FrontEnd.coordinator assign inspections',
+            'FrontEnd.coordinator update inspection status',
+            
+            // Team Management
+            'FrontEnd.view teams',
+            'FrontEnd.add Team',
+            'FrontEnd.settings Team',
+            
+            // Transaction & Finance
+            'FrontEnd.update transaction',
+            'FrontEnd.view finance',
+            'FrontEnd.finance report',
+            'FrontEnd.finance setor'
         ];
         $coordinatorRole->syncPermissions($coordinatorPermissions);
 
         // 3. Peran Inspektor
         $inspectorRole = Role::firstOrCreate(['name' => 'inspector']);
         $inspectorPermissions = [
-            'access dashboard',
-            'view inspections',
-            'start inspections',
-            'create inspections',
-            'cancel inspections',
-            'store inspection results',
-            'update vehicle details',
-            'update conclusion',
-            'upload images',
-            'delete images',
-            'final submit inspections',
-            'review inspections',
-            'download pdf reports',
-            'send email reports',
-            'view cars',
-            'create cars',
-            'manage brands',
-            'manage models',
-            'manage types',
-            'manage car details',
-            'view bantuan',
+ // Dashboard & Welcome
+            'FrontEnd.access dashboard',
+            
+            // Inspections - View
+            'FrontEnd.view inspections',
+            'FrontEnd.history inspections',
+            'FrontEnd.log inspections',
+            'FrontEnd.cancel inspections',
+            
+            // Inspections - Create
+            'FrontEnd.create inspections',
+            
+            // Inspections - Start & Process
+            'FrontEnd.start inspections',
+            'FrontEnd.final submit inspections',
+            
+            // Inspections - Review
+            'FrontEnd.review inspections',
+            'FrontEnd.revisi inspections',
+            'FrontEnd.review inspection report',
+            'FrontEnd.approve inspections report',
+            'FrontEnd.download pdf',
+            
+            // Reports & Communications
+            'FrontEnd.send email reports',
+            'FrontEnd.send whatsapp reports',
+            
+            // Cars Management
+            'FrontEnd.view cars',
+            'FrontEnd.create cars',
+            'FrontEnd.manage brands',
+            'FrontEnd.manage models',
+            'FrontEnd.manage types',
+            'FrontEnd.manage car details',
+            
+            // Bantuan
+            'FrontEnd.view bantuan',
+            
+            // // Coordinator Functions
+            // 'FrontEnd.view coordinator dashboard',
+            // 'FrontEnd.coordinator assign inspections',
+            // 'FrontEnd.coordinator update inspection status',
+            
+            // Team Management
+            'FrontEnd.view teams',
+            'FrontEnd.add Team',
+            'FrontEnd.settings Team',
+            
+            // Transaction & Finance
+            'FrontEnd.update transaction',
+            'FrontEnd.view finance',
+            'FrontEnd.finance report',
+            'FrontEnd.finance setor'
         ];
         $inspectorRole->syncPermissions($inspectorPermissions);
 

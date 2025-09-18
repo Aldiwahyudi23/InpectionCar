@@ -199,4 +199,25 @@ return [
 
         'store' => 'default',
     ],
+
+      /*
+    |--------------------------------------------------------------------------
+    | Permission Groups
+    |--------------------------------------------------------------------------
+    | Definisikan grup manual untuk permission agar tampil rapi di Filament.
+    | Keys = nama grup, Values = array keyword untuk filter permission.
+    |
+    | Contoh:
+    |   'Car Management' => ['kategori', 'car', 'inspection'],
+    |
+    | Kalau array kosong, berarti semua permission yang tidak match
+    | masuk ke grup itu.
+    */
+    
+    'groups' => [
+        'Car Management' => ['kategori', 'car', 'inspection'],
+        'User Management' => ['user', 'role', 'permission'],
+        'Filament System' => ['filament'],
+        'Other' => [], // semua sisa masuk sini
+    ],
 ];

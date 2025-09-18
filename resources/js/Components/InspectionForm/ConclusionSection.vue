@@ -153,6 +153,7 @@
         @paste="handlePaste"
         placeholder="Tambahkan catatan kesimpulan inspeksi di sini..."
       ></div>
+       <p class="text-xs mt-1 text-gray-500">{{ status }}</p>
     </div>
   </div>
 </template>
@@ -173,8 +174,12 @@ const props = defineProps({
 const editorRef = ref(null)
 const isEditing = ref(false)
 let savedRange = null;
+const note = ref('')
+const status = ref('') // status indikator
 
-// Helper function untuk parse settings dengan aman
+const STORAGE_KEY = `inspection-${props.inspectionId}-note`
+
+// Helper parse settings
 const parseSettings = (settings) => {
   if (!settings) return {};
   if (typeof settings === 'string') {
@@ -191,7 +196,7 @@ const parseSettings = (settings) => {
   return {};
 }
 
-// Ambil data conclusion dari settings yang sudah di-parse
+// Ambil data conclusion dari settings
 const conclusionSettings = computed(() => {
   const settings = parseSettings(props.inspection.settings);
   return settings.conclusion || {};
@@ -202,10 +207,10 @@ const form = ref({
   flooded: conclusionSettings.value.flooded || '',
   collision: conclusionSettings.value.collision || '',
   collision_severity: conclusionSettings.value.collision_severity || '',
-  conclusion_note: props.inspection.notes || ''
+  conclusion_note: '' // isi nanti dari localStorage atau props
 })
 
-// Options untuk radio
+// Options
 const floodOptions = [
   { value: 'yes', label: 'Ya' },
   { value: 'no', label: 'Tidak' }
@@ -221,49 +226,56 @@ const severityOptions = [
   { value: 'heavy', label: 'Berat' }
 ]
 
-// Inisialisasi editor
+// Init editor
 onMounted(() => {
   initializeForm();
+
+  // ⬇️ Ambil cadangan dari localStorage
+  const savedNote = localStorage.getItem(STORAGE_KEY)
+  if (savedNote) {
+    form.value.conclusion_note = savedNote
+  } else if (props.inspection.notes) {
+    form.value.conclusion_note = props.inspection.notes
+  }
+
   nextTick(() => {
     initializeEditor();
   });
 });
 
-// Initialize editor content
 const initializeEditor = () => {
   if (editorRef.value && form.value.conclusion_note) {
     editorRef.value.innerHTML = form.value.conclusion_note;
   }
 }
 
-// Handle input pada editor
+// Handle input editor
 const handleEditorInput = debounce(() => {
   if (editorRef.value) {
-    // Simpan posisi kursor sebelum memperbarui data
     const selection = window.getSelection();
     if (selection.rangeCount > 0) {
       savedRange = selection.getRangeAt(0);
     }
 
     form.value.conclusion_note = editorRef.value.innerHTML;
+    // ⬇️ Simpan ke localStorage
+    localStorage.setItem(STORAGE_KEY, form.value.conclusion_note);
     saveToServer();
   }
 }, 500)
 
-// Handle enter key untuk paragraf
 const handleEnterKey = (event) => {
   event.preventDefault();
   document.execCommand('insertParagraph', false, null);
 }
 
-// Handle paste event untuk membersihkan formatting
 const handlePaste = (event) => {
   event.preventDefault();
   const text = (event.clipboardData || window.clipboardData).getData('text/plain');
   document.execCommand('insertText', false, text);
 }
 
-// Format text
+// Format tools
 const formatText = (format) => {
   if (!editorRef.value) return;
   
@@ -274,59 +286,25 @@ const formatText = (format) => {
   }
   
   switch (format) {
-    case 'bold':
-      document.execCommand('bold', false, null);
-      break;
-    case 'italic':
-      document.execCommand('italic', false, null);
-      break;
-    case 'underline':
-      document.execCommand('underline', false, null);
-      break;
+    case 'bold': document.execCommand('bold'); break;
+    case 'italic': document.execCommand('italic'); break;
+    case 'underline': document.execCommand('underline'); break;
   }
   
   handleEditorInput();
 }
 
-// Insert bullet list
-const insertBulletList = () => {
-  if (!editorRef.value) return;
-  
-  editorRef.value.focus();
-  const selection = window.getSelection();
-  if (selection.rangeCount > 0) {
-    savedRange = selection.getRangeAt(0);
-  }
-  
-  document.execCommand('insertUnorderedList', false, null);
-  handleEditorInput();
-}
-
-// Clear formatting
-const clearFormatting = () => {
-  if (!editorRef.value) return;
-  
-  editorRef.value.focus();
-  const selection = window.getSelection();
-  if (selection.rangeCount > 0) {
-    savedRange = selection.getRangeAt(0);
-  }
-  
-  document.execCommand('removeFormat', false, null);
-  document.execCommand('unlink', false, null);
-  handleEditorInput();
-}
-
-// Save content ketika editor kehilangan fokus
+// Save ketika blur
 const saveContent = () => {
   isEditing.value = false;
   if (editorRef.value) {
     form.value.conclusion_note = editorRef.value.innerHTML;
+    localStorage.setItem(STORAGE_KEY, form.value.conclusion_note); // ⬇️ simpan cadangan
     saveToServer();
   }
 }
 
-// Fungsi untuk menyimpan data ke server
+// Simpan ke server
 const saveToServer = debounce(() => {
   const dataToSend = {
     flooded: form.value.flooded,
@@ -341,28 +319,18 @@ const saveToServer = debounce(() => {
     {
       preserveScroll: true,
       preserveState: true,
+      only: [],
+      // ⬇️ jangan replace props inspection
       onSuccess: () => {
-        nextTick(() => {
-          if (editorRef.value) {
-            const range = document.createRange();
-            const selection = window.getSelection();
-            
-            // Pindahkan kursor ke akhir teks
-            range.selectNodeContents(editorRef.value);
-            range.collapse(false);
-            selection.removeAllRanges();
-            selection.addRange(range);
-          }
-        });
-      },
-      onError: (errors) => {
-        console.error('Error saving conclusion:', errors);
+        // hapus backup setelah sukses simpan
+        localStorage.removeItem(STORAGE_KEY)
+        status.value = '⏳ Tersimpan'
       }
     }
   )
 }, 500)
 
-// Watch untuk perubahan pada radio buttons
+// Watch radio options, simpan otomatis
 watch([
   () => form.value.flooded,
   () => form.value.collision,
@@ -371,27 +339,17 @@ watch([
   saveToServer()
 })
 
-// Inisialisasi form saat component mounted
+// Inisialisasi form (tanpa overwrite notes)
 const initializeForm = () => {
   const settings = parseSettings(props.inspection.settings);
   const conclusion = settings.conclusion || {};
-  
-  form.value = {
-    flooded: conclusion.flooded || '',
-    collision: conclusion.collision || '',
-    collision_severity: conclusion.collision_severity || '',
-    conclusion_note: props.inspection.notes || ''
-  };
-};
 
-// Watch untuk perubahan props.inspection
-watch(() => props.inspection, () => {
-  initializeForm();
-  nextTick(() => {
-    initializeEditor();
-  });
-}, { deep: true });
+  form.value.flooded = conclusion.flooded || '';
+  form.value.collision = conclusion.collision || '';
+  form.value.collision_severity = conclusion.collision_severity || '';
+};
 </script>
+
 
 <style scoped>
 /* Style untuk placeholder contenteditable */

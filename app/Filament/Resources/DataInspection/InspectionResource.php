@@ -84,9 +84,27 @@ class InspectionResource extends Resource
                 Forms\Components\TextInput::make('file')
                     ->label('File'),
                 
-                Forms\Components\Textarea::make('notes')
+                 Forms\Components\RichEditor::make('notes')
                     ->label('Catatan')
-                    ->rows(3)
+                    ->toolbarButtons([
+                        'attachFiles',
+                        'blockquote',
+                        'bold',
+                        'bulletList',
+                        'codeBlock',
+                        'h2',
+                        'h3',
+                        'italic',
+                        'link',
+                        'orderedList',
+                        'redo',
+                        'strike',
+                        'underline',
+                        'undo',
+                    ])
+                    ->fileAttachmentsDirectory('notes') // Folder untuk upload file
+                    ->placeholder('Masukkan kesimpulan Komponen di sini...')
+                    ->helperText('Kesimpulan tambahan tentang komponen. Format HTML akan dipertahankan.')
                     ->columnSpanFull(),
 
                 Forms\Components\Textarea::make('settings')

@@ -15,17 +15,22 @@
                 <div class="bg-white rounded-xl shadow-lg p-4 mb-4">
                     <h3 class="text-lg font-bold text-gray-800 mb-4">Fitur Utama</h3>
                     <div class="grid grid-cols-4 md:grid-cols-4 lg:grid-cols-5 gap-y-6">
-                        <Link v-for="menu in filteredNavMenus" :key="menu.name" :href="route(menu.route)" 
-                                class="flex flex-col items-center text-gray-600 hover:text-indigo-800 transition-all duration-200 group">
+                        <Link v-for="menu in filteredNavMenus" 
+                            :key="menu.name" 
+                            :href="menu.route.startsWith('/') ? menu.route : route(menu.route)" 
+                            class="flex flex-col items-center text-gray-600 hover:text-indigo-800 transition-all duration-200 group">
+                            
                             <div :class="['p-3 rounded-xl mb-1 transition-all duration-200 group-hover:bg-indigo-100', menu.color]">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="menu.icon" />
                                 </svg>
                             </div>
+                            
                             <span class="text-xs font-medium text-center mt-1">{{ menu.name }}</span>
                         </Link>
                     </div>
                 </div>
+
 
                 <!-- Inspeksi Terakhir -->
                 <div class="bg-white rounded-xl shadow-lg p-4">
@@ -111,15 +116,15 @@ const navMenus = [
     { 
         name: 'Laporan', 
         icon: 'M9 19V6l12-3v14H9zM9 19a2 2 0 002 2h2a2 2 0 002-2M9 19c-.333 0-.667 0-1 0a2 2 0 01-2-2v-3.5a2 2 0 012-2a2 2 0 002-2c0-.333 0-.667 0-1', 
-        route: 'job.index',
+        route: 'report.index',
         color: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200',
-        restricted: true // Penanda bahwa menu ini dibatasi
     },
     { 
-        name: 'Pengaturan', 
+        name: 'Admin Panel', 
         icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z', 
-        route: 'job.index',
-        color: 'bg-violet-100 text-violet-700 hover:bg-violet-200'
+        route: '/admin',
+        color: 'bg-violet-100 text-violet-700 hover:bg-violet-200',
+        restricted: true // Penanda bahwa menu ini dibatasi
     },
     { 
         name: 'Bantuan', 

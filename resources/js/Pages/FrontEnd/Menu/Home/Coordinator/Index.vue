@@ -191,7 +191,7 @@
                                                         </span>
                                                     </td>
                                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                        <Link :href="route('coordinator.inspections.show', { inspection: encryptedIds[inspection.id] })" class="text-blue-600 hover:text-blue-900 mr-3">Lihat</Link>
+                                                        <Link :href="route('inspections.review', { id: encryptedIds[inspection.id] })" class="text-blue-600 hover:text-blue-900 mr-3">Lihat</Link>
                                                         <!-- <button v-if="inspection.status === 'pending'" @click="assignInspection(inspection.id)" class="text-green-600 hover:text-green-900">Tugaskan</button> -->
                                                     </td>
                                                 </tr>

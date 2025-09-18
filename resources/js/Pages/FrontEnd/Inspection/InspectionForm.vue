@@ -85,6 +85,7 @@
           @update-vehicle="updateVehicleDetails"
           @save-car-details="saveNewCarDetails"
           @update:validation="handleVehicleValidation"
+         @update:hasUnsavedChanges="handleUnsavedChanges"
         />
 
         <!-- Menu Inspeksi Biasa -->
@@ -412,6 +413,13 @@ const vehicleDetails = ref({
     car_name: props.inspection.car_name
 });
 
+// Definisikan state untuk melacak perubahan
+const hasUnsavedChanges = ref(false);
+
+// Function untuk handle emit dari child
+const handleUnsavedChanges = (hasChanges) => {
+  hasUnsavedChanges.value = hasChanges;
+};
 // State baru untuk menyimpan status validasi dari komponen anak
 const isVehicleDetailsInvalid = ref(false);
 
@@ -419,6 +427,7 @@ const isVehicleDetailsInvalid = ref(false);
 const handleVehicleValidation = (isInvalid) => {
     isVehicleDetailsInvalid.value = isInvalid;
 };
+
 
 // --- Logika utama untuk memeriksa kelengkapan form kendaraan ---
 const isVehicleFormComplete = computed(() => {
@@ -430,9 +439,12 @@ const isVehicleFormComplete = computed(() => {
     
     // 3. Cek apakah ada validasi negatif dari komponen anak
     const hasNoBlockingValidation = !isVehicleDetailsInvalid.value;
+
+    // 3. Cek apakah ada validasi negatif dari komponen anak
+    const hasUnsavedChangesValidation = !hasUnsavedChanges.value;
     
     // 4. Gabungkan semua validasi
-    return isPlateValid && isCarNameFilled && hasNoBlockingValidation;
+    return isPlateValid && isCarNameFilled && hasNoBlockingValidation && hasUnsavedChangesValidation;
 });
 
 
@@ -679,7 +691,7 @@ const allMenusComplete = computed(() => {
   const vehicleComplete = isVehicleFormComplete.value;
   const regularMenusComplete = props.appMenus.every(menu => isMenuComplete(menu));
   const conclusionComplete = isConclusionComplete();
-  return vehicleComplete && regularMenusComplete && conclusionComplete;
+  return vehicleComplete && regularMenusComplete && conclusionComplete ;
 });
 
 // Change active category

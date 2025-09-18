@@ -74,18 +74,39 @@ class RoleResource extends Resource
                     ])
                     ->columns(2),
                 
-               Section::make('Manajemen Izin')
-                    ->description('Pilih izin untuk peran ini. Izin ditampilkan dalam satu daftar yang dapat dicari.')
-                    ->schema([
-                        CheckboxList::make('permissions')
-                            ->label('')
-                            ->options($permissions->pluck('name', 'id'))
-                            ->bulkToggleable()
-                            ->searchable()
-                            ->columns(4)
-                            ->gridDirection('row')
-                            ->relationship('permissions', 'name'),
-                    ])
+ Section::make('Manajemen Izin')
+                ->description('Pilih izin untuk peran ini, sudah dikelompokkan berdasarkan config.')
+                ->schema([
+                    CheckboxList::make('permissions')
+                        ->label('')
+                        ->options(function () {
+                            $permissions = Permission::all()->sortBy('name');
+
+                            $groups = config('permissions.groups'); // 🔥 ambil dari config
+                            $result = [];
+
+                            foreach ($groups as $groupName => $keywords) {
+                                $filtered = $permissions->filter(function ($perm) use ($keywords) {
+                                    foreach ($keywords as $keyword) {
+                                        if (str_contains($perm->name, $keyword)) {
+                                            return true;
+                                        }
+                                    }
+                                    return empty($keywords); // kalau keywords kosong → Other
+                                });
+
+                                if ($filtered->isNotEmpty()) {
+                                    $result[$groupName] = $filtered->pluck('name', 'id')->toArray();
+                                }
+                            }
+
+                            return $result;
+                        })
+                        ->bulkToggleable()
+                        ->searchable()
+                        ->columns(3)
+                        ->relationship('permissions', 'name'),
+                ]),
             ]);
     }
 

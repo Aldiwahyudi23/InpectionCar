@@ -3,10 +3,15 @@
 namespace App\Providers\Filament;
 
 use App\Http\Middleware\EnsureIsAdmin;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Filament\Actions\Modal\Actions\Action as ActionsAction;
+use Filament\Forms\Components\Actions\Action;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationItem;
+use Filament\Navigation\UserMenuItem;
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -41,6 +46,19 @@ class AdminPanelProvider extends PanelProvider
                 Widgets\AccountWidget::class,
                 Widgets\FilamentInfoWidget::class,
             ])
+            ->navigationItems([
+                NavigationItem::make('App')
+                    ->url('/dashboard') // arahkan ke frontend
+                    ->icon('heroicon-o-device-phone-mobile') // bebas pilih icon
+                    ->sort(1)
+                    ->openUrlInNewTab(false), // kalau mau di tab baru → true
+            ])
+          ->userMenuItems([
+                'frontend' => UserMenuItem::make()
+                    ->label('App')
+                    ->url('/dashboard')
+                    ->icon('heroicon-o-device-phone-mobile'),
+            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -51,6 +69,9 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+            ])
+            ->plugins([
+                FilamentShieldPlugin::make(),
             ])
             ->authMiddleware([
                 Authenticate::class,

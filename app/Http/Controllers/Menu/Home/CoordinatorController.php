@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Menu\Home;
 
 use App\Http\Controllers\Controller;
 use App\Models\DataInspection\Inspection;
+use App\Models\Finance\Transaction;
 use App\Models\Team\Region;
 use App\Models\Team\RegionTeam;
 use App\Models\User;
@@ -204,6 +205,7 @@ class CoordinatorController extends Controller
             'car.model',
             'car.type',
             'user',
+            'customer',
             // 'items' => function($query) {
             //     $query->orderBy('category')->orderBy('name');
             // },
@@ -219,7 +221,7 @@ class CoordinatorController extends Controller
             $inspectors = User::whereIn('id', $userIds)
                                ->get(['id', 'name', 'email']);
         
-
+        $transaction = Transaction::where('inspection_id',$inspection->id )->first();
         // dd($inspectors);
          $inspection->load(['logs.user']); // load 
         $encryptedIds = Crypt::encrypt($inspection->id);
@@ -228,6 +230,7 @@ class CoordinatorController extends Controller
             'inspection' => $inspection,
             'encryptedIds' => $encryptedIds,
             'inspectors' => $inspectors,
+            'transaction' => $transaction,
             'region' => [
                 'id' => $user->region_id,
                 'name' => $user->region->name ?? 'Unknown Region'

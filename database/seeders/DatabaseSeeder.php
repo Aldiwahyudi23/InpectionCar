@@ -21,13 +21,15 @@ class DatabaseSeeder extends Seeder
         // ]);
 
          $this->call([
+             \Database\Seeders\Brands\BrandSeeder::class,
+
             RolePermissionSeeder::class,
             MasterDataSeeder::class, // Tambahkan ini
             AdminUserSeeder::class,
-            BrandSeeder::class,
-            CarModelSeeder::class,
-            CarTypeSeeder::class,
-            CarDetailSeeder::class,
+            // BrandSeeder::class,
+            // CarModelSeeder::class,
+            // CarTypeSeeder::class,
+            // CarDetailSeeder::class,
         ]);
     }
 }

@@ -7,7 +7,7 @@ use App\Models\DataCar\CarModel;
 use App\Models\DataCar\CarType;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-
+use Carbon\Carbon;
 
 class CarDetailSeeder extends Seeder
 {
@@ -19,58 +19,52 @@ class CarDetailSeeder extends Seeder
     public function run()
     {
         $carDetails = [];
+        $currentYear = date('Y');
 
         // Data untuk Toyota
         $toyotaModels = [
             'Avanza' => [
                 'E' => [
-                    ['year' => 2022, 'cc' => 1300, 'transmission' => 'MT', 'fuel_type' => 'Bensin', 'production_period' => '2020-present'],
-                    ['year' => 2022, 'cc' => 1300, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2020-present'],
+                    ['cc' => 1300, 'fuel_type' => 'Bensin', 'production_period' => '2006-present'],
                 ],
                 'G' => [
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'MT', 'fuel_type' => 'Bensin', 'production_period' => '2020-present'],
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2020-present'],
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '2006-present'],
                 ],
                 'Veloz' => [
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'MT', 'fuel_type' => 'Bensin', 'production_period' => '2020-present'],
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2020-present'],
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '2011-present'],
                 ]
             ],
             'Innova' => [
                 'G' => [
-                    ['year' => 2022, 'cc' => 2000, 'transmission' => 'MT', 'fuel_type' => 'Bensin', 'production_period' => '2016-present'],
-                    ['year' => 2022, 'cc' => 2000, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2016-present'],
+                    ['cc' => 2000, 'fuel_type' => 'Bensin', 'production_period' => '2004-present'],
+                    ['cc' => 2400, 'fuel_type' => 'Diesel', 'production_period' => '2004-present'],
                 ],
                 'V' => [
-                    ['year' => 2022, 'cc' => 2000, 'transmission' => 'MT', 'fuel_type' => 'Bensin', 'production_period' => '2016-present'],
-                    ['year' => 2022, 'cc' => 2000, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2016-present'],
-                ],
-                'V ' => [
-                    ['year' => 2022, 'cc' => 2400, 'transmission' => 'MT', 'fuel_type' => 'Diesel', 'production_period' => '2016-present'],
-                    ['year' => 2022, 'cc' => 2400, 'transmission' => 'AT', 'fuel_type' => 'Diesel', 'production_period' => '2016-present'],
+                    ['cc' => 2000, 'fuel_type' => 'Bensin', 'production_period' => '2004-present'],
+                    ['cc' => 2400, 'fuel_type' => 'Diesel', 'production_period' => '2004-present'],
                 ]
             ],
             'Fortuner' => [
                 'VRZ 4x2' => [
-                    ['year' => 2022, 'cc' => 2400, 'transmission' => 'MT', 'fuel_type' => 'Diesel', 'production_period' => '2016-present'],
-                    ['year' => 2022, 'cc' => 2400, 'transmission' => 'AT', 'fuel_type' => 'Diesel', 'production_period' => '2016-present'],
+                    ['cc' => 2400, 'fuel_type' => 'Diesel', 'production_period' => '2005-present'],
+                    ['cc' => 2700, 'fuel_type' => 'Bensin', 'production_period' => '2005-present'],
                 ],
                 'VRZ 4x4' => [
-                    ['year' => 2022, 'cc' => 2400, 'transmission' => 'MT', 'fuel_type' => 'Diesel', 'production_period' => '2016-present'],
-                    ['year' => 2022, 'cc' => 2400, 'transmission' => 'AT', 'fuel_type' => 'Diesel', 'production_period' => '2016-present'],
+                    ['cc' => 2400, 'fuel_type' => 'Diesel', 'production_period' => '2005-present'],
+                    ['cc' => 2700, 'fuel_type' => 'Bensin', 'production_period' => '2005-present'],
                 ]
             ],
             'Yaris' => [
                 'E' => [
-                    ['year' => 2022, 'cc' => 1200, 'transmission' => 'MT', 'fuel_type' => 'Bensin', 'production_period' => '2018-present'],
-                    ['year' => 2022, 'cc' => 1200, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2018-present'],
+                    ['cc' => 1200, 'fuel_type' => 'Bensin', 'production_period' => '2005-present'],
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '2005-present'],
                 ],
-                ' G' => [
-                    ['year' => 2022, 'cc' => 1200, 'transmission' => 'MT', 'fuel_type' => 'Bensin', 'production_period' => '2018-present'],
-                    ['year' => 2022, 'cc' => 1200, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2018-present'],
+                'G' => [
+                    ['cc' => 1200, 'fuel_type' => 'Bensin', 'production_period' => '2005-present'],
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '2005-present'],
                 ],
-                ' GR Sport' => [
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2021-present'],
+                'GR Sport' => [
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '2021-present'],
                 ]
             ]
         ];
@@ -78,47 +72,43 @@ class CarDetailSeeder extends Seeder
         // Data untuk Honda
         $hondaModels = [
             'Brio' => [
-                ' E' => [
-                    ['year' => 2022, 'cc' => 1200, 'transmission' => 'MT', 'fuel_type' => 'Bensin', 'production_period' => '2018-present'],
+                'E' => [
+                    ['cc' => 1200, 'fuel_type' => 'Bensin', 'production_period' => '2011-present'],
                 ],
-                ' E CVT' => [
-                    ['year' => 2022, 'cc' => 1200, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2018-present'],
-                ],
-                ' RS' => [
-                    ['year' => 2022, 'cc' => 1200, 'transmission' => 'MT', 'fuel_type' => 'Bensin', 'production_period' => '2018-present'],
-                ],
-                'RS CVT' => [
-                    ['year' => 2022, 'cc' => 1200, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2018-present'],
+                'RS' => [
+                    ['cc' => 1200, 'fuel_type' => 'Bensin', 'production_period' => '2011-present'],
                 ]
             ],
             'Jazz' => [
-                ' RS CVT' => [
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2020-present'],
+                'RS CVT' => [
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '2002-present'],
                 ],
                 'Crosstar CVT' => [
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2020-present'],
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '2020-present'],
                 ]
             ],
             'City' => [
                 'E CVT' => [
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2020-present'],
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '1996-present'],
                 ],
                 'RS CVT' => [
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2020-present'],
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '1996-present'],
                 ],
                 'Hatchback RS' => [
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2021-present'],
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '2021-present'],
                 ]
             ],
             'Civic' => [
                 'Turbo CVT' => [
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2021-present'],
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '1972-present'],
+                    ['cc' => 1800, 'fuel_type' => 'Bensin', 'production_period' => '1972-present'],
                 ],
                 'RS CVT' => [
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2021-present'],
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '1972-present'],
+                    ['cc' => 1800, 'fuel_type' => 'Bensin', 'production_period' => '1972-present'],
                 ],
                 'Type R' => [
-                    ['year' => 2022, 'cc' => 2000, 'transmission' => 'MT', 'fuel_type' => 'Bensin', 'production_period' => '2021-present'],
+                    ['cc' => 2000, 'fuel_type' => 'Bensin', 'production_period' => '1997-present'],
                 ]
             ]
         ];
@@ -127,38 +117,37 @@ class CarDetailSeeder extends Seeder
         $suzukiModels = [
             'Ertiga' => [
                 'GA' => [
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'MT', 'fuel_type' => 'Bensin', 'production_period' => '2018-present'],
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2018-present'],
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '2012-present'],
                 ],
                 'GL' => [
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2018-present'],
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '2012-present'],
                 ]
             ],
             'XL7' => [
                 'Alpha' => [
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2020-present'],
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '2019-present'],
                 ],
                 'Beta' => [
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2020-present'],
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '2019-present'],
                 ]
             ],
             'Ignis' => [
                 'GL' => [
-                    ['year' => 2022, 'cc' => 1200, 'transmission' => 'MT', 'fuel_type' => 'Bensin', 'production_period' => '2017-present'],
+                    ['cc' => 1200, 'fuel_type' => 'Bensin', 'production_period' => '2000-present'],
                 ],
                 'GL CVT' => [
-                    ['year' => 2022, 'cc' => 1200, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2017-present'],
+                    ['cc' => 1200, 'fuel_type' => 'Bensin', 'production_period' => '2000-present'],
                 ]
             ],
             'Baleno' => [
                 'GL' => [
-                    ['year' => 2022, 'cc' => 1200, 'transmission' => 'MT', 'fuel_type' => 'Bensin', 'production_period' => '2016-present'],
+                    ['cc' => 1200, 'fuel_type' => 'Bensin', 'production_period' => '1995-present'],
                 ],
                 'GL CVT' => [
-                    ['year' => 2022, 'cc' => 1200, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2016-present'],
+                    ['cc' => 1200, 'fuel_type' => 'Bensin', 'production_period' => '1995-present'],
                 ],
                 'GLS CVT' => [
-                    ['year' => 2022, 'cc' => 1200, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2016-present'],
+                    ['cc' => 1200, 'fuel_type' => 'Bensin', 'production_period' => '1995-present'],
                 ]
             ]
         ];
@@ -167,38 +156,37 @@ class CarDetailSeeder extends Seeder
         $daihatsuModels = [
             'Ayla' => [
                 'D' => [
-                    ['year' => 2022, 'cc' => 1000, 'transmission' => 'MT', 'fuel_type' => 'Bensin', 'production_period' => '2013-present'],
-                    ['year' => 2022, 'cc' => 1000, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2013-present'],
+                    ['cc' => 1000, 'fuel_type' => 'Bensin', 'production_period' => '2013-present'],
+                    ['cc' => 1200, 'fuel_type' => 'Bensin', 'production_period' => '2013-present'],
                 ],
                 'R' => [
-                    ['year' => 2022, 'cc' => 1200, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2013-present'],
+                    ['cc' => 1200, 'fuel_type' => 'Bensin', 'production_period' => '2013-present'],
                 ]
             ],
             'Sigra' => [
                 'D' => [
-                    ['year' => 2022, 'cc' => 1200, 'transmission' => 'MT', 'fuel_type' => 'Bensin', 'production_period' => '2016-present'],
-                    ['year' => 2022, 'cc' => 1200, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2016-present'],
+                    ['cc' => 1200, 'fuel_type' => 'Bensin', 'production_period' => '2016-present'],
                 ],
                 'X' => [
-                    ['year' => 2022, 'cc' => 1200, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2016-present'],
+                    ['cc' => 1200, 'fuel_type' => 'Bensin', 'production_period' => '2016-present'],
                 ]
             ],
             'Xenia' => [
                 'R' => [
-                    ['year' => 2022, 'cc' => 1300, 'transmission' => 'MT', 'fuel_type' => 'Bensin', 'production_period' => '2017-present'],
-                    ['year' => 2022, 'cc' => 1300, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2017-present'],
+                    ['cc' => 1300, 'fuel_type' => 'Bensin', 'production_period' => '2004-present'],
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '2004-present'],
                 ],
                 'R Deluxe' => [
-                    ['year' => 2022, 'cc' => 1300, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2017-present'],
+                    ['cc' => 1300, 'fuel_type' => 'Bensin', 'production_period' => '2004-present'],
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '2004-present'],
                 ]
             ],
             'Terios' => [
                 'R' => [
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'MT', 'fuel_type' => 'Bensin', 'production_period' => '2017-present'],
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2017-present'],
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '1997-present'],
                 ],
                 'R Luxury' => [
-                    ['year' => 2022, 'cc' => 1500, 'transmission' => 'AT', 'fuel_type' => 'Bensin', 'production_period' => '2017-present'],
+                    ['cc' => 1500, 'fuel_type' => 'Bensin', 'production_period' => '1997-present'],
                 ]
             ]
         ];
@@ -232,19 +220,40 @@ class CarDetailSeeder extends Seeder
                     if (!$carType) continue;
                     
                     foreach ($variants as $variant) {
-                        $carDetails[] = [
-                            'brand_id' => $brand->id,
-                            'car_model_id' => $carModel->id,
-                            'car_type_id' => $carType->id,
-                            'year' => $variant['year'],
-                            'cc' => $variant['cc'],
-                            'transmission' => $variant['transmission'],
-                            'fuel_type' => $variant['fuel_type'],
-                            'production_period' => $variant['production_period'],
-                            'description' => $this->generateDescription($brandName, $modelName, $typeName, $variant),
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ];
+                        // Parse production period
+                        $period = $this->parseProductionPeriod($variant['production_period']);
+                        $startYear = $period['start_year'];
+                        $endYear = $period['end_year'];
+                        
+                        // Generate data untuk setiap tahun dari startYear hingga endYear
+                        for ($year = $startYear; $year <= $endYear; $year++) {
+                            // Skip tahun sebelum 2010
+                            if ($year < 2010) continue;
+                            
+                            // Generate untuk kedua tipe transmisi (kecuali ada pengecualian)
+                            $transmissions = ['MT', 'AT'];
+                            
+                            foreach ($transmissions as $transmission) {
+                                // Skip kombinasi yang tidak mungkin (misal Type R dengan AT)
+                                if ($modelName === 'Civic' && $typeName === 'Type R' && $transmission === 'AT') {
+                                    continue;
+                                }
+                                
+                                $carDetails[] = [
+                                    'brand_id' => $brand->id,
+                                    'car_model_id' => $carModel->id,
+                                    'car_type_id' => $carType->id,
+                                    'year' => $year,
+                                    'cc' => $variant['cc'],
+                                    'transmission' => $transmission,
+                                    'fuel_type' => $variant['fuel_type'],
+                                    'production_period' => $variant['production_period'],
+                                    'description' => $this->generateDescription($brandName, $modelName, $typeName, $variant, $year, $transmission),
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ];
+                            }
+                        }
                     }
                 }
             }
@@ -254,17 +263,33 @@ class CarDetailSeeder extends Seeder
         DB::table('car_details')->insert($carDetails);
         
         $this->command->info('Car details seeded successfully!');
+        $this->command->info('Total car details generated: ' . count($carDetails));
+    }
+
+    /**
+     * Parse production period string to get start and end year
+     */
+    private function parseProductionPeriod($period)
+    {
+        $parts = explode('-', $period);
+        $startYear = (int)$parts[0];
+        $endYear = trim($parts[1]) === 'present' ? (int)date('Y') : (int)$parts[1];
+        
+        return [
+            'start_year' => $startYear,
+            'end_year' => $endYear
+        ];
     }
 
     /**
      * Generate description based on car details
      */
-    private function generateDescription($brand, $model, $type, $variant)
+    private function generateDescription($brand, $model, $type, $variant, $year, $transmission)
     {
-        $transmission = $variant['transmission'] == 'MT' ? 'manual' : 'otomatis';
+        $transmissionText = $transmission == 'MT' ? 'manual' : 'otomatis';
         $fuelType = $variant['fuel_type'] == 'Bensin' ? 'bensin' : 'diesel';
         
-        return "{$brand} {$model} tipe {$type} tahun {$variant['year']} dengan mesin {$variant['cc']}cc, transmisi {$transmission}, bahan bakar {$fuelType}. {$this->getAdditionalFeatures($brand, $model, $type)}";
+        return "{$brand} {$model} tipe {$type} tahun {$year} dengan mesin {$variant['cc']}cc, transmisi {$transmissionText}, bahan bakar {$fuelType}. {$this->getAdditionalFeatures($brand, $model, $type)}";
     }
 
     /**

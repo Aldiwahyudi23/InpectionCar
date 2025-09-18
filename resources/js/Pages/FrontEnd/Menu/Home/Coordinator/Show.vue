@@ -102,6 +102,24 @@
                     </div>
                 </div>
 
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h4 class="text-lg font-semibold text-gray-900 mb-4">Informasi Customer</h4>
+                    <div v-if="inspection.customer">
+                        <div class="text-sm text-gray-900">
+                            <strong>Nama:</strong> {{ inspection.customer.name }}
+                        </div>
+                        <div class="text-sm text-gray-900 flex items-center justify-between">
+                            <strong>Telepon:</strong> {{ inspection.customer.phone }}
+                            <a v-if="inspection.customer.phone" :href="`https://wa.me/62${inspection.customer.phone.replace(/^0/, '')}`" target="_blank" class="text-green-600 hover:text-green-800" title="Hubungi via WhatsApp">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.864 3.488"/>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                    <div v-else class="text-gray-500 italic">Belum ada data customer.</div>
+                </div>
+
                 <div class="bg-white rounded-xl shadow-md p-6 relative">
                     <h4 class="text-lg font-semibold text-gray-900 mb-4">Informasi Inspektur</h4>
                     
@@ -111,22 +129,48 @@
                         <div class="flex-1 min-w-0">
                             <div class="font-semibold text-gray-900">{{ inspection.user.name }}</div>
                             <div class="text-sm text-gray-500">{{ inspection.user.email }}</div>
-                            <div class="text-sm text-gray-500">{{ inspection.user.numberPhone }}</div>
+                        <div class="text-sm text-gray-500 flex items-center justify-between">
+                            <span>{{ inspection.user.numberPhone }}</span>
+                            <a
+                                v-if="inspection.user.numberPhone"
+                                :href="`https://wa.me/62${inspection.user.numberPhone.replace(/^0/, '')}`"
+                                target="_blank"
+                                class="text-green-600 hover:text-green-800"
+                                title="Hubungi via WhatsApp"
+                            >
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.864 3.488"/>
+                                </svg>
+                            </a>
+                        </div>
                         </div>
                     </div>
                     <div v-else class="text-gray-500 italic">Belum ada inspektur yang ditugaskan.</div>
+                </div>
 
-                    <a
-                        v-if="inspection.user && inspection.user.numberPhone"
-                        :href="`https://wa.me/62${inspection.user.numberPhone}`"
-                        target="_blank"
-                        class="absolute bottom-6 right-6 text-green-500 hover:text-green-600 transition-colors"
-                        aria-label="Hubungi Inspektur via WhatsApp"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12.04 2.167c-5.462 0-9.917 4.455-9.917 9.916 0 1.583.376 3.107 1.077 4.485l-1.161 4.24 4.321-1.139a9.854 9.854 0 0 0 4.298 1.056c5.46 0 9.914-4.453 9.914-9.913s-4.454-9.915-9.914-9.915zm4.84 14.73c-.15.223-.523.292-.79.358-.266.066-.62.099-.967.126-.347.027-1.127.054-2.147-.393-1.02-.448-1.742-1.282-2.13-1.898-.386-.615-.812-1.637-.456-2.585.356-.948 1.144-1.258 1.393-1.464.25-.206.536-.292.834-.292.3.001.594-.099.86-.099.266 0 .47.009.682.045.212.036.467.247.66.757.2.51.688 1.637.747 1.765.059.128.094.275.028.468-.066.193-.362.593-.523.702-.16.11-.322.22-.48.329-.158.109-.323.238-.426.377-.103.139-.214.33-.06.6.155.27.425.432.748.552.324.12.656.168.99.25.334.08.665.178.966.262.3.084.577.162.77.25.192.088.356.168.487.24.131.071.257.147.34.19.083.04.168.105.28.188.112.083.272.253.377.425.105.171.18.34.25.503.07.163.14.33.19.5.05.173.085.34.103.5.018.16.035.32.035.597 0 .167-.008.31-.027.442-.02.132-.045.242-.08.332-.034.09-.07.167-.105.23-.035.063-.122.14-.2.203-.078.063-.173.123-.28.188-.108.065-.25.127-.4.188-.15.061-.31.115-.487.168z"/>
-                        </svg>
-                    </a>
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h4 class="text-lg font-semibold text-gray-900 mb-4">Informasi Transaksi</h4>
+                    <div v-if="transaction">
+                        <div class="grid grid-cols-2 gap-y-4 gap-x-6">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500">No. Invoice</label>
+                                <p class="mt-1 text-sm text-gray-900">{{ transaction.invoice_number }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500">Jumlah</label>
+                                <p class="mt-1 text-sm text-gray-900">Rp {{ transaction.amount }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500">Status</label>
+                                <p class="mt-1 text-sm text-gray-900">{{ transaction.status }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500">Metode Pembayaran</label>
+                                <p class="mt-1 text-sm text-gray-900">{{ transaction.payment_method }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else class="text-gray-500 italic">Belum ada data transaksi.</div>
                 </div>
 
                 <div class="bg-white rounded-xl shadow-md p-4" v-if="inspection.notes">
@@ -417,7 +461,8 @@ const props = defineProps({
         type: Array,
         default: () => []
     },
-    encryptedIds: Object
+    encryptedIds: Object,
+    transaction: Object
 });
 
 const form = useForm({

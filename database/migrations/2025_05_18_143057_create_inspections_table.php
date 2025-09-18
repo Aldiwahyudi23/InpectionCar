@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('inspections', function (Blueprint $table) {
         $table->id();
-        $table->foreignId('submitted_by')->constrained('users');
+        $table->foreignId('submitted_by')->nullable()->constrained('users');
         $table->timestamp('submitted_at')->nullable();
-        $table->foreignId('user_id')->constrained('users');
+        $table->foreignId('user_id')->nullable()->constrained('users');
+        $table->foreignId('customer_id')->nullable()->constrained('customers');
         $table->foreignId('category_id')->constrained('categories');
         $table->foreignId('car_id')->nullable()->constrained('car_details');
         $table->string('car_name')->nullable();

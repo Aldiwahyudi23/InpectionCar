@@ -2,7 +2,9 @@
 
 namespace App\Models\DataInspection;
 
+use App\Models\Customer;
 use App\Models\DataCar\CarDetail;
+use App\Models\Finance\Transaction;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -21,6 +23,7 @@ class Inspection extends Model
         'submitted_by',
         'submitted_at',
         'user_id',
+        'customer_id',
         'category_id',
         'car_id',
         'car_name',
@@ -93,7 +96,11 @@ class Inspection extends Model
      */
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
+    }
+    public function submitted()
+    {
+        return $this->belongsTo(User::class,'submitted_by');
     }
 
     /**
@@ -128,4 +135,22 @@ class Inspection extends Model
         return $this->hasMany(InspectionLog::class)->with('user')->latest();
     }
 
+
+
+
+    // app/Models/Inspection.php
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    public function transaction()
+    {
+        return $this->hasOne(Transaction::class, 'inspection_id');
+    }
 }

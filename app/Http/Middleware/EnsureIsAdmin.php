@@ -14,12 +14,13 @@ class EnsureIsAdmin
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next): Response
-    {
-        if (Auth::check() && Auth::user()->hasRole('Admin')) {
-            return $next($request);
-        }
-
-        return redirect('/dashboard');
+public function handle(Request $request, Closure $next): Response
+{
+    if (Auth::check() && Auth::user()->hasAnyRole(['Admin', 'coordinator'])) {
+        return $next($request);
     }
+
+    return redirect('/dashboard');
+}
+
 }

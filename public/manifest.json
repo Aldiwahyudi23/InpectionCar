@@ -1,6 +1,6 @@
 {
   "name": "cek Mobil",
-  "short_name": "Mobil",
+  "short_name": "Inspek Mobil",
   "description": "Aplikasi untuk inspeksi, bagi karyawan yang tersakiti",
   "start_url": "/dashboard",
   "display": "standalone",

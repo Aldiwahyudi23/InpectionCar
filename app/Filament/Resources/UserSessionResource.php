@@ -65,8 +65,8 @@ public static function table(Table $table): Table
                     $record->user->update([
                         'is_active' => false,
                     ]);
-                })
-                ->visible(fn ($record) => $record->user->is_active), // tampil hanya kalau user masih aktif
+                }),
+                // ->visible(fn ($record) => $record->user->is_active), // tampil hanya kalau user masih aktif
 
             Tables\Actions\Action::make('Logout')
                 ->color('danger')

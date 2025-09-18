@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Menu\Job;
 
 use App\Http\Controllers\Controller;
 use App\Models\DataInspection\Inspection;
+use App\Models\Finance\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
@@ -21,10 +22,11 @@ class JobController extends Controller
             'car.model',
             'car.type',
             'category', // tambahkan relasi kategori
+            'customer',
+            'transaction',
         ])
         ->orderBy('inspection_date', 'asc')
         ->get();
-
     // Encrypt semua ID inspection
     $encryptedIds = $tasks->mapWithKeys(function($task) {
         return [$task->id => Crypt::encrypt($task->id)];

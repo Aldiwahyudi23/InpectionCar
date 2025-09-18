@@ -20,6 +20,8 @@ class CarDetail extends Model
         'fuel_type',
         'production_period',
         'description',
+        'engine_code',
+        'segment',
     ];
 
     protected $casts = [
