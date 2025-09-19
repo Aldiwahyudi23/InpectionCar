@@ -52,7 +52,7 @@ const confirmRelease = () => {
     <AppLayout title="Daftar Tagihan">
         <Head title="Daftar Tagihan" />
 
-        <div class="max-w-7xl mx-auto p-4">
+        <div class="w-full px-4 sm:px-6 lg:px-6 py-6">
             <h1 class="text-xl font-bold text-gray-800 mb-4">Daftar Tagihan</h1>
 
             <!-- Summary Total -->

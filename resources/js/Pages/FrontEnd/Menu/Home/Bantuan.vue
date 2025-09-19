@@ -1,8 +1,9 @@
 <template>
     <AppLayout title="Pusat Bantuan">
         <Head title="Pusat Bantuan" />
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative">
-            <div class="space-y-4 bg-white rounded-xl shadow-md p-4">
+        <!-- <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative"> -->
+        <div class="w-full px-4 sm:px-6 lg:px-6 py-6">
+            <div class="space-y-4 bg-white rounded-xl shadow-md p-4 relative">
                 <!-- Header dengan pencarian -->
                 <div class="flex justify-between items-center mb-4">
                     <h1 class="text-xl md:text-3xl font-bold text-gray-900 text-center flex-grow">
@@ -170,10 +171,6 @@ import { router } from '@inertiajs/vue3'
 import debounce from 'lodash/debounce'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { Head } from '@inertiajs/vue3';
-
-import { usePWA } from '@/composables/usePWA';
-
-const { canInstall, installApp, isOnline } = usePWA();
 
 const props = defineProps({
     components: {

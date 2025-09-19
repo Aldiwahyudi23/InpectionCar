@@ -14,13 +14,51 @@
                 </div>
             </header>
 
-            <main class="max-w-4xl mx-auto py-4 sm:px-4 lg:px-4">
+            <main class="w-full py-4 sm:px-4 lg:px-4">
+                <!-- <div class="w-full px-4 sm:px-6 lg:px-6 py-6"></div> -->
                 <!-- Bagian Filter -->
                 <div class="px-4 sm:px-0 mb-4">
                     <div class="bg-white overflow-hidden shadow-lg rounded-2xl p-4">
                         <h3 class="text-lg font-medium text-gray-900 mb-2">Saring Inspeksi</h3>
                         <!-- Kontainer untuk Status & Rentang Tanggal -->
                         <div class="grid grid-cols-2 sm:grid-cols-2 gap-4 mb-4">
+                            <!-- Filter Region (hanya admin) -->
+<!-- Filter Region (Admin only) -->
+<div v-if="isAdmin">
+  <label for="region" class="block text-sm font-medium text-gray-700">Region</label>
+  <select 
+    id="region"
+    v-model="filters.region_id"
+    @change="updateFilters"
+    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none 
+           focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+  >
+    <option value="all">Semua Region</option>
+    <option v-for="reg in allRegions" :key="reg.id" :value="reg.id">
+      {{ reg.name }}
+    </option>
+  </select>
+</div>
+
+<!-- Filter User (Admin only) -->
+<div v-if="isAdmin">
+  <label for="user" class="block text-sm font-medium text-gray-700">User</label>
+  <select 
+    id="user"
+    v-model="filters.user_id"
+    @change="updateFilters"
+    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none 
+           focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+  >
+    <option value="">Semua User</option>
+    <option v-for="teamUser in regionUsers" :key="teamUser.id" :value="teamUser.id">
+      {{ teamUser.name }}
+    </option>
+  </select>
+</div>
+
+
+
                             <!-- Filter Status -->
                             <div>
                                 <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
@@ -66,7 +104,7 @@
                                 id="search" 
                                 v-model="filters.search"
                                 @input="debouncedUpdateFilters"
-                                placeholder="Cari berdasarkan mobil atau inspektur..."
+                                placeholder="Cari berdasarkan mobil atau inspektor..."
                                 class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                             >
                         </div>
@@ -160,7 +198,10 @@
                                                         Tanggal Inspeksi
                                                     </th>
                                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Status
+                                                        Status Inspection
+                                                    </th>
+                                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                        Status Pembayaran
                                                     </th>
                                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                         Tindakan
@@ -187,13 +228,34 @@
                                                     </td>
                                                     <td class="px-6 py-4 whitespace-nowrap">
                                                         <span :class="`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass(inspection.status)}`">
-                                                            {{ formatStatus(inspection.status) }}
+                                                            {{ formatStatus(inspection.status) ?? '-' }}
                                                         </span>
                                                     </td>
-                                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                        <Link :href="route('inspections.review', { id: encryptedIds[inspection.id] })" class="text-blue-600 hover:text-blue-900 mr-3">Lihat</Link>
-                                                        <!-- <button v-if="inspection.status === 'pending'" @click="assignInspection(inspection.id)" class="text-green-600 hover:text-green-900">Tugaskan</button> -->
+                                                   <td class="px-6 py-4 whitespace-nowrap">
+                                                        <span 
+                                                            :class="`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass(inspection.transaction?.status ?? 'unpaid')}`"
+                                                        >
+                                                            {{ inspection.transaction?.status ? formatStatus(inspection.transaction.status) : 'Belum Ada Transaksi' }}
+                                                        </span>
                                                     </td>
+
+                                                   <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                                                        <Link 
+                                                            :href="route('inspections.review', { id: encryptedIds[inspection.id] })" 
+                                                            class="inline-flex items-center px-3 py-1 rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
+                                                        >
+                                                            Lihat
+                                                        </Link>
+
+                                                        <Link 
+                                                            v-if="inspection.status === 'draft' || inspection.user_id == null" 
+                                                            :href="route('coordinator.inspections.show', { id: encryptedIds[inspection.id] })"
+                                                            class="inline-flex items-center px-3 py-1 rounded-lg text-white bg-green-600 hover:bg-green-700 transition-colors duration-200"
+                                                        >
+                                                            Tugaskan
+                                                        </Link>
+                                                    </td>
+
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -273,14 +335,36 @@ const props = defineProps({
     encryptedIds:Object,
     filters: Object,
     stats: Object,
-    region: Object
+    region: Object,
+
+    allRegions: Array, // [ADMIN ADD]
+    isAdmin: Boolean,  // [ADMIN ADD]
 });
 
 // Filters
 const filters = reactive({
     status: props.filters.status || '',
     dateRange: props.filters.dateRange || 'all',
-    search: props.filters.search || ''
+    search: props.filters.search || '',
+    region_id: props.filters.region_id || 'all',
+    user_id: props.filters.user_id || '',
+});
+
+const regionUsers = ref([]);
+
+// Jika admin dan pilih region, ambil usernya
+watch(() => filters.region_id, async (newRegionId) => {
+  if (props.isAdmin) {
+    if (!newRegionId || newRegionId === "all") {
+      // Semua user dari semua region
+      let response = await axios.get(route('api.users.all'));
+      regionUsers.value = response.data;
+    } else {
+      // User dari region tertentu
+      let response = await axios.get(route('api.region.users', { id: newRegionId }));
+      regionUsers.value = response.data;
+    }
+  }
 });
 
 // Debounced search function
@@ -319,7 +403,14 @@ const formatStatus = (status) => {
         'rejected': 'Ditolak',
         'revision': 'Revisi',
         'completed': 'Selesai',
-        'cancelled': 'Dibatalkan'
+        'cancelled': 'Dibatalkan',
+
+          // Transaction
+        'paid': 'Sudah di bayar',
+        'failed': 'Gagal',
+        'refunded': 'Dikembalikan',
+        'expired': 'Kadaluarsa',
+        'released': 'Diberikan',
     };
     return statusMap[status] || status;
 };
@@ -335,19 +426,14 @@ const statusClass = (status) => {
         'rejected': 'bg-red-500 text-white',
         'revision': 'bg-orange-500 text-white',
         'completed': 'bg-emerald-500 text-white',
-        'cancelled': 'bg-red-500 text-white'
+        'cancelled': 'bg-red-500 text-white',
+
+        'failed': 'bg-red-500 text-white',
+        'expired': 'bg-red-500 text-white',
+        'paid': 'bg-emerald-500 text-white',
+        'refunded': 'bg-orange-500 text-white',
     };
     return classMap[status] || 'bg-gray-100 text-gray-800';
 };
 
-// Assign inspection
-const assignInspection = async (id) => {
-    try {
-        await router.post(route('coordinator.inspections.assign', id));
-        // Refresh data
-        router.reload({ only: ['inspections', 'stats'] });
-    } catch (error) {
-        console.error('Error assigning inspection:', error);
-    }
-};
 </script>

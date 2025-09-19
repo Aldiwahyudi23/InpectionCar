@@ -20,6 +20,7 @@ use App\Models\Finance\TransactionDistribution;
 use App\Models\Team\Region;
 use App\Models\Team\RegionTeam;
 use App\Models\User;
+use App\Services\InspectionPdfGenerator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -572,17 +573,12 @@ public function store(Request $request)
         ])->findOrFail($id);
 
 
-        // cek status
-        if (in_array($inspection->status, [
-            'draft', 
-            'in_progress', 
-            'pending', 
-            'revision',        
-            // 'rejected',
-            // 'revision',
-            // 'completed',
-            // 'cancelled'
-            ])) {
+        $user = Auth::user();
+        $roles = $user->getRoleNames()->toArray(); // ambil semua role user
+
+        $restrictedStatuses = ['draft', 'in_progress', 'pending', 'revision'];
+
+        if (in_array($inspection->status, $restrictedStatuses) && !in_array('Admin', $roles) && !in_array('coordinator', $roles)) {
             return redirect()->route('job.index');
         }
 
@@ -690,6 +686,9 @@ public function store(Request $request)
                 return redirect()->route('job.index')->with('error', 'Status inspection tidak valid untuk download.');
             }
             
+                // $pdfGenerator = new InspectionPdfGenerator();
+                // $filePath = $pdfGenerator->generate($inspection);
+
         $menu_points = MenuPoint::with([
                 'app_menu',
                 'inspection_point',

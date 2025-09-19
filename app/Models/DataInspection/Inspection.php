@@ -68,7 +68,7 @@ class Inspection extends Model
     public function addLog($action, $description = null, $userId = null)
     {
         return $this->logs()->create([
-            'user_id' => $userId ?? Auth::user()->id,
+            'user_id' => $userId ?? Auth::id() ?? null,
             'action' => $action,
             'description' => $description,
         ]);

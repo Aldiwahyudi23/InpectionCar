@@ -78,22 +78,148 @@ class CoordinatorController extends Controller
      * Display inspections for coordinator's region
      */
 
-    public function index(Request $request)
+    // public function index(Request $request)
+    // {
+    //     $user = $request->user();
+
+    //     // Ambil region_id dari user login
+    //     $regionId = RegionTeam::where('user_id', $user->id)->value('region_id');
+
+    //     $region = Region::find($regionId);
+    //     // Ambil semua user_id yang ada di region tersebut
+    //     $userIds = RegionTeam::where('region_id', $regionId)->pluck('user_id');
+
+    //     // Filters
+    //     $filters = $request->only(['status', 'dateRange', 'search', 'perPage']);
+
+    //     // Query utama inspections
+    //     $query = Inspection::with(['car', 'user', 'customer', 'transaction'])
+    //         ->whereIn('user_id', $userIds)
+    //         ->when($filters['status'] ?? null, fn($q, $status) => $q->where('status', $status))
+    //         ->when($filters['dateRange'] ?? null, function ($q, $dateRange) {
+    //             return match ($dateRange) {
+    //                 'today' => $q->whereDate('inspection_date', today()),
+    //                 'week'  => $q->whereBetween('inspection_date', [now()->startOfWeek(), now()->endOfWeek()]),
+    //                 'month' => $q->whereBetween('inspection_date', [now()->startOfMonth(), now()->endOfMonth()]),
+    //                 default => $q,
+    //             };
+    //         })
+    //         ->when($filters['search'] ?? null, function($q, $search) {
+    //             $q->where(function($q2) use ($search) {
+    //                 $q2->whereHas('car', fn($carQ) => 
+    //                         $carQ->where('car_name', 'like', "%{$search}%")
+    //                             ->orWhere('plate_number', 'like', "%{$search}%")
+    //                     )
+    //                     ->orWhereHas('user', fn($userQ) => 
+    //                         $userQ->where('name', 'like', "%{$search}%")
+    //                             ->orWhere('email', 'like', "%{$search}%")
+    //                     );
+    //             });
+    //         });
+
+    //     // Pagination
+    //     $perPage = $filters['perPage'] ?? 10;
+    //     $inspections = $query->orderBy('inspection_date', 'desc')
+    //                         ->paginate($perPage)
+    //                         ->withQueryString();
+
+    //     // Encrypt semua ID inspection
+    //     $encryptedIds = $inspections->mapWithKeys(function($task) {
+    //         return [$task->id => Crypt::encrypt($task->id)];
+    //     });
+    //     // =========================
+    //     // Stats (ikut filter dateRange + search)
+    //     // =========================
+    //     $statsQuery = Inspection::select('status', DB::raw('count(*) as total'))
+    //         ->whereIn('user_id', $userIds)
+    //         ->when($filters['dateRange'] ?? null, function ($q, $dateRange) {
+    //             return match ($dateRange) {
+    //                 'today' => $q->whereDate('inspection_date', today()),
+    //                 'week'  => $q->whereBetween('inspection_date', [now()->startOfWeek(), now()->endOfWeek()]),
+    //                 'month' => $q->whereBetween('inspection_date', [now()->startOfMonth(), now()->endOfMonth()]),
+    //                 default => $q,
+    //             };
+    //         })
+    //         ->when($filters['search'] ?? null, function($q, $search) {
+    //             $q->where(function($q2) use ($search) {
+    //                 $q2->whereHas('car', fn($carQ) => 
+    //                         $carQ->where('car_name', 'like', "%{$search}%")
+    //                             ->orWhere('plate_number', 'like', "%{$search}%")
+    //                     )
+    //                     ->orWhereHas('user', fn($userQ) => 
+    //                         $userQ->where('name', 'like', "%{$search}%")
+    //                             ->orWhere('email', 'like', "%{$search}%")
+    //                     );
+    //             });
+    //         })
+    //         ->groupBy('status')
+    //         ->pluck('total', 'status');
+
+    //     $stats = [
+    //         'total'          => $statsQuery->sum(),
+    //         'draft'          => $statsQuery['draft'] ?? 0,
+    //         'in_progress'    => $statsQuery['in_progress'] ?? 0,
+    //         'pending'        => $statsQuery['pending'] ?? 0,
+    //         'pending_review' => $statsQuery['pending_review'] ?? 0,
+    //         'approved'       => $statsQuery['approved'] ?? 0,
+    //         'rejected'       => $statsQuery['rejected'] ?? 0,
+    //         'revision'       => $statsQuery['revision'] ?? 0,
+    //         'cancelled'      => $statsQuery['cancelled'] ?? 0,
+    //         'completed'      => $statsQuery['completed'] ?? 0,
+    //     ];
+
+    //     return Inertia::render('FrontEnd/Menu/Home/Coordinator/Index', [
+    //         'inspections' => $inspections,
+    //         'encryptedIds' => $encryptedIds,
+    //         'filters'     => $filters,
+    //         'stats'       => $stats,
+    //         'region'      => [
+    //             'id'   => $regionId,
+    //             'name' => $region->name ?? 'Unknown Region',
+    //         ],
+    //     ]);
+    // }
+
+        public function index(Request $request)
     {
         $user = $request->user();
 
-        // Ambil region_id dari user login
+        // Ambil region_id default dari user login
         $regionId = RegionTeam::where('user_id', $user->id)->value('region_id');
+        $region   = Region::find($regionId);
 
-        $region = Region::find($regionId);
-        // Ambil semua user_id yang ada di region tersebut
-        $userIds = RegionTeam::where('region_id', $regionId)->pluck('user_id');
+        // [ADMIN ADD] Cek role admin
+        $isAdmin = $user->hasRole('Admin');
 
         // Filters
-        $filters = $request->only(['status', 'dateRange', 'search', 'perPage']);
+        $filters = $request->only(['status', 'dateRange', 'search', 'perPage', 'region_id', 'user_id']);
+
+        // [ADMIN ADD] Jika admin, ambil region dari filter atau default
+        if ($isAdmin) {
+            $selectedRegionId = $filters['region_id'] ?? null;
+            $selectedRegion   = Region::find($selectedRegionId);
+
+            // Ambil semua region untuk dropdown
+            $allRegions = Region::all(['id', 'name']);
+
+              // Ambil semua user_id sesuai region / semua kalau region kosong
+            $userIds = RegionTeam::query()
+                ->when($selectedRegionId, fn($q) => $q->where('region_id', $selectedRegionId))
+                ->pluck('user_id');
+
+            // Jika ada filter user_id, batasi ke user tersebut
+            if (!empty($filters['user_id'])) {
+                $userIds = collect([$filters['user_id']]);
+            }
+        } else {
+            // Default: koordinator biasa
+            $allRegions = collect([]);
+            $selectedRegion   = $region;
+            $userIds = RegionTeam::where('region_id', $regionId)->pluck('user_id');
+        }
 
         // Query utama inspections
-        $query = Inspection::with(['car', 'user'])
+        $query = Inspection::with(['car', 'user', 'customer', 'transaction'])
             ->whereIn('user_id', $userIds)
             ->when($filters['status'] ?? null, fn($q, $status) => $q->where('status', $status))
             ->when($filters['dateRange'] ?? null, function ($q, $dateRange) {
@@ -117,19 +243,16 @@ class CoordinatorController extends Controller
                 });
             });
 
-        // Pagination
         $perPage = $filters['perPage'] ?? 10;
         $inspections = $query->orderBy('inspection_date', 'desc')
                             ->paginate($perPage)
                             ->withQueryString();
 
-        // Encrypt semua ID inspection
         $encryptedIds = $inspections->mapWithKeys(function($task) {
             return [$task->id => Crypt::encrypt($task->id)];
         });
-        // =========================
-        // Stats (ikut filter dateRange + search)
-        // =========================
+
+        // Stats
         $statsQuery = Inspection::select('status', DB::raw('count(*) as total'))
             ->whereIn('user_id', $userIds)
             ->when($filters['dateRange'] ?? null, function ($q, $dateRange) {
@@ -145,6 +268,7 @@ class CoordinatorController extends Controller
                     $q2->whereHas('car', fn($carQ) => 
                             $carQ->where('car_name', 'like', "%{$search}%")
                                 ->orWhere('plate_number', 'like', "%{$search}%")
+                                ->orWhere('status', 'like', "%{$search}%")
                         )
                         ->orWhereHas('user', fn($userQ) => 
                             $userQ->where('name', 'like', "%{$search}%")
@@ -169,14 +293,16 @@ class CoordinatorController extends Controller
         ];
 
         return Inertia::render('FrontEnd/Menu/Home/Coordinator/Index', [
-            'inspections' => $inspections,
+            'inspections'  => $inspections,
             'encryptedIds' => $encryptedIds,
-            'filters'     => $filters,
-            'stats'       => $stats,
-            'region'      => [
-                'id'   => $regionId,
-                'name' => $region->name ?? 'Unknown Region',
+            'filters'      => $filters,
+            'stats'        => $stats,
+            'region'       => [
+                'id'   => $selectedRegion->id ?? $regionId,
+                'name' => $selectedRegion->name ?? 'Unknown Region',
             ],
+            'allRegions'   => $allRegions, // [ADMIN ADD]
+            'isAdmin'      => $isAdmin,    // [ADMIN ADD]
         ]);
     }
 

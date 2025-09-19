@@ -2,7 +2,8 @@
     <AppLayout title="Laporan Keuangan">
         <Head title="Laporan Distribusi Pendapatan" />
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <!-- <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4"> -->
+        <div class="w-full px-4 sm:px-6 lg:px-6 py-6">
             <!-- Header -->
             <div class="mb-2 text-center">
                 <h1 class="text-2xl font-bold text-gray-900">Laporan Distribusi Pendapatan</h1>
@@ -198,6 +199,12 @@
                                     ID Transaksi
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status Transaksi
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status Inspeksi
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Penerima
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -231,18 +238,30 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {{ formatDate(distribution.created_at) }}
                                 </td>
-                              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                <!-- Invoice -->
-                                <div>{{ distribution.transaction.invoice_number }}</div>
-                                
-                                <!-- Plate number (lebih kecil & redup) -->
-                                <div class="text-xs text-gray-500">
-                                    {{ distribution.transaction.inspection.plate_number }} 
-                                </div>
-                                <div class="text-xs text-gray-500">
-                                    {{ distribution.transaction.inspection.car_name }}
-                                </div>
-                            </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <!-- Invoice -->
+                                    <div>{{ distribution.transaction.invoice_number }}</div>
+                                    
+                                    <!-- Plate number (lebih kecil & redup) -->
+                                    <div class="text-xs text-gray-500">
+                                        {{ distribution.transaction.inspection.plate_number }} 
+                                    </div>
+                                    <div class="text-xs text-gray-500">
+                                        {{ distribution.transaction.inspection.car_name }}
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full" :class="getStatusClass(distribution.transaction.status)">
+                                        {{ translatedStatus(distribution.transaction.status) }}
+                                    </span>
+                                </td>
+
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                     <span class="px-2 py-1 text-xs font-medium rounded-full" :class="getStatusClass(distribution.transaction.inspection.status)">
+                                        {{ translatedStatus(distribution.transaction.inspection.status) }}
+                                    </span>
+                                </td>
 
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {{ distribution.user?.name || '-' }}
@@ -411,6 +430,90 @@ const goToPage = (url) => {
     if (!url) return;
     router.get(url, {}, { preserveState: true, preserveScroll: true, only: ['distributions', 'totals', 'filters'] });
 };
+
+const translatedStatus = computed(() => (status) => {
+    switch (status) {
+        // Inspection
+        case 'draft':
+            return 'Dibuat';
+        case 'in_progress':
+            return 'Dalam Proses';
+        case 'pending':
+            return 'Menunggu';
+        case 'pending_review':
+            return 'Menunggu Review';
+        case 'approved':
+            return 'Disetujui';
+        case 'rejected':
+            return 'Ditolak';
+        case 'revision':
+            return 'Revisi';
+        case 'completed':
+            return 'Selesai';
+        case 'cancelled':
+            return 'Dibatalkan';
+
+        // Transaction
+        case 'paid':
+            return 'Sudah di bayar';
+        case 'failed':
+            return 'Gagal';
+        case 'refunded':
+            return 'Dikembalikan';
+        case 'expired':
+            return 'Kadaluarsa';
+        case 'released':
+            return 'Diberikan';
+
+        default:
+            return status;
+    }
+});
+
+const getStatusClass = (status) => {
+    switch (status) {
+        // Hijau → sukses / selesai / dibayar / diberikan
+        case 'completed':
+        case 'released':
+        case 'paid':
+        case 'approved':
+            return 'bg-green-100 text-green-800';
+
+        // Biru → dalam proses
+        case 'in_progress':
+            return 'bg-blue-100 text-blue-800';
+
+        // Abu-abu → draft / belum ada tindakan
+        case 'draft':
+            return 'bg-gray-100 text-gray-800';
+
+        // Kuning → menunggu / pending
+        case 'pending':
+        case 'pending_review':
+            return 'bg-yellow-100 text-yellow-800';
+
+        // Oranye → revisi / unpaid
+        case 'revision':
+        case 'unpaid':
+            return 'bg-orange-100 text-orange-800';
+
+        // Merah → gagal / ditolak / dibatalkan / expired
+        case 'failed':
+        case 'rejected':
+        case 'cancelled':
+        case 'expired':
+            return 'bg-red-100 text-red-800';
+
+        // Biru muda untuk refunded misalnya
+        case 'refunded':
+            return 'bg-indigo-100 text-indigo-800';
+
+        default:
+            return 'bg-gray-100 text-gray-800';
+    }
+};
+
+
 </script>
 
 <style scoped>

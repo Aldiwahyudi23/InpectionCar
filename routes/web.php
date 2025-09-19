@@ -344,6 +344,15 @@ Route::middleware([
     Route::middleware(['permission:FrontEnd.view coordinator dashboard', 'role_spatie:Admin|coordinator'])->group(function () {
         Route::get('/coordinator/inspections', [CoordinatorController::class, 'index'])
             ->name('coordinator.inspections.index');
+            
+    Route::get('/api/region/{id}/users', function($id) {
+        return \App\Models\User::whereIn('id', \App\Models\Team\RegionTeam::where('region_id', $id)->pluck('user_id'))->get(['id','name']);
+    })->name('api.region.users');
+
+        Route::get('/api/users/all', function() {
+        return \App\Models\User::whereIn('id', \App\Models\Team\RegionTeam::pluck('user_id'))
+            ->get(['id','name']);
+    })->name('api.users.all');
 
         Route::get('/coordinator/inspections/{inspection}', [CoordinatorController::class, 'show'])
             ->name('coordinator.inspections.show');

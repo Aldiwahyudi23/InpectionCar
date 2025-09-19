@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import ApplicationMark from '@/Components/ApplicationMark.vue';
 import Banner from '@/Components/Banner.vue';
@@ -31,7 +31,35 @@ const logout = () => {
 const toggleProfileDropdown = () => {
     showProfileDropdown.value = !showProfileDropdown.value;
 };
+
+// ⚠️ Floating Warning untuk layar Desktop
+const showDesktopWarning = ref(false);
+const screenWidth = ref(window.innerWidth);
+const isClosed = ref(false);
+
+const checkScreen = () => {
+    screenWidth.value = window.innerWidth;
+    if (!isClosed.value) {
+        showDesktopWarning.value = screenWidth.value > 768;
+    }
+};
+
+const closeWarning = () => {
+    isClosed.value = true;
+    showDesktopWarning.value = false;
+};
+
+onMounted(() => {
+    checkScreen();
+    window.addEventListener('resize', checkScreen);
+});
+
+onBeforeUnmount(() => {
+    window.removeEventListener('resize', checkScreen);
+});
 </script>
+
+
 
 <template>
     <div>
@@ -42,7 +70,8 @@ const toggleProfileDropdown = () => {
         <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
             <!-- Header -->
             <nav class="bg-gradient-to-r from-sky-600 to-indigo-700 shadow-lg fixed w-full top-0 z-50">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <!-- <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"> -->
+                <div class="w-full px-4 sm:px-6 lg:px-8">
                     <div class="flex justify-between h-16">
                         <!-- Logo -->
                         <div class="shrink-0 flex items-center">
@@ -50,17 +79,17 @@ const toggleProfileDropdown = () => {
                                 CekMobil
                             </div>
                               
-          <!-- Install Button untuk Desktop -->
-          <button
-            v-if="canInstall && !isAppInstalled"
-            @click="installApp"
-            class="hidden md:flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            Install App
-          </button>
+                        <!-- Install Button untuk Desktop -->
+                        <button
+                            v-if="canInstall && !isAppInstalled"
+                            @click="installApp"
+                            class="hidden md:flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Install App
+                        </button>
                         </div>
 
                         <!-- Menu Desktop -->
@@ -225,8 +254,8 @@ const toggleProfileDropdown = () => {
             </nav>
 
             <!-- Mobile Bottom Navigation -->
-            <nav class="md:hidden fixed bottom-0 w-full bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg z-50 rounded-t-3xl">
-                <div class="flex justify-around items-center py-3">
+            <nav class="md:hidden fixed bottom-0 w-full bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg z-50 rounded-t-2xl">
+                <div class="flex justify-around items-center py-2">
                     <!-- Home -->
                     <Link
                         :href="route('dashboard')"
@@ -254,15 +283,14 @@ const toggleProfileDropdown = () => {
                         }"
                     >
                         <div class="p-2 rounded-lg" :class="{ 'bg-white/20': $page.url === '/job' }">
-                           <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V7a2 2 0 012-2h3.5l1-1h2l1 1H17a2 2 0 012 2v12a2 2 0 01-2 2z" />
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V7a2 2 0 012-2h3.5l1-1h2l1 1H17a2 2 0 012 2v12a2 2 0 01-2 2z" />
                             </svg>
                         </div>
                         <span class="text-xs mt-1 font-medium">Tugas</span>
                     </Link>
 
-                    <!-- Pengaturan -->
+                    <!-- Team -->
                     <Link
                         :href="route('team.index')"
                         class="flex flex-col items-center transition-all duration-300 transform hover:scale-110"
@@ -276,13 +304,10 @@ const toggleProfileDropdown = () => {
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                             </svg>
                         </div>
-
-
                         <span class="text-xs mt-1 font-medium">Team</span>
                     </Link>
                 </div>
             </nav>
-
             
             <!-- Page Content -->
             <main class="pt-14 pb-20 md:pb-0">
@@ -291,9 +316,28 @@ const toggleProfileDropdown = () => {
                 <!-- </div> -->
                   <FlashMessage />
             </main>
-  <!-- Floating Install Button untuk Mobile -->
-    <PWAInstallButton />
+            <!-- Floating Install Button untuk Mobile -->
+            <PWAInstallButton />
 
+               <!-- ⚠️ Floating Warning (Desktop) -->
+            <div
+                v-if="showDesktopWarning"
+                class="fixed bottom-4 right-4 bg-yellow-100 text-yellow-800 border border-yellow-400 rounded-lg px-4 py-3 shadow-lg z-[1000] max-w-sm"
+            >
+                <div class="flex justify-between items-start space-x-2">
+                    <div>
+                        <strong class="block font-semibold">⚠ Tampilan Desktop</strong>
+                        <span class="text-xs leading-snug">
+                            Halaman ini dirancang untuk tampilan <b>Mobile</b>.<br>
+                            Lebar layar Anda saat ini: <b>{{ screenWidth }}px</b>.<br>
+                            Tampilan mungkin sedikit berbeda atau tidak sepenuhnya responsif.
+                        </span>
+                    </div>
+                    <button @click="closeWarning" class="text-yellow-800 hover:text-yellow-600 text-lg font-bold leading-none">
+                        ×
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </template>

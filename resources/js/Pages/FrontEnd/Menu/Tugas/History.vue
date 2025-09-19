@@ -125,7 +125,7 @@ watch([selectedMonth, selectedYear], () => {
 <template>
     <AppLayout>
         <Head title="Riwayat Inspeksi" />
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="w-full px-4 sm:px-6 lg:px-6 py-6">
             <h3 class="text-xl md:text-3xl font-bold text-gray-900 mb-6 text-center">
                 Riwayat Inspeksi
             </h3>
@@ -198,7 +198,7 @@ watch([selectedMonth, selectedYear], () => {
             <!-- Jika ada tasks -->
             <div
                 v-if="tasks.length > 0"
-                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"
+                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2"
             >
                 <div
                     v-for="task in tasks"

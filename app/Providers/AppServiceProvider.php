@@ -125,3 +125,48 @@ class AppServiceProvider extends ServiceProvider
 //     </Link>
 //   </nav>
 // </template>
+
+// untuk mengambil role 
+
+// <script setup>
+// import { computed } from 'vue';
+// import { usePage } from '@inertiajs/vue3';
+
+// const page = usePage();
+
+// // Ambil roles user
+// const roles = page.props.global?.roles || [];
+
+// // Cek apakah user punya role tertentu
+// const isAdmin = computed(() => roles.includes('admin'));
+// const isCoordinator = computed(() => roles.includes('coordinator'));
+
+// // Ambil role tertentu saja (contoh: admin)
+// const adminRole = computed(() => roles.find(role => role === 'admin') || null);
+
+// // Ambil role tertentu saja (contoh: coordinator)
+// const coordinatorRole = computed(() => roles.find(role => role === 'coordinator') || null);
+
+
+
+// const page = usePage();
+
+// // Ambil roles user dari global
+// const roles = page.props.global?.roles || [];
+
+// // Cek apakah user adalah admin atau coordinator
+// const isAdminOrCoordinator = computed(() => {
+//     return roles.includes('admin') || roles.includes('coordinator');
+// });
+// </script>
+
+// <template>
+//   <div>
+//     <p>Admin Role: {{ adminRole }}</p>
+//     <p>Coordinator Role: {{ coordinatorRole }}</p>
+
+//     <!-- Contoh conditional rendering -->
+//     <div v-if="isAdmin">Menu khusus admin</div>
+//     <div v-if="isCoordinator">Menu khusus coordinator</div>
+//   </div>
+// </template>

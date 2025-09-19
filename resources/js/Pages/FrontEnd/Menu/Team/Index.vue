@@ -171,7 +171,7 @@
                                 <!-- Tombol WhatsApp -->
                                 <a
                                     v-if="member.user.phone && member.status === 'active'"
-                                    :href="`https://wa.me/${member.user.phone}`"
+                                    :href="`https://wa.me/62${member.user.phone}`"
                                     target="_blank"
                                     class="text-green-600 hover:text-green-800 transition"
                                     title="Hubungi via WhatsApp"
@@ -203,113 +203,98 @@
                 </div>
             </div>
 
-            <!-- Modal Tambah User -->
-            <div v-if="showAddUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                <div class="bg-white rounded-lg max-w-md w-full p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Tambah Anggota Baru</h3>
+<!-- Modal Tambah User -->
+<div v-if="showAddUserModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg max-w-md w-full p-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Tambah Anggota Baru</h3>
 
-                    <!-- Tampilkan pesan dari backend di sini -->
-                    <div v-if="message.text"
-                         :class="{ 'bg-green-100 text-green-700': !message.isError, 'bg-red-100 text-red-700': message.isError }"
-                         class="p-3 rounded-lg text-center mb-4 transition-all duration-300 ease-in-out">
-                        {{ message.text }}
-                    </div>
+        <div v-if="message.text"
+             :class="{ 'bg-green-100 text-green-700': !message.isError, 'bg-red-100 text-red-700': message.isError }"
+             class="p-3 rounded-lg text-center mb-4 transition-all duration-300 ease-in-out">
+            {{ message.text }}
+        </div>
 
-                    <form @submit.prevent="submitNewUser" v-if="!message.text">
-                        <!-- Nama -->
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Nama Lengkap
-                                <span class="text-red-500">*</span>
-                            </label>
-                            <input
-                                v-model="newUserForm.name"
-                                type="text"
-                                required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                placeholder="Masukkan nama lengkap"
-                            >
-                        </div>
-
-                        <!-- Email -->
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Email
-                                <span class="text-red-500">*</span>
-                            </label>
-                            <input
-                                v-model="newUserForm.email"
-                                type="email"
-                                required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                placeholder="Masukkan alamat email"
-                            >
-                        </div>
-
-                        <!-- Nomor Telepon -->
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Nomor WhatsApp
-                                <span class="text-red-500">*</span>
-                            </label>
-                            <input
-                                v-model="newUserForm.phone"
-                                type="tel"
-                                required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                placeholder="Contoh: 08123456789"
-                            >
-                            <p class="text-xs text-gray-500 mt-1">Gunakan format 08</p>
-                        </div>
-                        
-                        <!-- Pesan Validasi Duplikat -->
-                        <div v-if="isDuplicateUser" class="bg-red-100 text-red-700 p-3 rounded-lg text-center mb-4">
-                            Akun ini sudah terdaftar
-                        </div>
-
-                        <!-- Role -->
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Posisi</label>
-                            <select
-                                v-model="newUserForm.role"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                            >
-                                <option value="inspector">Inspector</option>
-                                <option disabled value="admin_region">Admin Wilayah</option>
-                            </select>
-                        </div>
-
-                        <div class="flex justify-end space-x-3">
-                            <button
-                                type="button"
-                                @click="showAddUserModal = false"
-                                class="px-4 py-2 text-gray-600 hover:text-gray-800 transition"
-                            >
-                                Batal
-                            </button>
-                            <button
-                                type="submit"
-                                :disabled="!isFormValid || isDuplicateUser || addingUser"
-                                class="px-4 py-2 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white rounded-md transition disabled:from-gray-400 disabled:to-gray-500 disabled:opacity-70 disabled:cursor-not-allowed"
-                            >
-                                <span v-if="addingUser">Menambahkan...</span>
-                                <span v-else-if="isDuplicateUser">Akun ini sudah terdaftar</span>
-                                <span v-else>{{ isFormValid ? 'Tambahkan Anggota' : 'Lengkapi data' }}</span>
-                            </button>
-                        </div>
-                    </form>
-
-                    <!-- Tombol Tutup Modal jika ada pesan -->
-                    <div v-if="message.text" class="flex justify-end mt-4">
-                        <button
-                            @click="showAddUserModal = false; message.text = ''"
-                            class="px-4 py-2 text-gray-600 hover:text-gray-800 transition"
-                        >
-                            Tutup
-                        </button>
-                    </div>
-                </div>
+        <form @submit.prevent="submitNewUser" >
+            <!-- Nama -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Nama Lengkap <span class="text-red-500">*</span>
+                </label>
+                <input
+                    v-model="newUserForm.name"
+                    type="text"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Masukkan nama lengkap"
+                >
             </div>
+
+            <!-- Email -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Email <span class="text-red-500">*</span>
+                </label>
+                <input
+                    v-model="newUserForm.email"
+                    type="email"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Masukkan alamat email"
+                >
+                <p v-if="newUserForm.email && !isEmailValid" class="text-xs text-red-500 mt-1">
+                    Format email tidak valid
+                </p>
+            </div>
+
+            <!-- Nomor Telepon -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Nomor WhatsApp <span class="text-red-500">*</span>
+                </label>
+                <input
+                    v-model="newUserForm.phone"
+                    type="tel"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="Contoh: 08123456789"
+                >
+                <p class="text-xs text-gray-500 mt-1">Gunakan format angka, minimal 9 digit</p>
+                <p v-if="newUserForm.phone && !isPhoneValid" class="text-xs text-red-500 mt-1">
+                    Nomor HP tidak valid
+                </p>
+            </div>
+
+            <!-- Role -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Posisi</label>
+                <select
+                    v-model="newUserForm.role"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                    <option value="inspector">Inspector</option>
+                    <option disabled value="admin_region">Admin Wilayah</option>
+                </select>
+            </div>
+
+            <!-- Tombol -->
+            <div class="flex justify-end space-x-3">
+                <button type="button" @click="showAddUserModal = false" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition">
+                    Batal
+                </button>
+                <button
+                    type="submit"
+                    :disabled="!isFormValid || isDuplicateUser || addingUser"
+                    class="px-4 py-2 bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white rounded-md transition disabled:from-gray-400 disabled:to-gray-500 disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                    <span v-if="addingUser">Menambahkan...</span>
+                    <span v-else-if="isDuplicateUser">Akun ini sudah terdaftar</span>
+                    <span v-else>{{ isFormValid ? 'Tambahkan Anggota' : 'Lengkapi data' }}</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
         </div>
     </AppLayout>
 </template>
@@ -354,6 +339,20 @@ const newUserForm = reactive({
     role: 'inspector'
 });
 
+// Validasi Email
+const isEmailValid = computed(() => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(newUserForm.email);
+});
+
+// Validasi Nomor HP (hanya angka, minimal 9 digit, maksimal 15)
+const isPhoneValid = computed(() => {
+    const phoneRegex = /^[0-9]{9,15}$/;
+    return phoneRegex.test(newUserForm.phone.replace(/^0/, '')); // hilangkan 0 awal
+});
+
+
+
 // Computed properties
 const userRoles = computed(() => page.props.roleName || 'inspection')
 const canAddUser = computed(() => {
@@ -395,9 +394,17 @@ const isDuplicateUser = computed(() => {
     return emailExists || phoneExists;
 });
 
-// Perbaikan: computed property untuk validasi form
+// // Perbaikan: computed property untuk validasi form
+// const isFormValid = computed(() => {
+//     return newUserForm.name && newUserForm.email && newUserForm.phone;
+// });
+// Form validasi keseluruhan
 const isFormValid = computed(() => {
-    return newUserForm.name && newUserForm.email && newUserForm.phone;
+    return (
+        newUserForm.name &&
+        isEmailValid.value &&
+        isPhoneValid.value
+    );
 });
 
 const filteredTeamMembers = computed(() => {
@@ -462,6 +469,8 @@ const submitNewUser = async () => {
         addingUser.value = false;
         return;
     }
+
+     if (!isFormValid.value) return;
     
     // Pastikan tidak ada duplikasi sebelum mengirim
     if (isDuplicateUser.value) {

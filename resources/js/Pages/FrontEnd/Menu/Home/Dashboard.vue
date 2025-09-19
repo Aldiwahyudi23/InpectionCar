@@ -3,7 +3,8 @@
         <Head title="Dashboard" />
         <!-- Kontainer utama dengan latar belakang abu-abu yang lembut -->
         <div class="bg-slate-100 min-h-screen">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <!-- <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"> -->
+                <div class="w-full px-4 sm:px-6 lg:px-6 py-6">
                 <!-- Card Jumlah Inspeksi (Menggunakan gradasi warna tema) -->
                 <div class="bg-gradient-to-br from-indigo-700 to-sky-500 rounded-xl shadow-lg p-2 mb-4 text-center text-white">
                     <h2 class="font-semibold text-sm opacity-80">Hasil Inspection Bulan Ini</h2>

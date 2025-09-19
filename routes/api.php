@@ -28,3 +28,4 @@ Route::post('/cars/store-type', [CarController::class, 'storeType']);
 Route::post('/cars/store-car-detail', [CarController::class, 'storeCarDetail']);
 
 Route::get('/api/cars/{carId}/images', [CarController::class, 'getCarImages']);
+

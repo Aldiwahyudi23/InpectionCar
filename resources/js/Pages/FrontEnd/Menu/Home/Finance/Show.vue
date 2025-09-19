@@ -121,7 +121,7 @@ const confirmRelease = () => {
     <AppLayout title="Detail Distribusi">
         <Head title="Detail Distribusi" />
 
-        <div class="max-w-6xl mx-auto py-4 px-4 sm:px-4 lg:px-6 space-y-4 animate-fade-in">
+        <div class="w-full px-4 sm:px-6 lg:px-6 py-6 animate-fade-in">
 
             <!-- Header -->
             <div class="flex flex-col text-center mb-4">
@@ -160,7 +160,7 @@ const confirmRelease = () => {
                     <div class="space-y-2">
                         <div class="flex flex-col p-1 bg-gray-50 rounded-lg">
                             <span class="text-sm font-medium text-gray-500">Diberikan Oleh</span>
-                            <span class="text-gray-800 font-semibold">{{ distribution.released_by?.name ?? '-' }}</span>
+                            <span class="text-gray-800 font-semibold">{{ distribution.released?.name ?? '-' }}</span>
                         </div>
                         <div class="flex flex-col p-1 bg-gray-50 rounded-lg">
                             <span class="text-sm font-medium text-gray-500">Waktu Pemberian</span>
@@ -186,7 +186,7 @@ const confirmRelease = () => {
                             </span>
                         </div>
                         <div class="flex flex-col p-1 bg-gray-50 rounded-lg">
-                            <span class="text-sm font-medium text-gray-500">Nama Inspektur</span>
+                            <span class="text-sm font-medium text-gray-500">Nama Inspektor</span>
                             <span class="text-gray-800 font-semibold">{{ inspection.user?.name ?? '-' }}</span>
                                 <!--  (lebih kecil & redup) -->
                                 <div class="text-xs text-gray-500">

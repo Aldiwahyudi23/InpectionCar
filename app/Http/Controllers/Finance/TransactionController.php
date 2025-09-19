@@ -111,7 +111,7 @@ class TransactionController extends Controller
         // Sorting
         $query->orderBy('transaction_distributions.created_at', 'desc');
 
-        $distributions = $query->paginate(20)->through(function ($item) {
+        $distributions = $query->paginate(10)->through(function ($item) {
             $item->encrypted_id = Crypt::encrypt($item->id); // Tambahin field baru
             return $item;
         })->appends($request->all());
