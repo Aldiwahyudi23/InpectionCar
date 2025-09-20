@@ -464,7 +464,7 @@ const handleDownload = (route) => {
         <!-- Tombol Aksi -->
         <div class="p-4 flex gap-2">
           <!-- Tampilan tombol untuk status 'pending_review' -->
-          <template v-if="inspection.status === 'pending_review'">
+          <template v-if="inspection.status === 'pending_review' || isAdminOrCoordinator">
             <!-- Tombol Revisi (lebih pendek) -->
             <button
               @click="showRevisionModal = true"
