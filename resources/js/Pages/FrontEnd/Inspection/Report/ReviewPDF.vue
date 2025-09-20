@@ -221,7 +221,10 @@
 
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from 'vue'
-import axios from 'axios'
+import { router } from "@inertiajs/vue3"
+import axios from "axios"
+
+
 
 const props = defineProps({
   inspection: {
@@ -237,38 +240,35 @@ const props = defineProps({
     default: null
   },
   encryptedIds: Object,
-})
+});
 
-const showConfirmationModal = ref(false)
-const isLoading = ref(false)
+const showConfirmationModal = ref(false);
+const isLoading = ref(false);
 
-// reactive local state biar bisa diupdate saat polling
+
+// bikin reactive data dari props
 const inspection = ref(props.inspection)
 const menuPoints = ref(props.menu_points)
 const coverImage = ref(props.coverImage)
 
-let pollingInterval = null
+// polling API detail
+const fetchInspection = async () => {
+   if (inspection.value.status === 'in_progress') {
+    try {
+      const response = await axios.get(route("inspections.detail", props.encryptedIds))
+      inspection.value = response.data.inspection
+      menuPoints.value = response.data.menu_points
+      coverImage.value = response.data.coverImage
+    } catch (err) {
+      console.error("Polling gagal:", err)
+    }
+  }
+}
 
 onMounted(() => {
-  if (inspection.value.status === 'in_progress') {
-    pollingInterval = setInterval(async () => {
-      try {
-        const response = await axios.get(
-          route('inspections.review.pdf', props.encryptedIds) // pastikan ada route show detail inspection
-        )
-        inspection.value = response.data.inspection
-        menuPoints.value = response.data.menu_points
-        coverImage.value = response.data.coverImage
-      } catch (error) {
-        console.error('Gagal polling inspection:', error)
-      }
-    }, 5000) // 5 detik
-  }
+  setInterval(fetchInspection, 5000) // polling tiap 5 detik
 })
 
-onUnmounted(() => {
-  if (pollingInterval) clearInterval(pollingInterval)
-})
 
 const groupedPoints = computed(() => {
   const groups = {}
