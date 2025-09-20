@@ -615,8 +615,10 @@ public function store(Request $request)
             'revision',
             'completed',
             'cancelled'
-            ])) {
-            return redirect()->route('job.index');
+            ])
+             && !auth()->user()->hasAnyRole(['Admin', 'coordinator'])
+            ) {
+            return redirect()->route('job.index')->with('error','Tidak bisa di buka status belum selesai ');
         }
 
         $menu_points = MenuPoint::with([
@@ -657,6 +659,50 @@ public function store(Request $request)
         ]);
 
         // return view('inspection.report.report1', compact('inspection', 'menu_points', 'coverImage')); 
+    }
+
+    public function detail($id)
+    {
+        $id = Crypt::decrypt($id);
+        $inspection = Inspection::with([
+            'car',
+            'car.brand',
+            'car.model',
+            'car.type',
+            'category',
+        ])->findOrFail($id);
+
+        $menu_points = MenuPoint::with([
+            'app_menu',
+            'inspection_point',
+            'inspection_point.component',
+            'inspection_point.results' => function ($q) use ($inspection) {
+                $q->where('inspection_id', $inspection->id);
+            },
+            'inspection_point.images' => function ($q) use ($inspection) {
+                $q->where('inspection_id', $inspection->id)
+                ->orderBy('created_at', 'asc');
+            }
+        ])
+        ->whereHas('app_menu', function ($query) use ($inspection) {
+            $query->where('category_id', $inspection->category_id);
+        })
+        ->get();
+
+        $coverImage = InspectionImage::where('inspection_id', $inspection->id)
+            ->whereHas('point', function ($q) {
+                $q->where('name', 'Depan Kanan');
+            })->first();
+
+        if (!$coverImage) {
+            $coverImage = InspectionImage::where('inspection_id', $inspection->id)->first();
+        }
+
+        return response()->json([
+            'inspection'   => $inspection,
+            'menu_points'  => $menu_points,
+            'coverImage'   => $coverImage,
+        ]);
     }
 
 

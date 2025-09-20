@@ -220,7 +220,8 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue'
+import axios from 'axios'
 
 const props = defineProps({
   inspection: {
@@ -236,22 +237,51 @@ const props = defineProps({
     default: null
   },
   encryptedIds: Object,
-});
+})
 
-const showConfirmationModal = ref(false);
-const isLoading = ref(false);
+const showConfirmationModal = ref(false)
+const isLoading = ref(false)
+
+// reactive local state biar bisa diupdate saat polling
+const inspection = ref(props.inspection)
+const menuPoints = ref(props.menu_points)
+const coverImage = ref(props.coverImage)
+
+let pollingInterval = null
+
+onMounted(() => {
+  if (inspection.value.status === 'in_progress') {
+    pollingInterval = setInterval(async () => {
+      try {
+        const response = await axios.get(
+          route('inspections.review.pdf', props.encryptedIds) // pastikan ada route show detail inspection
+        )
+        inspection.value = response.data.inspection
+        menuPoints.value = response.data.menu_points
+        coverImage.value = response.data.coverImage
+      } catch (error) {
+        console.error('Gagal polling inspection:', error)
+      }
+    }, 5000) // 5 detik
+  }
+})
+
+onUnmounted(() => {
+  if (pollingInterval) clearInterval(pollingInterval)
+})
 
 const groupedPoints = computed(() => {
-  const groups = {};
-  props.menu_points.forEach(point => {
-    const componentName = point.inspection_point?.component?.name || 'Tanpa Komponen';
+  const groups = {}
+  menuPoints.value.forEach(point => {
+    const componentName = point.inspection_point?.component?.name || 'Tanpa Komponen'
     if (!groups[componentName]) {
-      groups[componentName] = [];
+      groups[componentName] = []
     }
-    groups[componentName].push(point);
-  });
-  return groups;
-});
+    groups[componentName].push(point)
+  })
+  return groups
+})
+
 
 const approveReport = () => {
   isLoading.value = true;
@@ -266,9 +296,9 @@ const approveReport = () => {
 };
 
 const hasDataOrImages = computed(() => {
-    if (props.inspection.notes) {
-        return true;
-    }
+    // if (props.inspection.notes) {
+    //     return true;
+    // }
     // Menggunakan fungsi helper untuk memeriksa apakah ada data atau gambar di salah satu poin.
     const hasContent = props.menu_points.some(point => hasResult(point) || hasImage(point));
     

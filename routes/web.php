@@ -273,6 +273,11 @@ Route::middleware([
         Route::get('/inspections/{id}/review-pdf', [InspectionController::class, 'reviewPdf'])
             ->name('inspections.review.pdf');
 
+        // routes/web.php untuk realtim pooling
+        Route::get('/inspections/{id}/detail', [InspectionController::class, 'detail'])
+            ->name('inspections.detail');
+
+
         Route::get('/inspections/{id}/download-pdf', [InspectionController::class, 'downloadPdf'])
             ->name('inspections.download.pdf')
             ->middleware('permission:FrontEnd.approve inspections report');
