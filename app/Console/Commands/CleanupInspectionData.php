@@ -29,7 +29,7 @@ class CleanupInspectionData extends Command
         Inspection::with(['car', 'car.brand', 'car.model', 'car.type', 'category'])
             ->whereIn('status', $statuses)
 
-            //->where('updated_at', '<=', Carbon::now()->subDays(3))
+            ->where('updated_at', '<=', Carbon::now()->subDays(3))
 
             // 1 jam yang lalu
             //->where('updated_at', '<=', Carbon::now()->subHours(1))
@@ -43,7 +43,7 @@ class CleanupInspectionData extends Command
             // 30 menit yang lalu
             //->where('updated_at', '<=', Carbon::now()->subMinutes(30))
 
-            ->where('updated_at', '<=', Carbon::now()->subMinutes(2))
+            // ->where('updated_at', '<=', Carbon::now()->subMinutes(2))
 
 
             ->chunkById(50, function ($inspections) {
@@ -61,10 +61,10 @@ class CleanupInspectionData extends Command
                         })
                         ->exists();
 
-                    // Jika tidak ada data, lewati
-                    if (!$hasResults && !$hasImages) {
-                        continue;
-                    }
+                    // // Jika tidak ada data, lewati
+                    // if (!$hasResults && !$hasImages) {
+                    //     continue;
+                    // }
 
                     // Jika status pending_review atau approved -> generate PDF dulu
                     if (in_array($inspection->status, ['pending_review', 'approved'])) {
@@ -99,7 +99,7 @@ class CleanupInspectionData extends Command
                         $inspection->update(['status' => 'completed']);
                         $inspection->addLog(
                             'cleanup',
-                            'Inspection results & images dihapus otomatis setelah 3 hari (kecuali Depan Kanan) karena status pending_review/approved'
+                            'Inspection results & images dihapus otomatis setelah 3 hari (kecuali Depan Kanan)'
                         );
 
                     } else {

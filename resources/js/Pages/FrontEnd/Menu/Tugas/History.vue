@@ -236,7 +236,7 @@ watch([selectedMonth, selectedYear], () => {
                             <CarIcon class="h-5 w-5 text-gray-500 mr-2" />
                             <div class="text-sm font-medium text-gray-800">
                                <div v-if="task.car">
-                                    {{ `${task.car.brand.name} ${task.car.model.name} ${task.car.type.name} ${task.car.cc} ${task.car.transmission} ${task.car.year}` }}
+                                    {{ `${task.car.brand.name} ${task.car.model.name} ${task.car.type.name} ${(task.car.cc / 1000).toFixed(1)} ${task.car.transmission} ${task.car.year}` }}
                                     <span class="text-gray-600">({{ task.car.fuel_type }})</span>
                                 </div>
                                 <div v-else>

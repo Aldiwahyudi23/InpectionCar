@@ -22,6 +22,7 @@ class MenuPoint extends Model
         'settings',
         'order',
         'is_active',
+        'is_default',
     ];
 
     /**
@@ -32,6 +33,7 @@ class MenuPoint extends Model
     protected $casts = [
         'settings' => 'array',
         'is_active' => 'boolean',
+        'is_default' => 'boolean',
         'deleted_at' => 'datetime',
     ];
 
@@ -43,6 +45,7 @@ class MenuPoint extends Model
     protected $attributes = [
         'input_type' => 'text',
         'is_active' => true,
+        'is_default' => false,
     ];
 
      public $sortable = [

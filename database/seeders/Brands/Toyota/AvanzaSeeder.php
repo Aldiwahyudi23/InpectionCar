@@ -7,6 +7,7 @@ use App\Models\DataCar\CarDetail;
 use App\Models\DataCar\CarModel;
 use App\Models\DataCar\CarType;
 use Illuminate\Database\Seeder;
+
 class AvanzaSeeder extends Seeder
 {
     public function run(): void
@@ -25,58 +26,57 @@ class AvanzaSeeder extends Seeder
         ];
 
         $typeConfigurations = [
-    'E' => [
-        'generations' => [
-            '2003-2011 (Gen 1)' => [
-                'engines' => [
-                    ['cc' => 1298, 'code' => 'K3-VE', 'transmission' => ['MT','AT']], // 1.3L Gen 1
+            'E' => [
+                'generations' => [
+                    '2003-2011 (Gen 1)' => [
+                        'engines' => [
+                            ['cc' => 1298, 'code' => 'K3-VE', 'transmission' => ['MT','AT']],
+                        ]
+                    ],
+                    '2011-2021 (Gen 2 & facelift)' => [
+                        'engines' => [
+                            ['cc' => 1298, 'code' => 'K3-VE', 'transmission' => ['MT','AT']],
+                            ['cc' => 1329, 'code' => '1NR-VE', 'transmission' => ['MT','AT']],
+                        ]
+                    ],
+                    '2021-now (Gen 3)' => [
+                        'engines' => [
+                            ['cc' => 1329, 'code' => '1NR-VE', 'transmission' => ['MT','CVT']],
+                        ]
+                    ]
                 ]
             ],
-            '2011-2021 (Gen 2 & facelift)' => [
-                'engines' => [
-                    ['cc' => 1298, 'code' => 'K3-VE', 'transmission' => ['MT','AT']], // awal Gen 2
-                    ['cc' => 1329, 'code' => '1NR-VE', 'transmission' => ['MT','AT']], // facelift Gen 2
+            'G' => [
+                'generations' => [
+                    '2003-2011 (Gen 1)' => [
+                        'engines' => [
+                            ['cc' => 1495, 'code' => '3SZ-VE', 'transmission' => ['MT','AT']],
+                        ]
+                    ],
+                    '2011-2021 (Gen 2 & facelift)' => [
+                        'engines' => [
+                            ['cc' => 1495, 'code' => '3SZ-VE', 'transmission' => ['MT','AT']],
+                            ['cc' => 1496, 'code' => '2NR-VE', 'transmission' => ['MT','AT']],
+                        ]
+                    ],
+                    '2021-now (Gen 3)' => [
+                        'engines' => [
+                            ['cc' => 1496, 'code' => '2NR-VE', 'transmission' => ['MT','CVT']],
+                        ]
+                    ]
                 ]
             ],
-            '2021-present (Gen 3)' => [
-                'engines' => [
-                    ['cc' => 1329, 'code' => '1NR-VE', 'transmission' => ['MT','CVT']], // Gen 3 Avanza
+            'Veloz' => [
+                'generations' => [
+                    '2011-2021 (Gen 2)' => [
+                        'engines' => [
+                            ['cc' => 1495, 'code' => '3SZ-VE', 'transmission' => ['MT','AT']],
+                            ['cc' => 1496, 'code' => '2NR-VE', 'transmission' => ['MT','AT']],
+                        ]
+                    ],
                 ]
             ]
-        ]
-    ],
-    'G' => [
-        'generations' => [
-            '2003-2011 (Gen 1)' => [
-                'engines' => [
-                    ['cc' => 1495, 'code' => '3SZ-VE', 'transmission' => ['MT','AT']], // 1.5L Gen 1
-                ]
-            ],
-            '2011-2021 (Gen 2 & facelift)' => [
-                'engines' => [
-                    ['cc' => 1495, 'code' => '3SZ-VE', 'transmission' => ['MT','AT']], // Gen 2 awal
-                    ['cc' => 1496, 'code' => '2NR-VE', 'transmission' => ['MT','AT']], // facelift Gen 2
-                ]
-            ],
-            '2021-present (Gen 3)' => [
-                'engines' => [
-                    ['cc' => 1496, 'code' => '2NR-VE', 'transmission' => ['MT','CVT']], // Gen 3 Avanza G
-                ]
-            ]
-        ]
-    ],
-    'Veloz' => [
-        'generations' => [
-            '2011-2021 (Gen 2)' => [
-                'engines' => [
-                    ['cc' => 1495, 'code' => '3SZ-VE', 'transmission' => ['MT','AT']], // Veloz awal
-                    ['cc' => 1496, 'code' => '2NR-VE', 'transmission' => ['MT','AT']], // facelift Gen 2
-                ]
-            ],
-        ]
-    ]
-];
-
+        ];
 
         foreach ($avanzaTypes as $typeData) {
             $type = CarType::firstOrCreate([
@@ -98,27 +98,30 @@ class AvanzaSeeder extends Seeder
             foreach ($years as $year) {
                 foreach ($generationConfig['engines'] as $engineConfig) {
                     foreach ($engineConfig['transmission'] as $transmission) {
-                        CarDetail::firstOrCreate([
-                            'brand_id' => $brandId,
-                            'car_model_id' => $modelId,
-                            'car_type_id' => $typeId,
-                            'year' => $year,
-                            'cc' => $engineConfig['cc'],
-                            'transmission' => $transmission,
-                            'fuel_type' => 'Bensin',
-                            'engine_code' => $engineConfig['code'],
-                            'segment' => 'Low MPV (Multi-Purpose Vehicle)',
-                            'production_period' => $period
-                        ], [
-                            'description' => $this->generateDescription(
-                                $typeName,
-                                $year,
-                                $engineConfig['cc'],
-                                $engineConfig['code'],
-                                $transmission,
-                                $period
-                            )
-                        ]);
+                        CarDetail::firstOrCreate(
+                            [
+                                'brand_id' => $brandId,
+                                'car_model_id' => $modelId,
+                                'car_type_id' => $typeId,
+                                'year' => $year,
+                                'cc' => $engineConfig['cc'],
+                                'transmission' => $transmission,
+                                'fuel_type' => 'Bensin',
+                                'engine_code' => $engineConfig['code'],
+                                'segment' => 'Low MPV (Multi-Purpose Vehicle)',
+                                'production_period' => $period
+                            ],
+                            [
+                                'description' => $this->generateDescription(
+                                    $typeName,
+                                    $year,
+                                    $engineConfig['cc'],
+                                    $engineConfig['code'],
+                                    $transmission,
+                                    $period
+                                )
+                            ]
+                        );
                     }
                 }
             }
@@ -127,20 +130,23 @@ class AvanzaSeeder extends Seeder
 
     private function getYearsForGeneration($period, $currentYear): array
     {
-        return match ($period) {
-            '2003-2011' => range(2003, 2011),
-            '2011-2021' => range(2011, 2021),
-            '2021-present' => range(2021, $currentYear),
+        return match (true) {
+            str_contains($period, '2003-2011') => range(2003, 2011),
+            str_contains($period, '2011-2021') => range(2011, 2021),
+            str_contains($period, '2021-now') => range(2021, $currentYear),
             default => []
         };
     }
 
     private function generateDescription($typeName, $year, $cc, $engineCode, $transmission, $generation): string
     {
-        $transmissionText = $transmission === 'AT' ? 'matic' : ($transmission === 'CVT' ? 'CVT' : 'manual');
+        $transmissionText = $transmission === 'AT'
+            ? 'matic'
+            : ($transmission === 'CVT' ? 'CVT' : 'manual');
+
         $ccText = round($cc/1000, 1) . 'L';
 
         return "Toyota Avanza {$typeName} {$ccText} {$transmissionText} (mesin {$engineCode}) tahun {$year}. " .
-               "Generasi {$generation}, MPV keluarga dengan kepraktisan dan efisiensi bahan bakar.";
+            "Generasi {$generation}, MPV keluarga dengan kepraktisan dan efisiensi bahan bakar.";
     }
 }

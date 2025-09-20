@@ -57,8 +57,8 @@ return Application::configure(basePath: dirname(__DIR__))
         });
     })
     ->withSchedule(function (SchedulingSchedule $schedule) {
-        //    $schedule->command('inspection:cleanup')->daily(); // jalan tiap hari
+           $schedule->command('inspection:cleanup')->daily(); // jalan tiap hari
         //    $schedule->command('inspection:cleanup')->hourly();
-            $schedule->command('inspection:cleanup')->everyMinute();
+            // $schedule->command('inspection:cleanup')->everyMinute();
     })
     ->create();

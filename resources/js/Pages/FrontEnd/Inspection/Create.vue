@@ -326,6 +326,10 @@ const region = page.props.global.region;
 const roles = page.props.global.has_roles;
 const permissions = page.props.global.permissions;
 
+const formatCc = (cc) => {
+  return (cc / 1000).toFixed(1) + "L";
+}
+
 // State untuk input plat nomor terpisah
 const plateAreaCode = ref('');
 const plateNumber = ref('');
@@ -423,13 +427,14 @@ const formatCarName = (car) => {
     if (car.brand?.name) parts.push(car.brand.name);
     if (car.model?.name) parts.push(car.model.name);
     if (car.type?.name) parts.push(car.type.name);
-    if (car.cc) parts.push(`${car.cc}cc`);
+    if (car.cc) parts.push((car.cc / 1000).toFixed(1)); // ubah ke liter
     if (car.transmission) parts.push(car.transmission);
-    if (car.fuel_type) parts.push(car.fuel_type);
     if (car.year) parts.push(car.year.toString());
+    if (car.fuel_type) parts.push(car.fuel_type);
     if (car.production_period) parts.push(`(${car.production_period})`);
     return parts.join(' ');
 };
+
 
 // Search cars dengan debounce
 const searchCars = debounce(() => {

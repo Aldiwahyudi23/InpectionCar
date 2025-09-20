@@ -2,6 +2,8 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Widgets\LatestInspections;
+use App\Filament\Widgets\StatsOverview;
 use App\Http\Middleware\EnsureIsAdmin;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Actions\Modal\Actions\Action as ActionsAction;
@@ -43,8 +45,10 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
+                LatestInspections::class,     // tabel custom
                 Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                StatsOverview::class,         // statistik angka
+                // Widgets\FilamentInfoWidget::class,
             ])
             ->navigationItems([
                 NavigationItem::make('App')

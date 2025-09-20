@@ -53,6 +53,10 @@ const unifiedForm = useForm({
   status: 'paid'
 });
 
+const formatCc = (cc) => {
+  return (cc / 1000).toFixed(1) + "L";
+}
+
 // Cek apakah inspection sudah memiliki customer
 const hasCustomer = computed(() => props.inspection.customer_id !== null);
 
@@ -303,7 +307,7 @@ const handleDownload = (route) => {
             <CarIcon class="h-5 w-5 text-gray-500 mr-2" />
             <div class="text-sm font-medium text-gray-800">
               <div v-if="inspection.car">
-                {{ `${inspection.car.brand.name} ${inspection.car.model.name} ${inspection.car.type.name} ${inspection.car.cc} ${inspection.car.transmission} ${inspection.car.year}` }}
+                {{ `${inspection.car.brand.name} ${inspection.car.model.name} ${inspection.car.type.name} ${(inspection.car.cc / 1000).toFixed(1)} ${inspection.car.transmission} ${inspection.car.year}` }}
                 <span class="text-gray-600">({{ inspection.car.fuel_type }})</span>
               </div>
               <div v-else>
