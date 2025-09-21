@@ -19,7 +19,7 @@ class HomeController extends Controller
     {
          // Hitung jumlah inspeksi bulan ini yang approved untuk user yang login
         $monthlyApprovedInspections = Inspection::where('user_id', Auth::user()->id)
-            ->where('status', 'approved')
+            ->whereIn('status', ['approved', 'completed'])
             ->whereMonth('created_at', Carbon::now()->month)
             ->whereYear('created_at', Carbon::now()->year)
             ->count();

@@ -14,6 +14,21 @@ defineProps({
     title: String,
 });
 
+const isLoading = ref(false)
+
+onMounted(() => {
+  // event global Inertia
+  router.on("start", () => {
+    isLoading.value = true
+  })
+  router.on("finish", () => {
+    isLoading.value = false
+  })
+  router.on("error", () => {
+    isLoading.value = false
+  })
+})
+
 const showProfileDropdown = ref(false);
 
 const switchToTeam = (team) => {
@@ -309,6 +324,14 @@ onBeforeUnmount(() => {
                 </div>
             </nav>
             
+              <!-- Loader Global -->
+    <div 
+      v-if="isLoading" 
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
+    >
+      <div class="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+    </div>
+    
             <!-- Page Content -->
             <main class="pt-14 pb-20 md:pb-0">
                 <!-- <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6"> -->

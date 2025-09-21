@@ -183,7 +183,7 @@
         Data sudah tidak ada, karena sudah dijadikan PDF.
       </p>
       <a 
-        :href="route('inspections.download.pdf', encryptedIds)"
+        :href="route('inspections.download.approved.pdf', encryptedIds)"
         class="mt-4 inline-block bg-blue-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
       >
         Download PDF

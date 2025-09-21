@@ -90,9 +90,7 @@ class InspectionController extends Controller
     */
     public function start($inspection)
     {
-        try {
-
-           
+        try {  
             // Dekripsi dan validasi
             $id = Crypt::decrypt($inspection);
             $inspection = Inspection::findOrFail($id);
