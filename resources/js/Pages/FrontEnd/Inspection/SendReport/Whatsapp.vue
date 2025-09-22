@@ -163,7 +163,9 @@ const whatsappMessage = computed(() => {
 *HASIL:*
 ${props.notesForWhatsApp}
 
-Terima kasih telah menggunakan layanan kami.`;
+Terima kasih telah menggunakan layanan kami.
+
+_Catatan: Mohon gunakan ID Inspeksi untuk mengakses file, sebagai upaya kami melindungi data kendaraan._`;
 });
 
 // // URL WhatsApp

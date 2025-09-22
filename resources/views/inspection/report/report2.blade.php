@@ -3,347 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Inspeksi Kendaraan</title>
-    <style>
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 13px;
-            color: #333;
-            margin: 0;
-            padding: 20px;
-        }
 
-        .header-footer {
-            width: 100%;
-            display: table;
-            table-layout: fixed;
-            margin-bottom: 20px;
-        }
-
-        .header-footer-cell {
-            display: table-cell;
-            vertical-align: top;
-        }
-
-        .header-footer-cell.left {
-            text-align: left;
-        }
-
-        .header-footer-cell.right {
-            text-align: right;
-        }
-
-        .header-footer-cell h1, .header-footer-cell p {
-            margin: 0;
-        }
-
-        .header {
-            margin-bottom: 20px;
-            display: table;
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .header-cell {
-            display: table-cell;
-            vertical-align: top;
-        }
-
-        .header img {
-            width: 250px;
-            height: 250px;
-            object-fit: cover;
-            margin-right: 20px;
-            border: none;
-            border-radius: 8px;
-        }
-
-        .car-info {
-            font-size: 13px;
-        }
-
-        .car-info h2 {
-            margin: 0 0 5px 0;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .car-info table {
-            margin-top: 10px;
-            border-collapse: collapse;
-            width: 100%;
-        }
-
-        .car-info td {
-            padding: 5px 8px;
-            vertical-align: top;
-            border: none;
-        }
-
-        .car-info tr:not(:last-child) td {
-            border-bottom: 1px solid #ddd;
-        }
-
-        .car-info td:first-child {
-            width: 30%;
-            font-weight: bold;
-            background-color: #f7f7f7;
-        }
-
-        .conclusion {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border-left: 4px solid #4338CA; /* Warna disesuaikan dengan judul komponen */
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Menambahkan bayangan untuk efek 3D */
-        }
-
-        .conclusion h3 {
-            margin-top: 0;
-            font-size: 16px;
-            color: #4338CA;
-            font-weight: bold;
-        }
-        
-        .conclusion p {
-            margin: 0;
-            line-height: 1.6;
-        }
-
-        .component-block {
-            margin-top: 25px;
-            border-radius: 8px;
-            overflow: hidden;
-            page-break-inside: avoid;
-            border: 1px solid #ddd;
-        }
-
-        .component-title {
-            font-weight: bold;
-            font-size: 16px;
-            padding: 10px 15px;
-            color: white;
-            background-color: #4338CA;
-        }
-
-        .component-content {
-            padding: 15px;
-            background-color: #fff;
-        }
-
-        .point-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .point-table td {
-            padding: 5px 8px;
-            vertical-align: top;
-            border: none;
-        }
-
-        .point-separator {
-            border-bottom: 2px solid #000;
-            line-height: 0;
-            height: 0;
-            padding: 0;
-        }
-
-        .point-separator-row td {
-            padding: 0;
-            border: none;
-        }
-
-        .point-name-cell {
-            width: 40%;
-            font-weight: bold;
-            vertical-align: middle;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-            white-space: nowrap;
-        }
-
-        .status-good {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        .status-bad {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-
-        .status-warning {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-
-        .point-note {
-            font-style: italic;
-            color: #777;
-        }
-
-        .photo-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        .photo-table td {
-            padding: 5px;
-            text-align: center;
-            vertical-align: top;
-            border: none;
-        }
-
-        .photo-table.car-photos-4 td {
-            width: 25%;
-        }
-
-        .photo-table.other-photos td {
-            width: 20%;
-        }
-
-        .photo-table img {
-            width: 100%;
-            max-height: 150px;
-            object-fit: cover;
-            border-radius: 4px;
-            border: none;
-        }
-
-        .img-placeholder {
-            width: 100%;
-            height: 150px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            display: table-cell;
-            text-align: center;
-            vertical-align: middle;
-            background-color: #f9f9f9;
-            font-size: 10px;
-        }
-
-        .info-card {
-            display: inline-block;
-            padding: 8px 12px;
-            border-radius: 5px;
-            font-weight: bold;
-            font-size: 14px;
-            text-align: center;
-            border: 1px solid #ddd;
-        }
-
-        .color-red {
-            background-color: #f8d7da;
-            color: #721c24;
-            border-color: #f5c6cb;
-        }
-
-        .color-green {
-            background-color: #d4edda;
-            color: #155724;
-            border-color: #c3e6cb;
-        }
-
-        .color-yellow {
-            background-color: #fff3cd;
-            color: #856404;
-            border-color: #ffeaa7;
-        }
-
-        .color-orange {
-            background-color: #ffeaa7;
-            color: #d63031;
-            border-color: #fab1a0;
-        }
-
-        @media print {
-            body {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-                margin: 0;
-                padding: 20px;
-            }
-            .header {
-                page-break-after: always;
-            }
-            table, tr, td {
-                page-break-inside: avoid;
-            }
-        }
-
-        /* Image section with table for better PDF alignment */
-        .image-section-table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: center;
-            margin: 20px auto;
-        }
-        .image-section-table td {
-            padding: 10px;
-            text-align: center;
-        }
-        .image-section-table img {
-            width: 80px;
-            height: 80px;
-            object-fit: contain;
-        }
-        .image-section-table p {
-            font-weight: bold;
-            margin: 5px 0;
-            font-size: 12px;
-        }
-
-        /* Table for component title and info */
-        .component-title-table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            margin-bottom: 10px;
-        }
-        .component-title-table td {
-            padding: 0;
-            vertical-align: middle;
-        }
-        .info-with-image {
-            display: table;
-            table-layout: fixed;
-            width: auto;
-            border-collapse: collapse;
-        }
-        .info-with-image .icon-cell,
-        .info-with-image .text-cell {
-            display: table-cell;
-            vertical-align: middle;
-        }
-        .info-with-image img {
-            width: 30px;
-            height: 30px;
-            object-fit: contain;
-            margin-right: 10px;
-        }
-        .info-with-image .info-card {
-            margin: 0;
-        }
-    </style>
 </head>
 <body>
-    <div class="header-footer">
-        <div class="header-footer-cell left">
-            <h1>Laporan Inspeksi Kendaraan</h1>
-        </div>
-        <div class="header-footer-cell right">
-            <p>Tanggal: {{ \Carbon\Carbon::parse($inspection->inspection_date)->format('d-m-Y') }}</p>
-            <p>Waktu: {{ \Carbon\Carbon::parse($inspection->inspection_date)->format('H:i:s') }}</p>
-        </div>
-    </div>
+    
+    <table class="header-table" style="margin-bottom: 20px;">
+        <tr>
+            <td style="width: 50%;">
+                <h1 style="font-size: 20px; margin: 0;">Laporan Inspeksi Kendaraan</h1>
+            </td>
+            <td style="width: 50%; text-align: right; color: #555;">
+                <p style="margin: 0; font-size: 13px;">Tanggal: {{ \Carbon\Carbon::parse($inspection->inspection_date)->format('d-m-Y') }}</p>
+                <p style="margin: 0; font-size: 13px;">Waktu: {{ \Carbon\Carbon::parse($inspection->inspection_date)->format('H:i:s') }}</p>
+            </td>
+        </tr>
+    </table>
     
     @php
         $conclusionSettings = $inspection->settings['conclusion'] ?? [];
@@ -352,57 +26,96 @@
         $collisionSeverity = $conclusionSettings['collision_severity'] ?? '';
     @endphp
 
-    <div class="header">
-        <div class="header-cell" style="width: 250px;">
-            @if($coverImage && $coverImage->image_path && file_exists(public_path($coverImage->image_path)))
-                <img src="{{ public_path($coverImage->image_path) }}" alt="Foto Utama">
-            @else
-                <div class="img-placeholder" style="width:250px; height:250px; font-size:12px;">
-                    Gambar tidak tersedia
-                </div>
-            @endif
-            <h3 style="margin: 5px 0 15px;">{{ $inspection->car_name }}</h3>
-        </div>
-        <div class="header-cell" style="padding-left: 20px;">
-            <div class="car-info">
-                @if ($inspection->car_id)
-                <table>
-                    <tr><td>Nomor Polisi</td><td>{{ $inspection->plate_number }}</td></tr>
-                    <tr><td>Merek</td><td>{{ $inspection->car->brand->name }}</td></tr>
-                    <tr><td>Model</td><td>{{ $inspection->car->model->name }}</td></tr>
-                    <tr><td>Tipe</td><td>{{ $inspection->car->type->name }}</td></tr>
-                    <tr><td>CC</td><td>{{ $inspection->car->cc }}</td></tr>
-                    <tr><td>Bahan Bakar</td><td>{{ $inspection->car->fuel_type }}</td></tr>
-                    <tr><td>Transmisi</td><td>{{ $inspection->car->transmission }}</td></tr>
-                    <tr><td>Tahun Pembuatan</td><td>{{ $inspection->car->year }}</td></tr>
-                    <tr><td>Periode Model</td><td>{{ $inspection->car->production_period ?? '-' }}</td></tr>
-                </table>
-                @endif
-            </div>
-        </div>
-    </div>
-
-    @if($flooded == 'yes' || $collision == 'yes')
-    <table class="image-section-table">
+    <table class="main-info-table" style="margin-bottom: 20px;">
         <tr>
-            <td style="width: 50%;">
-                @if($flooded == 'yes')
-                    <img src="{{ public_path('images/icons/banjir.png') }}" alt="Banjir">
-                    <p>Bekas Banjir</p>
+            <td style="width: 250px;">
+                @if($coverImage && $coverImage->image_path && file_exists(public_path($coverImage->image_path)))
+                    <img src="{{ public_path($coverImage->image_path) }}" alt="Foto Utama" style="width: 220px; height: 220px; object-fit: cover; border: 1px solid #ccc;">
+                @else
+                    <div style="width: 220px; height: 220px; background: #f5f5f5; border: 1px dashed #bbb; text-align: center; color: #666; font-size: 12px;">
+                        <span style="display: block; margin-top: 50%; transform: translateY(-50%);">Gambar tidak tersedia</span>
+                    </div>
+                @endif
+                <h3 style="margin: 5px 0 15px; font-size: 16px;">{{ $inspection->car_name }}</h3>
+            </td>
+            <td style="padding-left: 20px;">
+                @if ($inspection->car_id)
+                <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #ddd; font-weight: bold; width: 140px; font-size: 13px;">Nomor Polisi</td>
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 13px;">{{ $inspection->plate_number }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #ddd; font-weight: bold; width: 140px; font-size: 13px;">Merek</td>
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 13px;">{{ $inspection->car->brand->name }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #ddd; font-weight: bold; width: 140px; font-size: 13px;">Model</td>
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 13px;">{{ $inspection->car->model->name }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #ddd; font-weight: bold; width: 140px; font-size: 13px;">Tipe</td>
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 13px;">{{ $inspection->car->type->name }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #ddd; font-weight: bold; width: 140px; font-size: 13px;">CC</td>
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 13px;">{{ $inspection->car->cc }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #ddd; font-weight: bold; width: 140px; font-size: 13px;">Bahan Bakar</td>
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 13px;">{{ $inspection->car->fuel_type }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #ddd; font-weight: bold; width: 140px; font-size: 13px;">Transmisi</td>
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 13px;">{{ $inspection->car->transmission }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #ddd; font-weight: bold; width: 140px; font-size: 13px;">Tahun Pembuatan</td>
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 13px;">{{ $inspection->car->year }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #ddd; font-weight: bold; width: 140px; font-size: 13px;">Periode Model</td>
+                                <td style="padding: 6px 8px; border-bottom: 1px solid #ddd; font-size: 13px;">{{ $inspection->car->production_period ?? '-' }}</td>
+                            </tr>
+                    </table>
                 @endif
             </td>
-            <td style="width: 50%;">
-                @if($collision == 'yes')
-                    @if($collisionSeverity == 'light')
-                        <img src="{{ public_path('images/icons/ringan.png') }}" alt="Tabrak Ringan">
-                        <p>Tabrak Ringan</p>
-                    @elseif($collisionSeverity == 'moderate')
-                        <img src="{{ public_path('images/icons/bruntun.png') }}" alt="Tabrak Sedang">
-                        <p>Tabrak Sedang</p>
-                    @elseif($collisionSeverity == 'heavy')
-                        <img src="{{ public_path('images/icons/bruntun.png') }}" alt="Tabrak Berat">
-                        <p>Tabrak Berat</p>
-                    @endif
+        </tr>
+    </table>
+
+    @if($flooded == 'yes' || $collision == 'yes')
+    <table style="width: 100%; margin: 15px 0; border-collapse: collapse; text-align: center;">
+        <tr>
+            <td style="width: 50%; padding: 6px;">
+                @if ($flooded === 'yes')
+                    <img src="{{ public_path('images/icons/banjir.png') }}" alt="Banjir" style="width: 80px; height: 80px;">
+                    <p style="font-weight: bold; font-size: 15px; color: #dc3545;">Bekas Banjir</p>
+                @else
+                    <img src="{{ public_path('images/icons/aman.png') }}" alt="Aman" style="width: 80px; height: 80px;">
+                    <p style="font-weight: bold; font-size: 15px; color: #28a745;">Bebas Banjir</p>
+                @endif
+            </td>
+            <td style="width: 50%; padding: 6px;">
+                @if ($collision == 'yes')
+                    @php
+                        $collisionImage = public_path('images/icons/ringan.png');
+                        $collisionText = 'Tabrak Ringan';
+                        $collisionColor = '#ffc107';
+                        if ($collisionSeverity === 'moderate') {
+                            $collisionImage = public_path('images/icons/beruntun.png');
+                            $collisionText = 'Tabrak Beruntun';
+                            $collisionColor = '#fd7e14';
+                        } elseif ($collisionSeverity === 'heavy') {
+                            $collisionImage = public_path('images/icons/berat.png');
+                            $collisionText = 'Tabrak Berat';
+                            $collisionColor = '#dc3545';
+                        }
+                    @endphp
+                    <img src="{{ $collisionImage }}" alt="Tabrak" style="width: 80px; height: 80px;">
+                    <p style="font-weight: bold; font-size: 15px; color: {{ $collisionColor }};">{{ $collisionText }}</p>
+                @else
+                    <img src="{{ public_path('images/icons/aman.png') }}" alt="Aman" style="width: 80px; height: 80px;">
+                    <p style="font-weight: bold; font-size: 15px; color: #28a745;">Bebas Tabrak</p>
                 @endif
             </td>
         </tr>
@@ -410,92 +123,80 @@
     @endif
 
     @if($inspection->notes)
-    <div class="conclusion">
-        <h3>Kesimpulan Inspeksi:</h3>
-        <p>{!! $inspection->notes !!}</p>
+    <div style="margin: 15px 0; padding: 12px; background: #f9f9f9; border-left: 4px solid #0d98d8;">
+        <h3 style="margin: 0 0 6px; font-size: 15px;">Kesimpulan Inspeksi:</h3>
+        <div style="margin: 0; font-size: 14px; line-height: 1.8;">{!! $inspection->notes !!}</div>
     </div>
     @endif
 
     @foreach($menu_points->groupBy('inspection_point.component.name') as $componentName => $points)
-        <div class="component-block">
-            <div class="component-title">{{ $componentName ?? 'Tanpa Komponen' }}</div>
+    @php
+        $hasData = false;
+        if ($componentName == 'Interior (Validasi Banjir)' && $flooded == 'yes') {
+            $hasData = true;
+        } elseif ($componentName == 'Rangka (Validasi Tabrak)' && $collision == 'yes') {
+            $hasData = true;
+        } elseif ($componentName == 'Foto Kendaraan') {
+            $hasData = $points->flatMap(fn($p) => $p->inspection_point->images)->isNotEmpty();
+        } else {
+            foreach ($points as $point) {
+                $result = $point->inspection_point->results->first();
+                $hasResult = $result && (!empty($result->status) || !empty($result->note));
+                $hasImage = $point->inspection_point->images && $point->inspection_point->images->count() > 0;
+                if ($hasResult || $hasImage) {
+                    $hasData = true;
+                    break;
+                }
+            }
+        }
+    @endphp
 
-            <div class="component-content">
+    @if($hasData)
+
+        @if(in_array($componentName, ['Dokumen', 'Foto Kendaraan', 'Rangka (Validasi Tabrak)', 'Interior (Validasi Banjir)']))
+            <div style="page-break-before: always;"></div>
+        @endif
+        <div class="section-box" style="border: 1px solid #0d98d8; border-radius: 10px 10px 0 0; margin-bottom: 20px; overflow: hidden;">
+            <div style="font-size: 16px; font-weight: bold; background: #0d98d8; padding: 8px; border-bottom: 1px solid #07a9e9; color: white; position: relative;">
+                {{ $componentName ?? 'Tanpa Komponen' }}
+            </div>
+
+            <div style="padding: 10px;">
                 @if ($componentName == 'Interior (Validasi Banjir)')
-                    <table class="component-title-table">
-                        <tr>
-                            <td>
-                                <div class="info-with-image">
-                                    <div class="icon-cell">
-                                        @if ($flooded === 'yes')
-                                            <img src="{{ public_path('images/icons/banjir.png') }}" alt="Banjir">
-                                        @endif
-                                    </div>
-                                    <div class="text-cell">
-                                        @if ($flooded === 'yes')
-                                            <div class="info-card color-red">
-                                                <span>Bekas Banjir</span>
-                                            </div>
-                                        @else
-                                            <div class="info-card color-green">
-                                                <span>Bebas Banjir</span>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        @if ($flooded === 'yes')
+                            <img src="{{ public_path('images/icons/banjir.png') }}" alt="Banjir" style="width: 80px; height: 80px;">
+                            <p style="font-weight: bold; font-size: 15px; color: #dc3545;">Bekas Banjir</p>
+                        @else
+                            <img src="{{ public_path('images/icons/aman.png') }}" alt="Aman" style="width: 80px; height: 80px;">
+                            <p style="font-weight: bold; font-size: 15px; color: #28a745;">Bebas Banjir</p>
+                        @endif
+                    </div>
                 @endif
                 @if ($componentName == 'Rangka (Validasi Tabrak)')
-                    <table class="component-title-table">
-                        <tr>
-                            <td>
-                                <div class="info-with-image">
-                                    <div class="icon-cell">
-                                        @if ($collision == 'yes')
-                                            @php
-                                                $collisionImage = '';
-                                                if ($collisionSeverity == 'light') {
-                                                    $collisionImage = public_path('images/icons/ringan.png');
-                                                } elseif ($collisionSeverity === 'moderate') {
-                                                    $collisionImage = public_path('images/icons/bruntun.png');
-                                                } elseif ($collisionSeverity == 'heavy') {
-                                                    $collisionImage = public_path('images/icons/bruntun.png');
-                                                }
-                                            @endphp
-                                            <img src="{{ $collisionImage }}" alt="Tabrak">
-                                        @endif
-                                    </div>
-                                    <div class="text-cell">
-                                        @if ($collision == 'yes')
-                                            @php
-                                                $collisionText = '';
-                                                $collisionColor = 'color-yellow';
-                                                if ($collisionSeverity === 'light') {
-                                                    $collisionText = 'Tabrak Ringan';
-                                                    $collisionColor = 'color-yellow';
-                                                } elseif ($collisionSeverity === 'moderate') {
-                                                    $collisionText = 'Tabrak Sedang';
-                                                    $collisionColor = 'color-orange';
-                                                } elseif ($collisionSeverity === 'heavy') {
-                                                    $collisionText = 'Tabrak Berat';
-                                                    $collisionColor = 'color-red';
-                                                }
-                                            @endphp
-                                            <div class="info-card {{ $collisionColor }}">
-                                                <span>{{ $collisionText }}</span>
-                                            </div>
-                                        @else
-                                            <div class="info-card color-green">
-                                                <span>Bebas Tabrak</span>
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                    </table>
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        @if ($collision == 'yes')
+                            @php
+                                $collisionImage = public_path('images/icons/ringan.png');
+                                $collisionText = 'Tabrak Ringan';
+                                $collisionColor = '#ffc107';
+                                if ($collisionSeverity === 'moderate') {
+                                    $collisionImage = public_path('images/icons/beruntun.png');
+                                    $collisionText = 'Tabrak Beruntun';
+                                    $collisionColor = '#fd7e14';
+                                } elseif ($collisionSeverity === 'heavy') {
+                                    $collisionImage = public_path('images/icons/berat.png');
+                                    $collisionText = 'Tabrak Berat';
+                                    $collisionColor = '#dc3545';
+                                }
+                            @endphp
+                            <img src="{{ $collisionImage }}" alt="Tabrak" style="width: 80px; height: 80px;">
+                            <p style="font-weight: bold; font-size: 15px; color: {{ $collisionColor }};">{{ $collisionText }}</p>
+                        @else
+                            <img src="{{ public_path('images/icons/aman.png') }}" alt="Aman" style="width: 80px; height: 80px;">
+                            <p style="font-weight: bold; font-size: 15px; color: #28a745;">Bebas Tabrak</p>
+                        @endif
+                    </div>
                 @endif
 
                 @if($componentName == 'Foto Kendaraan')
@@ -506,38 +207,43 @@
                                 $allCarImages = array_merge($allCarImages, $point->inspection_point->images->all());
                             }
                         }
-                        $columns = 4;
+                        $columns = 4; // Menggunakan 4 kolom seperti kode Anda
                         $imageChunks = array_chunk($allCarImages, $columns);
                     @endphp
-                    @foreach($imageChunks as $chunk)
-                        <table class="photo-table car-photos-4">
-                            <tr>
-                                @foreach($chunk as $img)
-                                    <td>
-                                        @if($img->image_path && file_exists(public_path($img->image_path)))
-                                            <img src="{{ public_path($img->image_path) }}" alt="Foto Kendaraan">
-                                        @else
-                                            <div class="img-placeholder">Gambar tidak ditemukan</div>
-                                        @endif
-                                    </td>
-                                @endforeach
-                                @for($i = count($chunk); $i < $columns; $i++)
-                                    <td></td>
-                                @endfor
-                            </tr>
-                        </table>
-                    @endforeach
+                    @if(count($imageChunks) > 0)
+                        @foreach($imageChunks as $chunk)
+                            <table class="image-table" style="margin-bottom: 10px;">
+                                <tr>
+                                    @foreach($chunk as $img)
+                                        <td style="width: 25%;">
+                                            @if($img->image_path && file_exists(public_path($img->image_path)))
+                                                <div class="image-container">
+                                                    <img src="{{ public_path($img->image_path) }}" alt="Foto Kendaraan">
+                                                </div>
+                                            @else
+                                                <div class="image-placeholder">
+                                                    <span>Gambar tidak ditemukan</span>
+                                                </div>
+                                            @endif
+                                        </td>
+                                    @endforeach
+                                    @for($i = count($chunk); $i < $columns; $i++)
+                                        <td style="width: 25%;">
+                                            <div class="image-placeholder">
+                                                <span></span>
+                                            </div>
+                                        </td>
+                                    @endfor
+                                </tr>
+                            </table>
+                        @endforeach
+                    @endif
                 @else
-                    <table class="point-table">
                     @foreach($points as $point)
                         @php
                             $result = $point->inspection_point->results->first();
                             $hasResult = $result && (!empty($result->status) || !empty($result->note));
                             $hasImage = $point->inspection_point->images && $point->inspection_point->images->count() > 0;
-
-                            if (!$hasResult && !$hasImage && $inputType !== 'account') {
-                                continue;
-                            }
                             
                             $inputType = $point->input_type ?? '';
                             $selected = $result->status ?? null;
@@ -546,19 +252,19 @@
                             $showImageUpload = $selectedOption['settings']['show_image_upload'] ?? false;
                             $showTextarea = $selectedOption['settings']['show_textarea'] ?? false;
                             $showImages = (in_array($inputType, ['image', 'imageTOradio']) || ($inputType === 'radio' && $showImageUpload)) && $hasImage;
-                            $notess = (in_array($inputType, ['image', 'imageTOradio','radio' ]));
-
-                            if( $notess){
-                                $cek_type = $showTextarea;
-                            }else{
-                                $cek_type = '';
+                            $showNote = !empty($result->note);
+                            $isRadioType = in_array($inputType, ['radio', 'imageTOradio']);
+                            $showNoteForRadio = $isRadioType && $showTextarea;
+                            
+                            if (!$hasResult && !$showImages) {
+                                continue;
                             }
 
-                            $statusClass = 'status-warning';
+                            $statusColor = '#ffc107'; // default for warning
                             if (in_array(strtolower($selected), ['normal', 'ada', 'baik', 'good', 'ok'])) {
-                                $statusClass = 'status-good';
+                                $statusColor = '#28a745';
                             } elseif (in_array(strtolower($selected), ['tidak normal', 'tidak ada', 'rusak', 'bad', 'not ok'])) {
-                                $statusClass = 'status-bad';
+                                $statusColor = '#dc3545';
                             }
                             
                             $formattedNote = $result->note ?? '';
@@ -572,74 +278,87 @@
                             }
                         @endphp
                         
-                        <tr>
-                            <td class="point-name-cell">{{ $point->inspection_point->name ?? '-' }}</td>
-                            <td>
-                                @if(in_array($inputType, ['radio', 'imageTOradio']) && !empty($result->status))
-                                    <span class="status-badge {{ $statusClass }}">{{ $result->status }}</span>
-                                @endif
-                            </td>
-                            <td>
-                                @if ($notess)
-                                    @if(!$showImages && !empty($formattedNote) && $showTextarea)
-                                        <span class="point-note">{{ $formattedNote }}</span>
-                                    @endif
-                                @else
-                                    @if(!$showImages && !empty($formattedNote))
-                                        <span class="point-note">{{ $formattedNote }}</span>
-                                    @endif
-                                @endif
-                            </td>
-                        </tr>
-
-                        @if($showImages)
-                            <tr>
-                                <td colspan="3">
-                                    <table class="photo-table other-photos">
-                                        <tr>
-                                            @foreach($point->inspection_point->images as $index => $img)
-                                                <td>
-                                                    @if($img->image_path && file_exists(public_path($img->image_path)))
-                                                        <img src="{{ public_path($img->image_path) }}" alt="image">
-                                                    @else
-                                                        <div class="img-placeholder">Gambar tidak ditemukan</div>
-                                                    @endif
-                                                </td>
-                                                @if(($index+1) % 5 == 0) </tr><tr> @endif
-                                            @endforeach
-                                            @php
-                                                $totalOtherImages = $point->inspection_point->images->count();
-                                            @endphp
-                                            @if($totalOtherImages > 0 && $totalOtherImages % 5 != 0)
-                                                @for($i = 0; $i < (5 - ($totalOtherImages % 5)); $i++)
-                                                    <td></td>
+                        <div style="margin-bottom: 15px; border-bottom: 1px dashed #ccc; padding-bottom: 10px;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr>
+                                    <td style="width: 35%; padding: 4px; vertical-align: top; font-weight: bold; font-size: 14px;">{{ $point->inspection_point->name ?? '-' }}</td>
+                                    <td style="width: 20%; padding: 4px; vertical-align: top; font-size: 14px;">
+                                        @if($isRadioType && !empty($result->status))
+                                            <span style="display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: {{ $statusColor }};">{{ $result->status }}</span>
+                                        @endif
+                                    </td>
+                                    <td style="padding: 4px; vertical-align: top; font-size: 14px;">
+                                        @if ($showNote && (!$isRadioType || $showNoteForRadio) && !$showImages)
+                                            <span style="font-style: italic; color: #555; font-size: 13px;">{{ $formattedNote }}</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            @if($showImages)
+                                <div style="margin-top: 10px;">
+                                    <table class="image-table">
+                                        @php
+                                            $images = $point->inspection_point->images;
+                                            $columns = 5;
+                                            $imageChunks = $images->count() > 0 ? array_chunk($images->all(), $columns) : [[]];
+                                        @endphp
+                                        @foreach($imageChunks as $chunk)
+                                            <tr>
+                                                @foreach($chunk as $img)
+                                                    <td style="width: 20%;">
+                                                        @if($img->image_path && file_exists(public_path($img->image_path)))
+                                                            <div class="image-container">
+                                                                <img src="{{ public_path($img->image_path) }}" alt="image">
+                                                            </div>
+                                                        @else
+                                                            <div class="image-placeholder">
+                                                                <span>Gambar tidak ditemukan</span>
+                                                            </div>
+                                                        @endif
+                                                    </td>
+                                                @endforeach
+                                                @for ($i = count($chunk); $i < $columns; $i++)
+                                                    <td style="width: 20%;">
+                                                        <div class="image-placeholder">
+                                                            <span></span>
+                                                        </div>
+                                                    </td>
                                                 @endfor
-                                            @endif
-                                        </tr>
+                                            </tr>
+                                        @endforeach
                                     </table>
-                                    @if(!empty($formattedNote) && $showTextarea)
-                                        <div class="point-note" style="margin-top: 10px;">{{ $formattedNote }}</div>
-                                    @endif
-                                </td>
-                            </tr>
-                        @endif
-                        <tr class="point-separator-row">
-                            <td colspan="3" class="point-separator"></td>
-                        </tr>
+                                </div>
+                           
+
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr>
+                                    <td style="padding: 4px; vertical-align: top; font-size: 14px;">
+                                        @if ($showNote && (!$isRadioType || $showNoteForRadio))
+                                            <span style="font-style: italic; color: #555; font-size: 13px;">{{ $formattedNote }}</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            </table>
+                             @endif
+
+                        </div>
                     @endforeach
-                    </table>
                 @endif
             </div>
         </div>
+    @endif
     @endforeach
 
-    <div class="header-footer" style="margin-top: 20px;">
-        <div class="header-footer-cell left">
-            <p>Laporan ini dibuat secara otomatis.</p>
-        </div>
-        <div class="header-footer-cell right">
-            <p>Terima kasih telah menggunakan layanan kami.</p>
-        </div>
-    </div>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+        <tr>
+            <td style="width: 50%;">
+                <p style="margin: 0; font-size: 13px;">Laporan ini dibuat secara otomatis.</p>
+            </td>
+            <td style="width: 50%; text-align: right;">
+                <p style="margin: 0; font-size: 13px;">Terima kasih telah menggunakan layanan kami.</p>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

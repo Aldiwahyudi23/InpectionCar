@@ -266,6 +266,48 @@ const handleDownload = (route) => {
   }, 1500); // 1.5 detik
 };
 
+// Untuk Composition API (<script setup>)
+const copyToClipboard = async (text) => {
+  try {
+    // Metode modern menggunakan Clipboard API :cite[2]:cite[6]:cite[9]
+    await navigator.clipboard.writeText(text);
+    console.log('Teks berhasil disalin: ', text);
+    // Opsional: Tambahkan umpan balik ke pengguna, seperti alert atau notifikasi kecil
+    alert(`ID Inspeksi "${text}" berhasil disalin!`);
+  } catch (err) {
+    console.error('Gagal menyalin teks: ', err);
+    // Fallback untuk browser yang lebih lama
+    fallbackCopyTextToClipboard(text);
+  }
+};
+
+// Fallback jika metode modern tidak didukung :cite[7]:cite[10]
+const fallbackCopyTextToClipboard = (text) => {
+  // Buat elemen textarea sementara
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+  // Pastikan elemen berada di luar layar
+  textArea.style.position = 'fixed';
+  textArea.style.left = '-999999px';
+  textArea.style.top = '-999999px';
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  try {
+    // Jalankan perintah salin lama
+    const successful = document.execCommand('copy');
+    const msg = successful ? 'berhasil' : 'gagal';
+    console.log('Fallback menyalin teks ' + msg);
+    alert(successful ? `ID Inspeksi "${text}" berhasil disalin!` : 'Gagal menyalin ID Inspeksi.');
+  } catch (err) {
+    console.error('Fallback pun gagal: ', err);
+    alert('Browser tidak mendukung aksi salin.');
+  } finally {
+    // Bersihkan dengan menghapus elemen textarea
+    document.body.removeChild(textArea);
+  }
+};
+
 </script>
 
 <template>
@@ -452,6 +494,28 @@ const handleDownload = (route) => {
           <p class="text-sm font-semibold text-gray-800 ml-7 -mt-1">
             {{ statusLabel(inspection.status) }}
           </p>
+
+          <div v-if="(inspection.status === 'approved' || inspection.status === 'completed') && inspection.file && canShowPdf"  class="mt-3 mb-3">
+            <div class="flex items-center mb-1">
+                <!-- Icon Kunci -->
+                <svg class="h-5 w-5 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                <span class="text-sm font-medium text-gray-600">ID Inspeksi (Untuk Buka File)</span>
+            </div>
+            <p class="text-sm font-semibold text-gray-800 ml-7 -mt-1 flex items-center">
+                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-mono">
+                    {{ inspection.code }}
+                </span>
+                <!-- Icon Clipboard -->
+                <button @click="copyToClipboard(inspection.code)" class="ml-2 text-blue-500 hover:text-blue-700">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                </button>
+            </p>
+        </div>
+
           <div class="mt-3">
             <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">
               Catatan

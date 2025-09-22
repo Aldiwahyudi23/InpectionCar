@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\DataInspection\Inspection;
 use App\Models\DataInspection\InspectionImage;
+use App\Services\InspectionmPdfGenerator;
 use App\Services\InspectionPdfGenerator;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -69,9 +70,10 @@ class CleanupInspectionData extends Command
                     // Jika status pending_review atau approved -> generate PDF dulu
                     if (in_array($inspection->status, ['pending_review', 'approved'])) {
 
-                        $generator = new InspectionPdfGenerator();
+                        $generator = new InspectionmPdfGenerator();
                         if (empty($inspection->file) || !file_exists(public_path($inspection->file))) {
                             $generator->generate($inspection);
+                            
                         }
 
                         // Hapus results

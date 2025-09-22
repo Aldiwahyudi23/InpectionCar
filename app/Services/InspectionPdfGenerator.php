@@ -48,7 +48,7 @@ class InspectionPdfGenerator
         }
 
         // Generate PDF
-        $pdf = Pdf::loadView('inspection.report.report1', [
+        $pdf = Pdf::loadView('inspection.report.domPDF1', [
             'inspection' => $inspection,
             'menu_points' => $menu_points,
             'coverImage' => $coverImage,

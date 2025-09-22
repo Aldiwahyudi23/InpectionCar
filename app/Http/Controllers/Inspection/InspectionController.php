@@ -20,6 +20,7 @@ use App\Models\Finance\TransactionDistribution;
 use App\Models\Team\Region;
 use App\Models\Team\RegionTeam;
 use App\Models\User;
+use App\Services\InspectionmPdfGenerator;
 use App\Services\InspectionPdfGenerator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Dompdf\Dompdf;
@@ -32,6 +33,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -656,7 +658,7 @@ public function store(Request $request)
             'encryptedIds' => $encryptedIds,
         ]);
 
-        // return view('inspection.report.report1', compact('inspection', 'menu_points', 'coverImage')); 
+        // return view('inspection.report.report2', compact('inspection', 'menu_points', 'coverImage')); 
     }
 
     public function detail($id)
@@ -760,7 +762,7 @@ public function store(Request $request)
                 $coverImage = InspectionImage::where('inspection_id', $inspection->id)->first();
             }
 
-            $pdf = Pdf::loadView('inspection.report.report1', [
+            $pdf = Pdf::loadView('inspection.report.domPDF1', [
                 'inspection' => $inspection,
                 'menu_points' => $menu_points,
                 'coverImage' => $coverImage,
@@ -802,6 +804,39 @@ public function store(Request $request)
         }
     }
 
+        public function approvePdf($id)
+    {
+        try {
+            $id = Crypt::decrypt($id);
+            $inspection = Inspection::with([
+                'car',
+                'car.brand',
+                'car.model',
+                'car.type',
+                'category',
+            ])->findOrFail($id);
+
+            // Update inspection status dan file path
+            $inspection->update([
+                'status' => 'approved',
+                'approved_at' => now(),
+            ]);
+            $inspection->addLog('approved', 'Menyetujui Hasil Inspeksi');
+
+            $generator = new InspectionmPdfGenerator();
+            $generator->generate($inspection);
+            
+            $encryptId = Crypt::encrypt($inspection->id);
+                // Redirect ke halaman review
+            return redirect()->route('inspections.review', ['id' => $encryptId])
+            ->with('success', 'Inspeksi sudah di setujui dan report sedang di buat');
+                
+                
+        } catch (\Exception $e) {
+            Log::error('Error generating PDF: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal generate laporan PDF: ' . $e->getMessage());
+        }
+    }
 
 
 public function sendEmail($id, Request $request)
@@ -820,7 +855,7 @@ public function sendEmail($id, Request $request)
     return response()->json(['message' => 'Email berhasil dikirim']);
 }
 
-public function whatsapp($id)
+    public function whatsapp($id)
     {
         $id = Crypt::decrypt($id);
         $inspection = Inspection::with(
@@ -830,6 +865,22 @@ public function whatsapp($id)
             'car.type',
             'customer',
             )->findOrFail($id);
+
+       // cek status
+        if (in_array($inspection->status, [
+                'draft', 
+                'in_progress', 
+                'pending', 
+                'pending_review', 
+                'revision',        
+                'rejected',
+                'revision',
+                'cancelled'
+        ])) {
+            $encryptId = Crypt::encrypt($inspection->id);
+               // Generate URL download
+            return redirect()->route('inspections.review.pdf', ['id' => $encryptId]);
+        }
 
         $transaction = Transaction::where('inspection_id' , $inspection->id)->first();
 
@@ -846,7 +897,7 @@ public function whatsapp($id)
         ]);
     }
 
- public function send($inspection)
+    public function send($inspection)
     {
 
          $id = Crypt::decrypt($inspection);
@@ -875,7 +926,9 @@ public function whatsapp($id)
             ."*Plat Nomor*: {$inspection->plate_number}\n"
             ."*Kendaraan*: {$inspection->car_name}\n\n"
             ."*HASIL:*\n{$notes}\n\n"
-            ."Terima kasih telah menggunakan layanan kami.";
+            ."Terima kasih telah menggunakan layanan kami.\n\n"
+            ."_Catatan: Mohon gunakan ID Inspeksi untuk mengakses file, sebagai upaya kami melindungi data kendaraan._";
+            
 
         // simpan log (opsional kalau ada tabel log)
 
@@ -968,6 +1021,29 @@ public function whatsapp($id)
         }
     }
 
+    // =======================Kode percobaan awalna======================
+    public function download($id)
+    {
+        try {
+            $id = Crypt::decrypt($id);
+            $inspection = Inspection::with([
+                'car',
+                'car.brand',
+                'car.model',
+                'car.type',
+                'category',
+            ])->findOrFail($id);
 
+            $generator = new InspectionmPdfGenerator();
+            if (empty($inspection->file) || !file_exists(public_path($inspection->file))) {
+                $generator->generate($inspection);
+            }
 
+             return redirect()->back()->with('success','pdf sudah tergenerate ');
+                
+        } catch (\Exception $e) {
+            Log::error('Error generating PDF: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal generate laporan PDF: ' . $e->getMessage());
+        }
+    }
 }
