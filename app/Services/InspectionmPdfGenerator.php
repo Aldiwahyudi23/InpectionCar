@@ -8,7 +8,6 @@ use App\Models\DataInspection\MenuPoint;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Mpdf\Mpdf;
-use Illuminate\Support\Str;
 use Throwable;
 
 class InspectionmPdfGenerator
@@ -53,8 +52,7 @@ class InspectionmPdfGenerator
 
             // Jika inspection->code kosong maka generate random 6-digit code dan simpan
             if (empty($inspection->code)) {
-                // 🔑 Generate random secure code (10 karakter alfanumerik)
-                $randomCode = Str::upper(Str::random(10));
+                $randomCode = mt_rand(100000, 999999); // 6 digit
                 $inspection->update(['code' => (string) $randomCode]);
                 // reload variable
                 $inspection->refresh();
@@ -103,7 +101,7 @@ class InspectionmPdfGenerator
 
             // Tambahkan log (asumsi ada method addLog di model)
             if (method_exists($inspection, 'addLog')) {
-                $inspection->addLog('pdf_generated', 'PDF inspection berhasil di-generate dan diproteksi');
+                $inspection->addLog('pdf_generated', 'PDF inspection berhasil di-generate dan diproteksi ');
             }
 
             return $filePath;
