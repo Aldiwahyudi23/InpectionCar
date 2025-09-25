@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('car_type_id')->constrained('car_types')->onDelete('cascade');
             $table->year('year');
             $table->integer('cc')->nullable();
-            $table->enum('transmission', ['AT', 'MT', 'CVT', 'e-CVT', 'DCT', 'AMT']);
+            $table->enum('transmission', ['AT', 'MT', 'CVT', 'e-CVT', 'DCT', 'AMT', 'IVT','SSG','AGS','DHT']);
             $table->string('fuel_type');
             $table->string('production_period');
             $table->string('engine_code')->nullable();

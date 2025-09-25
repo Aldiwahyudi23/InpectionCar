@@ -77,7 +77,7 @@ class InspectionController extends Controller
             ->whereIn('status', ['in_progress', 'revision'])
             ->exists(); // Menggunakan exists() untuk cek apakah ada data
 
-        return Inertia::render('FrontEnd/Inspection/Create', [
+        return Inertia::render('FrontEnd/Inspection/Create/Index', [
             'CarDetail' => $CarDetail,
             'Category' => $Category,
             'team' => $team,

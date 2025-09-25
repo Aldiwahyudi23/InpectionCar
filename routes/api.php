@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DataCar\CarController;
+use App\Http\Controllers\Inspection\CarDataController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -10,7 +11,7 @@ Route::get('/user', function (Request $request) {
 
 Route::get('/cars/{id}/images', [CarController::class, 'images']);
 
-
+// ===========================Kebutuhan untuk menambahkan data mobil baru=========================
 // File: routes/api.php
 
 Route::get('/cars/brands', [CarController::class, 'getBrands']);
@@ -29,3 +30,15 @@ Route::post('/cars/store-car-detail', [CarController::class, 'storeCarDetail']);
 
 Route::get('/api/cars/{carId}/images', [CarController::class, 'getCarImages']);
 
+
+// =================Kebutuhan Create Inspection=============================
+
+Route::get('/car-brands', [CarDataController::class, 'getBrands']);
+Route::get('/car-models/{brandId}', [CarDataController::class, 'getModels']);
+Route::get('/car-types/{modelId}', [CarDataController::class, 'getTypes']);
+Route::get('/car-capacities/{typeId}', [CarDataController::class, 'getCapacities']);
+Route::get('/car-years/{typeId}/{capacity}', [CarDataController::class, 'getYears']);
+Route::get('/car-transmissions/{typeId}/{capacity}/{year}', [CarDataController::class, 'getTransmissions']);
+Route::get('/car-fuels/{typeId}/{capacity}/{year}/{transmission}', [CarDataController::class, 'getFuels']);
+Route::get('/car-periods/{typeId}/{capacity}/{year}/{transmission}/{fuel}', [CarDataController::class, 'getPeriods']);
+Route::get('/car-details/{typeId}/{capacity}/{year}/{transmission}/{fuel}/{period}', [CarDataController::class, 'getCarDetail']);
