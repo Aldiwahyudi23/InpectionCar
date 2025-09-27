@@ -6,75 +6,93 @@ export function useDraggableButton(storageKey, defaultPos) {
   const dragging = ref(false);
   const longPressTimer = ref(null);
   const isLongPressing = ref(false);
+  const startPos = ref({ x: 0, y: 0 });
 
   onMounted(() => {
     const saved = localStorage.getItem(storageKey);
-    if (saved) pos.value = JSON.parse(saved);
+    if (saved) {
+      try {
+        pos.value = JSON.parse(saved);
+      } catch (e) {
+        console.error('Error parsing saved position:', e);
+      }
+    }
   });
 
   const startLongPress = (e) => {
-    // Prevent default untuk menghindari behavior tidak diinginkan
-    e.preventDefault();
-    
+    // Simpan posisi awal
+    if (e.type.includes('touch')) {
+      startPos.value.x = e.touches[0].clientX;
+      startPos.value.y = e.touches[0].clientY;
+    } else {
+      startPos.value.x = e.clientX;
+      startPos.value.y = e.clientY;
+    }
+
+    // Start timer untuk long press
     longPressTimer.value = setTimeout(() => {
       isLongPressing.value = true;
       dragging.value = true;
-      
-      // Set posisi awal drag berdasarkan titik sentuh
-      if (e.type.includes('touch')) {
-        pos.value.x = e.touches[0].clientX - 24;
-        pos.value.y = e.touches[0].clientY - 24;
-      } else {
-        pos.value.x = e.clientX - 24;
-        pos.value.y = e.clientY - 24;
-      }
-    }, 500); // Harus tahan 500ms baru bisa drag
+      console.log('Long press activated - drag mode ON');
+    }, 900); // ✅ PERPANJANG jadi 800ms agar tidak accidental
   };
 
   const cancelLongPress = () => {
-    clearTimeout(longPressTimer.value);
-    isLongPressing.value = false;
-    
-    // Jika sedang tidak dragging, reset timer saja
-    if (!dragging.value) {
+    if (longPressTimer.value) {
+      clearTimeout(longPressTimer.value);
       longPressTimer.value = null;
     }
+    isLongPressing.value = false;
   };
 
   const onDrag = (e) => {
-    // Hanya drag jika benar-benar dalam mode dragging (setelah long press)
+    // Hanya drag jika dalam mode long press
     if (!dragging.value || !isLongPressing.value) return;
 
-    // Prevent default untuk mobile scrolling
     e.preventDefault();
 
+    let clientX, clientY;
+    
     if (e.type.includes('touch')) {
-      pos.value.x = e.touches[0].clientX - 24;
-      pos.value.y = e.touches[0].clientY - 24;
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
     } else {
-      pos.value.x = e.clientX - 24;
-      pos.value.y = e.clientY - 24;
+      clientX = e.clientX;
+      clientY = e.clientY;
     }
+
+    // Update posisi
+    pos.value.x = clientX - 24; // 24 = half of button size
+    pos.value.y = clientY - 24;
   };
 
   const stopDrag = () => {
-    if (dragging.value) {
+    if (dragging.value && isLongPressing.value) {
+      console.log('Drag stopped - saving position');
       dragging.value = false;
       isLongPressing.value = false;
-      clearTimeout(longPressTimer.value);
-      longPressTimer.value = null;
-      localStorage.setItem(storageKey, JSON.stringify(pos.value));
+      
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(pos.value));
+      } catch (e) {
+        console.error('Error saving position:', e);
+      }
     }
+    
+    // Always clear timer
+    cancelLongPress();
   };
 
-  // Fungsi untuk handle click biasa (bukan drag)
   const handleClick = (e) => {
-    // Jika sedang tidak dragging, biarkan click biasa
+    // Jika sedang tidak dragging, ini adalah click biasa
     if (!dragging.value && !isLongPressing.value) {
-      // Click handler biasa bisa ditambahkan di sini
+      console.log('Regular click detected');
       return true; // Return true untuk indicate ini click biasa
     }
-    return false; // Return false untuk indicate ini bagian dari drag
+    
+    // Jika sedang dragging, ini adalah bagian dari drag operation
+    console.log('Click ignored - part of drag operation');
+    return false;
   };
 
   return {
