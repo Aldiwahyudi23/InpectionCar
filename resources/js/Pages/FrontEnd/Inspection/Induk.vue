@@ -10,18 +10,18 @@
     <!-- Tombol toggle HANYA muncul kalau vertical -->
      <button
     v-if="menuMode === 'vertical'"
-      @mousedown="startToggleLongPress"
-      @mouseup="stopToggleDrag"
-      @mouseleave="cancelToggleLongPress"
-      @mousemove="onToggleDrag"
-      @touchstart="startToggleLongPress"
-      @touchend="stopToggleDrag"
-      @touchmove="onToggleDrag"
-      @click="toggleMenu"
-      class="fixed z-40 p-4 bg-gradient-to-r from-indigo-700 to-sky-600 text-white border shadow-lg rounded-full hover:shadow-xl transition"
-      :style="{ left: togglePos.x + 'px', top: togglePos.y + 'px' }"
-      aria-label="Toggle vertical menu"
-    >
+    @mousedown="startToggleLongPress"
+    @mouseup="stopToggleDrag"
+    @mouseleave="cancelToggleLongPress"
+    @mousemove="onToggleDrag"
+    @touchstart="startToggleLongPress"
+    @touchend="stopToggleDrag"
+    @touchmove="onToggleDrag"
+    @click="handleToggleClick"
+    class="fixed z-40 p-4 bg-gradient-to-r from-indigo-700 to-sky-600 text-white border shadow-lg rounded-full hover:shadow-xl transition"
+    :style="{ left: togglePos.x + 'px', top: togglePos.y + 'px' }"
+    aria-label="Toggle vertical menu"
+  >
     <template v-if="!isMenuOpen">
       <!-- icon buka -->
       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor" stroke-width="2">
@@ -34,7 +34,7 @@
         <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
       </svg>
     </template>
-  </button>
+      </button>
 
     <!-- Horizontal menu -->
     <div
@@ -160,8 +160,13 @@
       </div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-1">
-
+    <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-1"
+      :class="{
+              'pb-4 pt-1': menuPosition === 'top',
+              'pb-20 pt-4': menuPosition === 'bottom', // ✅ Padding bottom ketika menu di bawah
+                'pb-4 pt-4'   : menuMode === 'vertical'
+            }"
+      >
       <!-- Pesan sukses -->
       <transition name="fade">
         <div
@@ -253,6 +258,10 @@
     <div
       v-if="activeCategory === 'conclusion'"
       class="flex justify-end gap-4 mt-2 p-4 bg-white rounded-xl shadow-md"
+        :class="{
+          'mb-4': menuPosition === 'top',
+          'mb-20': menuPosition === 'bottom' // ✅ Extra margin bottom ketika menu di bawah
+        }"
     >
       <!-- Tombol Pending -->
       <Link
@@ -338,7 +347,7 @@
     @touchstart="startDamageLongPress"
     @touchend="stopDamageDrag"
     @touchmove="onDamageDrag"
-    @click="showSearchModal = true"
+      @click="handleDamageClick"
     class="fixed z-40 p-4 bg-gradient-to-r from-indigo-700 to-sky-600 text-white rounded-full shadow-lg"
     :style="{ left: damagePos.x + 'px', top: damagePos.y + 'px' }"
   >
@@ -459,20 +468,29 @@ const isMenuOpen = ref(false)
 // draggable button untuk Toggle Menu
 const {
   pos: togglePos,
-  dragging: menuDragging, // ⬅️ ambil state dragging
+  dragging: menuDragging,
   startLongPress: startToggleLongPress,
   cancelLongPress: cancelToggleLongPress,
   onDrag: onToggleDrag,
   stopDrag: stopToggleDrag,
+  handleClick: handleToggleClickFunc,
 } = useDraggableButton('toggleMenuButtonPos', {
   x: window.innerWidth - 80,
   y: 20,
 });
 
-// toggle untuk vertical
+// Handle click biasa (bukan drag)
+const handleToggleClick = (e) => {
+  if (handleToggleClickFunc(e)) {
+    // Ini adalah click biasa, bukan hasil drag
+    toggleMenu();
+  }
+  // Jika return false, berarti ini bagian dari drag, tidak perlu toggle menu
+};
+
 const toggleMenu = () => {
-  isMenuOpen.value = !isMenuOpen.value
-}
+  isMenuOpen.value = !isMenuOpen.value;
+};
 
 const closeMenu = () => {
   isMenuOpen.value = false
@@ -488,15 +506,25 @@ const menuButtonClass = (isActive) => {
 // draggable button untuk Damage
 const {
   pos: damagePos,
-  dragging: damageDragging, // ⬅️ ambil state dragging
+  dragging: damageDragging,
   startLongPress: startDamageLongPress,
   cancelLongPress: cancelDamageLongPress,
   onDrag: onDamageDrag,
   stopDrag: stopDamageDrag,
+  handleClick: handleDamageClickFunc,
 } = useDraggableButton('damageButtonPos', {
   x: window.innerWidth - 80,
   y: window.innerHeight - 80,
 });
+
+// Handle click biasa (bukan drag)
+const handleDamageClick = (e) => {
+  if (handleDamageClickFunc(e)) {
+    // Ini adalah click biasa, buka modal
+    showSearchModal.value = true;
+  }
+  // Jika return false, berarti ini bagian dari drag, tidak buka modal
+};
 
 // State untuk modal
 const showSearchModal = ref(false);
