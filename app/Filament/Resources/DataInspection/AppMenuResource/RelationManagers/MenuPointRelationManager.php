@@ -96,6 +96,11 @@ public function updatedSelectAll($value)
                     ->default(true)
                     ->inline(false),
 
+                Forms\Components\Toggle::make('is_default')
+                    ->label('Tampilkan Point')
+                    ->default(true)
+                    ->inline(false),
+
                 Forms\Components\Fieldset::make('Konfigurasi Settings')
                     ->schema(function (callable $get) {
                         $inputType = $get('input_type');
@@ -724,7 +729,7 @@ public function updatedSelectAll($value)
                     
                     ['value' => 'Level oli mesin kurang', 'label' => 'Oli Kurang'],
                     ['value' => 'Kondisi dalam mesin sudah ngerak ', 'label' => 'Ngerak'],
-                    ['value' => 'Mesin sudah berlumpur/Slug (Jorok jarang ganti oli/oli palsu)', 'label' => 'Slug'],
+                    ['value' => 'Mesin sudah berlumpur atau Slug (Jorok jarang ganti oli atau oli palsu)', 'label' => 'Slug'],
                     ['value' => 'Oli kental tidak biasanya', 'label' => 'Kekentalan'],
                 ]
             ],
@@ -1009,6 +1014,10 @@ public function updatedSelectAll($value)
                     ->label('Aktif')
                     ->boolean(),
 
+                Tables\Columns\IconColumn::make('is_default')
+                    ->label('Tampil')
+                    ->boolean(),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -1148,6 +1157,11 @@ Forms\Components\Group::make()
                             Forms\Components\Toggle::make('is_active')
                                 ->label('Status Aktif')
                                 ->default(true),
+
+                            Forms\Components\Toggle::make('is_default')
+                                ->label('Tampilkan Point')
+                                ->default(true)
+                                ->inline(false),
                                           
                             // FIELDSET SETTINGS (SAMA SEPERTI SEBELUMNYA)
                             Forms\Components\Fieldset::make('Konfigurasi Settings')
@@ -1738,6 +1752,7 @@ Forms\Components\Group::make()
                         $inputType = $data['input_type'];
                         $settings = $data['settings'] ?? [];
                         $isActive = $data['is_active'];
+                        $isDefault = $data['is_default'];
                         
                         $createdCount = 0;
                         foreach ($inspectionPointIds as $pointId) {
@@ -1752,6 +1767,7 @@ Forms\Components\Group::make()
                                     'input_type' => $inputType,
                                     'settings' => $settings,
                                     'is_active' => $isActive,
+                                    'is_default' => $isDefault,
                                     'app_menu_id' => $ownerRecord->id,
                                     'order' => MenuPoint::where('app_menu_id', $ownerRecord->id)->max('order') + 1,
                                 ]);
@@ -1772,7 +1788,8 @@ Forms\Components\Group::make()
 
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ViewAction::make(),
+                // Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

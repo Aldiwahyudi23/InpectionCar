@@ -187,20 +187,19 @@
           @update:hasUnsavedChanges="handleUnsavedChanges"
           />
 
-<!-- UPDATE bagian CategorySection di template induk: -->
-<category-section
-  v-else-if="activeMenuData && activeCategory !== 'conclusion'"
-  :key="activeMenuData.id"
-  :category="activeMenuData"
-  :inspection-id="inspection.id"
-  :form="getFormDataForChild"
-  :is-syncing="isSyncing"
-  @saveResult="saveResult"
-  @updateResult="updateResult"
-  @updateImages="updateImages"
-  @hapusPoint="hapusData"
-  @removeImage="removeImage"
-/>
+          <!-- Menu Inspeksi Biasa -->
+          <!-- <category-section -->
+           <CategoryCadangan
+            v-else-if="activeMenuData && activeCategory !== 'conclusion'"
+            :key="activeMenuData.id"
+            :category="activeMenuData"
+            :inspection-id="inspection.id"
+            :form="form"
+            @saveResult="saveResult"
+            @updateResult="updateResult"
+            @hapusPoint="hapusData"
+            @removeImage="removeImage"
+          />
 
           <!-- Kesimpulan -->
           <conclusion-section
@@ -426,12 +425,13 @@
   </div>
 </template>
 
-<<script setup>
+<script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useForm, usePage, Link, router } from '@inertiajs/vue3';
-import { debounce, throttle } from 'lodash';
+import { debounce } from 'lodash';
 import VehicleDetails from '@/Components/InspectionForm/VehicleDetails.vue';
 import CategorySection from '@/Components/InspectionForm/CategorySection.vue';
+import CategoryCadangan from '@/Components/InspectionForm/CategoryCadangan.vue';
 import ConclusionSection from '@/Components/InspectionForm/ConclusionSection.vue';
 import RadioOptionModal from '@/Components/InspectionForm/RadioOptionModal.vue';
 import BottomSheetModal from '@/Components/InspectionForm/BottomSheetModal.vue';
@@ -449,27 +449,17 @@ const props = defineProps({
   allInspections: Array,
 });
 
-// ================ OPTIMISTIC UPDATES STATE ================
-// State untuk optimistic updates
-const localFormState = ref({
-  results: {},
-  images: {}
-});
-
-const syncQueue = ref(new Map());
-const isSyncing = ref(false);
-const pendingSync = ref(new Set());
-const lastSavedState = ref({});
-
-// ================ MENU DRAGGABLE ================
+//================Untuk mengatur posisi menu 
 const menuMode = ref(props.category?.settings?.menu_model || 'horizontal')
 const menuPosition = ref(props.category?.settings?.position || 'top')
+
+// state buka/tutup khusus vertical
 const isMenuOpen = ref(false)
 
 // draggable button untuk Toggle Menu
 const {
   pos: togglePos,
-  dragging: menuDragging,
+  dragging: menuDragging, // ⬅️ ambil state dragging
   startLongPress: startToggleLongPress,
   cancelLongPress: cancelToggleLongPress,
   onDrag: onToggleDrag,
@@ -494,10 +484,11 @@ const menuButtonClass = (isActive) => {
     : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
 }
 
-// ================ DAMAGE DRAGGABLE ================
+// ===================================================
+// draggable button untuk Damage
 const {
   pos: damagePos,
-  dragging: damageDragging,
+  dragging: damageDragging, // ⬅️ ambil state dragging
   startLongPress: startDamageLongPress,
   cancelLongPress: cancelDamageLongPress,
   onDrag: onDamageDrag,
@@ -507,7 +498,7 @@ const {
   y: window.innerHeight - 80,
 });
 
-// ================ MODAL STATE ================
+// State untuk modal
 const showSearchModal = ref(false);
 const showRadioModal = ref(false);
 const searchQuery = ref('');
@@ -519,9 +510,202 @@ const successMessage = ref('');
 const isLoading = ref(false)
 const currentAction = ref(null)
 
-// ================ INITIALIZATION FUNCTIONS ================
-// Inisialisasi local state
-const initializeLocalState = () => {
+// Fungsi untuk menangani aksi dengan status loading
+const handleAction = (route, actionType) => {
+  isLoading.value = true;
+  currentAction.value = actionType;
+
+  router.visit(route, {
+    onFinish: () => {
+      isLoading.value = false;
+      currentAction.value = null;
+    }
+  });
+};
+
+// cek apakah ada appMenu dengan input_type = 'damage'
+const hasDamage = computed(() => {
+  return props.appMenus.some(menu => menu.input_type === 'damage')
+})
+
+// Inisialisasi daftar kategori lengkap (termasuk 'vehicle' dan 'conclusion')
+const allCategories = computed(() => {
+  return ['vehicle', ...props.appMenus.map(menu => menu.id), 'conclusion'];
+});
+
+// State untuk navigasi kategori
+const activeCategory = ref(allCategories.value[0]);
+const activeIndex = ref(0);
+
+// Watcher untuk sinkronisasi activeIndex dengan activeCategory
+watch(activeCategory, (newVal) => {
+  activeIndex.value = allCategories.value.indexOf(newVal);
+});
+
+// Properti terhitung untuk mendapatkan data menu aktif
+const activeMenuData = computed(() => {
+  if (activeCategory.value === 'vehicle' || activeCategory.value === 'conclusion') {
+    return null;
+  }
+  const menu = props.appMenus.find(m => m.id === activeCategory.value);
+  if (!menu) return null;
+
+  return {
+    ...menu,
+    points: getVisiblePoints(menu.menu_point, menu.input_type === 'damage')
+  };
+});
+
+// Filter points berdasarkan kondisi
+const getVisiblePoints = (menuPoints, isDamageMenu) => {
+  if (!isDamageMenu) {
+    return menuPoints || [];
+  }
+  
+  return (menuPoints || []).filter(point => {
+    const pointId = point.inspection_point_id;
+    return hasPointData(pointId);
+  });
+};
+
+
+// State untuk menyimpan data dari komponen anak
+const vehicleDetails = ref({
+    plate_number: props.inspection.plate_number,
+    car_id: props.inspection.car_id,
+    car_name: props.inspection.car_name
+});
+
+// Definisikan state untuk melacak perubahan
+const hasUnsavedChanges = ref(false);
+
+// Function untuk handle emit dari child
+const handleUnsavedChanges = (hasChanges) => {
+  hasUnsavedChanges.value = hasChanges;
+};
+// State baru untuk menyimpan status validasi dari komponen anak
+const isVehicleDetailsInvalid = ref(false);
+
+// Fungsi yang dipanggil saat `update:validation` dari anak di-emit
+const handleVehicleValidation = (isInvalid) => {
+    isVehicleDetailsInvalid.value = isInvalid;
+};
+
+
+// --- Logika utama untuk memeriksa kelengkapan form kendaraan ---
+const isVehicleFormComplete = computed(() => {
+    // 1. Cek apakah nomor plat sudah terisi dan valid
+    const isPlateValid = vehicleDetails.value.plate_number && /^[A-Z]{1,2}\d{1,4}[A-Z]{0,3}$/.test(vehicleDetails.value.plate_number);
+    
+    // 2. Cek apakah nama mobil sudah terisi
+    const isCarNameFilled = !!vehicleDetails.value.car_name?.trim();
+    
+    // 3. Cek apakah ada validasi negatif dari komponen anak
+    const hasNoBlockingValidation = !isVehicleDetailsInvalid.value;
+
+    // 3. Cek apakah ada validasi negatif dari komponen anak
+    const hasUnsavedChangesValidation = !hasUnsavedChanges.value;
+    
+    // 4. Gabungkan semua validasi
+    return isPlateValid && isCarNameFilled && hasNoBlockingValidation && hasUnsavedChangesValidation;
+});
+
+
+
+
+
+
+// Filter damage points berdasarkan pencarian
+const filteredDamagePoints = computed(() => {
+  if (!searchQuery.value.trim()) {
+    return props.damagePoints || [];
+  }
+  
+  const query = searchQuery.value.toLowerCase().trim();
+  return (props.damagePoints || []).filter(point => 
+    point.inspection_point?.name?.toLowerCase().includes(query) ||
+    point.inspection_point?.description?.toLowerCase().includes(query) ||
+    getComponentName(point)?.toLowerCase().includes(query)
+  );
+});
+
+// Cek apakah point sudah memiliki data
+const hasPointData = (pointId) => {
+  const hasServerResult = props.existingResults && props.existingResults[pointId] !== undefined;
+  const hasServerImages = props.existingImages && props.existingImages[pointId] && props.existingImages[pointId].length > 0;
+  
+  const hasLocalResult = form.results[pointId] && 
+                         (form.results[pointId].status || form.results[pointId].note);
+  
+  const hasLocalImages = form.images[pointId] && form.images[pointId].length > 0;
+  
+  return hasServerResult || hasServerImages || hasLocalResult || hasLocalImages;
+};
+
+// Ambil nama component
+const getComponentName = (point) => {
+  return point.inspection_point.component?.name || 'Komponen Tidak Diketahui';
+};
+
+// Get existing data untuk point
+const getExistingPointData = (pointId) => {
+  return props.existingResults[pointId] || null;
+};
+
+// Pilih point dan buka modal
+const selectPoint = (point) => {
+  selectedPoint.value = point;
+  const pointId = point.inspection_point_id;
+  
+  const existingResult = form.results[pointId] || {};
+  tempRadioValue.value = existingResult.status || '';
+  tempNotes.value = existingResult.note || '';
+
+  showSearchModal.value = false;
+  showRadioModal.value = true;
+};
+
+// Update images value
+const updateImagesValue = (images) => {
+  if (selectedPoint.value) {
+    form.images[selectedPoint.value.inspection_point_id] = images;
+  }
+};
+
+// Handle save data dari modal
+const saveAllData = () => {
+  if (selectedPoint.value) {
+    const pointId = selectedPoint.value.inspection_point_id;
+    
+    form.results[pointId] = {
+      ...form.results[pointId],
+      status: tempRadioValue.value,
+      note: tempNotes.value,
+    };
+    
+    saveResult(pointId);
+    successMessage.value = "Data berhasil disimpan!";
+    setTimeout(() => successMessage.value = "", 1000);
+  }
+  
+  closeRadioModal();
+};
+
+// Close modals
+const closeSearchModal = () => {
+  showSearchModal.value = false;
+  searchQuery.value = '';
+};
+
+const closeRadioModal = () => {
+  showRadioModal.value = false;
+  selectedPoint.value = null;
+  tempRadioValue.value = '';
+  tempNotes.value = '';
+};
+
+// Inisialisasi form
+const initializeForm = () => {
   const results = {};
   const images = {};
 
@@ -542,383 +726,17 @@ const initializeLocalState = () => {
     images[pointId] = props.existingImages[pointId] || [];
   });
   
-  localFormState.value = { results, images };
-  lastSavedState.value = JSON.parse(JSON.stringify(localFormState.value));
-};
-
-// Inisialisasi form untuk final submit
-const initializeForm = () => {
   return {
     inspection_id: props.inspection.id,
-    results: {},
-    images: {},
+    results,
+    images,
     overall_note: props.inspection.overall_note || ''
   };
 };
 
 const form = useForm(initializeForm());
 
-// ================ SYNC QUEUE SYSTEM ================
-// Queue system untuk sync
-const addToSyncQueue = (pointId, type, data) => {
-  const queueKey = `${pointId}-${type}-${Date.now()}`;
-  syncQueue.value.set(queueKey, {
-    pointId,
-    type,
-    data,
-    timestamp: Date.now()
-  });
-  pendingSync.value.add(queueKey);
-};
-
-const processSyncQueue = async () => {
-  if (isSyncing.value || syncQueue.value.size === 0) return;
-  
-  isSyncing.value = true;
-  
-  try {
-    const queueEntries = Array.from(syncQueue.value.entries());
-    
-    for (const [key, entry] of queueEntries) {
-      if (pendingSync.value.has(key)) {
-        await syncToServer(entry);
-        pendingSync.value.delete(key);
-        syncQueue.value.delete(key);
-        
-        // Update last saved state setelah berhasil sync
-        lastSavedState.value = JSON.parse(JSON.stringify(localFormState.value));
-      }
-    }
-  } catch (error) {
-    console.error('Sync error:', error);
-  } finally {
-    isSyncing.value = false;
-    
-    if (pendingSync.value.size > 0) {
-      setTimeout(() => processSyncQueue(), 500);
-    }
-  }
-};
-
-const syncToServer = async (entry) => {
-  try {
-    await router.post(route('inspections.save-result'), {
-      inspection_id: props.inspection.id,
-      point_id: entry.pointId,
-      status: entry.type === 'result' ? entry.data.status : undefined,
-      note: entry.type === 'result' ? entry.data.note : undefined,
-      images: entry.type === 'images' ? entry.data : undefined,
-    }, {
-      preserveScroll: true,
-      preserveState: true,
-      onError: (errors) => {
-        console.error('Sync failed:', errors);
-      }
-    });
-  } catch (error) {
-    console.error('Network error:', error);
-  }
-};
-
-const findChanges = (oldState, newState) => {
-  const changes = [];
-  
-  // Cek perubahan di results
-  Object.keys(newState.results).forEach(pointId => {
-    const oldResult = oldState.results[pointId] || {};
-    const newResult = newState.results[pointId] || {};
-    
-    if (oldResult.status !== newResult.status || oldResult.note !== newResult.note) {
-      changes.push({
-        pointId,
-        type: 'result',
-        data: { ...newResult }
-      });
-    }
-  });
-  
-  // Cek perubahan di images
-  Object.keys(newState.images).forEach(pointId => {
-    const oldImages = oldState.images[pointId] || [];
-    const newImages = newState.images[pointId] || [];
-    
-    if (JSON.stringify(oldImages) !== JSON.stringify(newImages)) {
-      changes.push({
-        pointId,
-        type: 'images',
-        data: [...newImages]
-      });
-    }
-  });
-  
-  return changes;
-};
-
-// Debounced sync function
-const debouncedSync = debounce(async () => {
-  await processSyncQueue();
-}, 1000);
-
-// Watcher untuk sync perubahan ke server
-watch(
-  () => localFormState.value,
-  (newState, oldState) => {
-    const changes = findChanges(lastSavedState.value, newState);
-    
-    if (changes.length > 0) {
-      changes.forEach(change => {
-        addToSyncQueue(change.pointId, change.type, change.data);
-      });
-      
-      debouncedSync();
-    }
-  },
-  { deep: true, immediate: false }
-);
-
-// ================ COMPUTED PROPERTIES ================
-const hasDamage = computed(() => {
-  return props.appMenus.some(menu => menu.input_type === 'damage')
-})
-
-const allCategories = computed(() => {
-  return ['vehicle', ...props.appMenus.map(menu => menu.id), 'conclusion'];
-});
-
-const activeCategory = ref(allCategories.value[0]);
-const activeIndex = ref(0);
-
-watch(activeCategory, (newVal) => {
-  activeIndex.value = allCategories.value.indexOf(newVal);
-});
-
-const activeMenuData = computed(() => {
-  if (activeCategory.value === 'vehicle' || activeCategory.value === 'conclusion') {
-    return null;
-  }
-  const menu = props.appMenus.find(m => m.id === activeCategory.value);
-  if (!menu) return null;
-
-  return {
-    ...menu,
-    points: getVisiblePoints(menu.menu_point, menu.input_type === 'damage')
-  };
-});
-
-// Data untuk dikirim ke child components
-const getFormDataForChild = computed(() => ({
-  results: localFormState.value.results,
-  images: localFormState.value.images,
-  isSyncing: isSyncing.value
-}));
-
-// ================ VEHICLE DETAILS ================
-const vehicleDetails = ref({
-  plate_number: props.inspection.plate_number,
-  car_id: props.inspection.car_id,
-  car_name: props.inspection.car_name
-});
-
-const hasUnsavedChanges = ref(false);
-const isVehicleDetailsInvalid = ref(false);
-
-const handleUnsavedChanges = (hasChanges) => {
-  hasUnsavedChanges.value = hasChanges;
-};
-
-const handleVehicleValidation = (isInvalid) => {
-  isVehicleDetailsInvalid.value = isInvalid;
-};
-
-const isVehicleFormComplete = computed(() => {
-  const isPlateValid = vehicleDetails.value.plate_number && /^[A-Z]{1,2}\d{1,4}[A-Z]{0,3}$/.test(vehicleDetails.value.plate_number);
-  const isCarNameFilled = !!vehicleDetails.value.car_name?.trim();
-  const hasNoBlockingValidation = !isVehicleDetailsInvalid.value;
-  const hasUnsavedChangesValidation = !hasUnsavedChanges.value;
-  
-  return isPlateValid && isCarNameFilled && hasNoBlockingValidation && hasUnsavedChangesValidation;
-});
-
-// ================ DAMAGE POINTS ================
-const filteredDamagePoints = computed(() => {
-  if (!searchQuery.value.trim()) {
-    return props.damagePoints || [];
-  }
-  
-  const query = searchQuery.value.toLowerCase().trim();
-  return (props.damagePoints || []).filter(point => 
-    point.inspection_point?.name?.toLowerCase().includes(query) ||
-    point.inspection_point?.description?.toLowerCase().includes(query) ||
-    getComponentName(point)?.toLowerCase().includes(query)
-  );
-});
-
-// Cek apakah point sudah memiliki data (gunakan local state)
-const hasPointData = (pointId) => {
-  const hasServerResult = props.existingResults && props.existingResults[pointId] !== undefined;
-  const hasServerImages = props.existingImages && props.existingImages[pointId] && props.existingImages[pointId].length > 0;
-  
-  const hasLocalResult = localFormState.value.results[pointId] && 
-                         (localFormState.value.results[pointId].status || localFormState.value.results[pointId].note);
-  
-  const hasLocalImages = localFormState.value.images[pointId] && localFormState.value.images[pointId].length > 0;
-  
-  return hasServerResult || hasServerImages || hasLocalResult || hasLocalImages;
-};
-
-const getComponentName = (point) => {
-  return point.inspection_point.component?.name || 'Komponen Tidak Diketahui';
-};
-
-const getExistingPointData = (pointId) => {
-  return props.existingResults[pointId] || null;
-};
-
-// ================ POINT MANAGEMENT ================
-const selectPoint = (point) => {
-  selectedPoint.value = point;
-  const pointId = point.inspection_point_id;
-  
-  const existingResult = localFormState.value.results[pointId] || {};
-  tempRadioValue.value = existingResult.status || '';
-  tempNotes.value = existingResult.note || '';
-
-  showSearchModal.value = false;
-  showRadioModal.value = true;
-};
-
-const updateImagesValue = (images) => {
-  if (selectedPoint.value) {
-    const pointId = selectedPoint.value.inspection_point_id;
-    localFormState.value.images[pointId] = images;
-    form.images[pointId] = images;
-  }
-};
-
-const saveAllData = () => {
-  if (selectedPoint.value) {
-    const pointId = selectedPoint.value.inspection_point_id;
-    
-    localFormState.value.results[pointId] = {
-      ...localFormState.value.results[pointId],
-      status: tempRadioValue.value,
-      note: tempNotes.value,
-    };
-    
-    form.results[pointId] = { ...localFormState.value.results[pointId] };
-    
-    // Trigger sync
-    addToSyncQueue(pointId, 'result', localFormState.value.results[pointId]);
-    processSyncQueue();
-    
-    successMessage.value = "Data berhasil disimpan!";
-    setTimeout(() => successMessage.value = "", 1000);
-  }
-  
-  closeRadioModal();
-};
-
-const closeSearchModal = () => {
-  showSearchModal.value = false;
-  searchQuery.value = '';
-};
-
-const closeRadioModal = () => {
-  showRadioModal.value = false;
-  selectedPoint.value = null;
-  tempRadioValue.value = '';
-  tempNotes.value = '';
-};
-
-// ================ FORM OPERATIONS ================
-// Update result dengan optimistic update
-const updateResult = ({ pointId, type, value }) => {
-  if (!localFormState.value.results[pointId]) {
-    localFormState.value.results[pointId] = { status: '', note: '' };
-  }
-  
-  localFormState.value.results[pointId][type] = value;
-  
-  // Untuk kompatibilitas, update form juga
-  if (!form.results[pointId]) {
-    form.results[pointId] = { status: '', note: '' };
-  }
-  form.results[pointId][type] = value;
-};
-
-// Update images dengan optimistic update
-const updateImages = (pointId, images) => {
-  localFormState.value.images[pointId] = images;
-  form.images[pointId] = images;
-};
-
-// Save result untuk kasus khusus (immediate save)
-const saveResult = debounce(async (pointId) => {
-  if (localFormState.value.results[pointId]) {
-    addToSyncQueue(pointId, 'result', localFormState.value.results[pointId]);
-  }
-  if (localFormState.value.images[pointId]) {
-    addToSyncQueue(pointId, 'images', localFormState.value.images[pointId]);
-  }
-  await processSyncQueue();
-}, 500);
-
-// Delete data dengan optimistic update
-const hapusData = async (pointId) => {
-  if (!pointId) return;
-
-  if (confirm("Apakah kamu yakin ingin menghapus data ini?")) {
-    try {
-      // Optimistic update - reset local state dulu
-      if (localFormState.value.results[pointId]) {
-        localFormState.value.results[pointId] = { status: '', note: '' };
-      }
-      if (localFormState.value.images[pointId]) {
-        localFormState.value.images[pointId] = [];
-      }
-      
-      // Reset form state juga
-      if (form.results[pointId]) {
-        form.results[pointId] = { status: '', note: '' };
-      }
-      if (form.images[pointId]) {
-        form.images[pointId] = [];
-      }
-      
-      await router.post(route('inspections.delete-result'), {
-        inspection_id: props.inspection.id,
-        point_id: pointId,
-      }, {
-        preserveScroll: true,
-        onSuccess: () => {
-          successMessage.value = "Data berhasil dihapus!";
-          // Update last saved state
-          lastSavedState.value = JSON.parse(JSON.stringify(localFormState.value));
-        },
-        onError: (errors) => {
-          console.error('Error menghapus hasil:', errors);
-          // Rollback bisa ditambahkan di sini jika needed
-        }
-      });
-    } catch (error) {
-      console.error('Error menghapus hasil:', error);
-    }
-    closeRadioModal();
-  }
-};
-
-// ================ MENU COMPLETION LOGIC ================
-const getVisiblePoints = (menuPoints, isDamageMenu) => {
-  if (!isDamageMenu) {
-    return menuPoints || [];
-  }
-  
-  return (menuPoints || []).filter(point => {
-    const pointId = point.inspection_point_id;
-    return hasPointData(pointId);
-  });
-};
-
+// Check if menu is complete
 const isMenuComplete = (menu) => {
   if (menu.input_type === 'damage') {
     const pointsWithData = getVisiblePoints(menu.menu_point, true);
@@ -932,12 +750,13 @@ const isMenuComplete = (menu) => {
     return isVehicleFormComplete();
   }
 
+  // 🔑 hanya ambil point yang default (is_default = true)
   const requiredPoints = (getVisiblePoints(menu.menu_point, false) || [])
     .filter(point => point.is_default);
 
   return requiredPoints.every(point => {
-    const result = localFormState.value.results[point.inspection_point_id];
-    const image = localFormState.value.images[point.inspection_point_id];
+    const result = form.results[point.inspection_point_id];
+    const image = form.images[point.inspection_point_id];
     if (!result) return false;
     
     const settings = parseSettings(point.settings);
@@ -985,6 +804,8 @@ const isMenuComplete = (menu) => {
   });
 };
 
+
+// Parse settings
 const parseSettings = (settings) => {
   if (!settings) return {};
   if (typeof settings === 'string') {
@@ -1001,20 +822,24 @@ const parseSettings = (settings) => {
   return {};
 };
 
+// Check if conclusion is complete
 const isConclusionComplete = () => {
   const settings = parseSettings(props.inspection.settings);
   const conclusionData = settings.conclusion || {};
   
   const hasFlooded = !!conclusionData.flooded;
   const hasCollision = !!conclusionData.collision;
+  
   const hasValidCollision = conclusionData.collision === 'yes' 
     ? !!conclusionData.collision_severity 
     : true;
+  
   const hasConclusionNote = !!props.inspection.notes?.trim();
   
   return hasFlooded && hasCollision && hasValidCollision && hasConclusionNote;
 };
 
+// Conclusion status
 const conclusionStatus = computed(() => {
   const settings = parseSettings(props.inspection.settings);
   const conclusionData = settings.conclusion || {};
@@ -1028,18 +853,20 @@ const conclusionStatus = computed(() => {
   };
 });
 
+// Check if all menus are complete
 const allMenusComplete = computed(() => {
   const vehicleComplete = isVehicleFormComplete.value;
   const regularMenusComplete = props.appMenus.every(menu => isMenuComplete(menu));
   const conclusionComplete = isConclusionComplete();
-  return vehicleComplete && regularMenusComplete && conclusionComplete;
+  return vehicleComplete && regularMenusComplete && conclusionComplete ;
 });
 
-// ================ OTHER FUNCTIONS ================
+// Change active category
 const changeCategory = (menuId) => {
   activeCategory.value = menuId;
 };
 
+// Navigasi dengan swipe
 const navigate = (direction) => {
   let newIndex = activeIndex.value + direction;
   
@@ -1048,31 +875,100 @@ const navigate = (direction) => {
   }
 };
 
-const handleAction = (route, actionType) => {
-  isLoading.value = true;
-  currentAction.value = actionType;
+// Save single result
+const saveResult = debounce(async (pointId) => {
+  try {
+    await router.post(route('inspections.save-result'), {
+      inspection_id: props.inspection.id,
+      point_id: pointId,
+      status: form.results[pointId]?.status,
+      note: form.results[pointId]?.note,
+      images: form.images[pointId],
+    }, {
+      preserveScroll: true,
+      preserveState: true,
+      onSuccess: () => {
+        router.reload({ only: ['existingResults', 'existingImages'] });
+      }
+    });
+  } catch (error) {
+    console.error('Error menyimpan hasil:', error);
+  }
+}, 500);
 
-  router.visit(route, {
-    onFinish: () => {
-      isLoading.value = false;
-      currentAction.value = null;
-    }
-  });
+// Update result
+const updateResult = ({ pointId, type, value }) => {
+  if (form.results[pointId]?.hasOwnProperty(type)) {
+    form.results[pointId][type] = value;
+  }
+  saveResult(pointId);
 };
 
+// Delete data
+const hapusData = async (pointId) => {
+  if (!pointId) return;
+
+  if (confirm("Apakah kamu yakin ingin menghapus data ini?")) {
+    try {
+      await router.post(route('inspections.delete-result'), {
+        inspection_id: props.inspection.id,
+        point_id: pointId,
+      }, {
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => {
+          // RESET STATE SECARA MANUAL sebelum reload
+          if (form.results[pointId]) {
+            form.results[pointId] = {
+              status: '',
+              note: ''
+            };
+          }
+          if (form.images[pointId]) {
+            form.images[pointId] = [];
+          }
+          
+          successMessage.value = "Data berhasil dihapus!";
+          
+          // Gunakan setTimeout untuk memberi waktu reset state sebelum reload
+          setTimeout(() => {
+            router.reload({ 
+              only: ['existingResults', 'existingImages'],
+              onSuccess: () => {
+                // Force reset form setelah reload
+                Object.assign(form, initializeForm());
+              }
+            });
+          }, 100);
+        },
+        onError: (errors) => {
+          console.error('Error menghapus hasil:', errors);
+        }
+      });
+    } catch (error) {
+      console.error('Error menghapus hasil:', error);
+    }
+    closeRadioModal();
+  }
+};
+
+// Update vehicle details
 const updateVehicleDetails = (vehicleData) => {
   console.log('Update vehicle:', vehicleData);
 };
 
+// Save new car details
 const saveNewCarDetails = (carDetails) => {
   console.log('Save car details:', carDetails);
 };
 
+// Update conclusion
 const updateConclusion = (conclusionData) => {
   Object.assign(form.conclusion, conclusionData);
   saveConclusion();
 };
 
+// Save conclusion
 const saveConclusion = debounce(async () => {
   try {
     await router.post(route('inspections.save-conclusion'), {
@@ -1087,16 +983,8 @@ const saveConclusion = debounce(async () => {
   }
 }, 500);
 
-const submitAll = async () => {
-  // Pastikan semua pending sync selesai dulu
-  if (pendingSync.value.size > 0) {
-    await processSyncQueue();
-  }
-  
-  // Copy data dari local state ke form untuk submit
-  form.results = { ...localFormState.value.results };
-  form.images = { ...localFormState.value.images };
-  
+// Final submit
+const submitAll = () => {
   if (!allMenusComplete.value) {
     alert('Harap lengkapi semua menu inspeksi termasuk kesimpulan sebelum submit final');
     return;
@@ -1113,17 +1001,52 @@ const submitAll = async () => {
   });
 };
 
+// Remove image
 const removeImage = ({ pointId, imageId }) => {
-  if (localFormState.value.images[pointId]) {
-    localFormState.value.images[pointId] = localFormState.value.images[pointId].filter(img => img.id !== imageId);
-    form.images[pointId] = localFormState.value.images[pointId];
+  if (form.images[pointId]) {
+    form.images[pointId] = form.images[pointId].filter(img => img.id !== imageId);
     saveResult(pointId);
   }
 };
 
-// ================ LIFECYCLE ================
+// Setup swipe gestures
+const setupSwipe = () => {
+  let touchStartX = 0;
+  let touchEndX = 0;
+  
+  const handleTouchStart = (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+  };
+  
+  const handleTouchEnd = (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+  };
+  
+  const handleSwipe = () => {
+    const swipeThreshold = 150;
+    if (touchEndX < touchStartX - swipeThreshold) {
+      navigate(1); // Geser kiri -> kategori berikutnya
+    } else if (touchEndX > touchStartX + swipeThreshold) {
+      navigate(-1); // Geser kanan -> kategori sebelumnya
+    }
+  };
+  
+  const mainContentArea = document.querySelector('.relative.overflow-hidden'); 
+  if (mainContentArea) {
+    mainContentArea.addEventListener('touchstart', handleTouchStart, false);
+    mainContentArea.addEventListener('touchend', handleTouchEnd, false);
+  }
+  
+  return () => {
+    if (mainContentArea) {
+      mainContentArea.removeEventListener('touchstart', handleTouchStart);
+      mainContentArea.removeEventListener('touchend', handleTouchEnd);
+    }
+  };
+};
+
 onMounted(() => {
-  initializeLocalState();
   // setupSwipe();
 });
 </script>

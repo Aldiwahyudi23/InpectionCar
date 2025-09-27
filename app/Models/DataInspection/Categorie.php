@@ -17,11 +17,13 @@ class Categorie extends Model
 
     protected $fillable = [
         'name',
+        'settings',
         'order',
         'is_active',
     ];
 
     protected $casts = [
+        'settings' => 'array',
         'is_active' => 'boolean',
     ];
 

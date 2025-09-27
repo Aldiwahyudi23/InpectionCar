@@ -96,6 +96,11 @@ public function updatedSelectAll($value)
                     ->default(true)
                     ->inline(false),
 
+                Forms\Components\Toggle::make('is_default')
+                    ->label('Tampilkan Point')
+                    ->default(true)
+                    ->inline(false),
+
                 Forms\Components\Fieldset::make('Konfigurasi Settings')
                     ->schema(function (callable $get) {
                         $inputType = $get('input_type');

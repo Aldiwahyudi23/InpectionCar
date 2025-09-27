@@ -19,7 +19,7 @@ return new class extends Migration
             $table->json('settings')->nullable(); // Kolom untuk menyimpan konfigurasi dinamis
             $table->integer('order');
             $table->boolean('is_active')->default(true);
-            $table->boolean('is_default')->default(false);
+            $table->boolean('is_default')->default(true);
             $table->timestamps();
             $table->softDeletes();
         });

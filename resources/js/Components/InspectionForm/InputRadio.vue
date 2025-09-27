@@ -279,7 +279,19 @@ const saveAllData = () => {
 };
 
 const HapusPoint = (pointId) => {
-    emit("hapus", pointId);
+  // Reset semua state lokal
+  tempRadioValue.value = '';
+  tempNotes.value = '';
+  tempImages.value = [];
+  notesValue.value = '';
+  imageValues.value = [];
+  
+  // Emit ke parent untuk reset state dan hapus data
+  emit('update:modelValue', '');
+  emit('update:notes', '');
+  emit('update:images', []);
+  emit('hapus', pointId); // Ini yang memanggil hapusData di parent
+  
   showOptionModal.value = false;
 };
 </script>

@@ -178,9 +178,13 @@ class InspectionController extends Controller
                     'category',
                 )->get();
 
+            //mengambil data categori untuk menu 
+            $category = Categorie::find($inspection->category_id);
             // Data untuk frontend
-            return Inertia::render('FrontEnd/Inspection/InspectionForm', [
+            return Inertia::render('FrontEnd/Inspection/Induk', [
+            // return Inertia::render('FrontEnd/Inspection/InspectionForm', [
                 'inspection' => $inspection->load(['car', 'user']),
+                'category' => $category,
                 'appMenus' => $appMenus,
                 'damagePoints' => $damagePoints,
                 'existingResults' => $existingResults,
@@ -292,7 +296,6 @@ public function store(Request $request)
     }
 
 
-// InspectionController.php
     public function saveResult(Request $request)
     {
         $validated = $request->validate([
@@ -303,6 +306,16 @@ public function store(Request $request)
         ]);
 
         try {
+            // Kalau status & note dua-duanya kosong → hapus datanya
+            if (empty($validated['status']) && empty($validated['note'])) {
+                InspectionResult::where('inspection_id', $validated['inspection_id'])
+                    ->where('point_id', $validated['point_id'])
+                    ->delete();
+
+                return redirect()->back()->with('success', 'Data deleted successfully');
+            }
+
+            // Kalau masih ada isi status atau note → update/create
             $result = InspectionResult::updateOrCreate(
                 [
                     'inspection_id' => $validated['inspection_id'],
@@ -310,29 +323,30 @@ public function store(Request $request)
                 ],
                 [
                     'status' => $validated['status'],
-                    'note' => $validated['note'],
+                    'note'   => $validated['note'],
                 ]
             );
-            // menambil data atau nama dari point_id 
+
+            // Ambil point
             $point = InspectionPoint::find($validated['point_id']);
-
-            //Untuk mengupdate otomatis setiap ada perubahan di result 
             $inspect = Inspection::find($validated['inspection_id']);
-            //jika point name nya warna maka ambil nilai note nya
-            if($point->name === "Warna"){
-                $inspect->color = $validated['note'];
-            }
-            if($point->name === "No Rangka"){
-            $inspect->noka = $validated['note'];
-            }
-             if($point->name === "No Mesin"){
-            $inspect->nosin = $validated['note'];
-             }
-             if($point->name === "Jarak Tempuh (KM)"){
-            $inspect->km =$validated['note'];
-             }
 
-            $inspect->update();
+            // Update field otomatis
+            if ($point) {
+                if ($point->name === "Warna") {
+                    $inspect->color = $validated['note'];
+                }
+                if ($point->name === "No Rangka") {
+                    $inspect->noka = $validated['note'];
+                }
+                if ($point->name === "No Mesin") {
+                    $inspect->nosin = $validated['note'];
+                }
+                if ($point->name === "Jarak Tempuh (KM)") {
+                    $inspect->km = $validated['note'];
+                }
+                $inspect->update();
+            }
 
             return redirect()->back()->with('success', 'Data saved successfully');
         } catch (\Exception $e) {
@@ -343,7 +357,7 @@ public function store(Request $request)
         }
     }
 
-        public function updateConclusion(Request $request, Inspection $inspection)
+    public function updateConclusion(Request $request, Inspection $inspection)
     {
         $validated = $request->validate([
             'flooded' => 'nullable|in:yes,no',
@@ -384,7 +398,6 @@ public function store(Request $request)
 
         return back()->with('success', 'Kesimpulan diperbarui');
     }
-    // Di InspectionController.php
     public function updateVehicleDetails(Request $request, Inspection $inspection)
     {
         // 1. Validasi data yang masuk, termasuk `car_id` sebagai opsional
@@ -498,48 +511,48 @@ public function store(Request $request)
     }
 
 
-    public function deleteResultImage(Request $request)
-    {
-        $request->validate([
-            'inspection_id' => 'required|exists:inspections,id',
-            'point_id' => 'required|exists:inspection_points,id',
-        ]);
+public function deleteResultImage(Request $request)
+{
+    $request->validate([
+        'inspection_id' => 'required|exists:inspections,id',
+        'point_id' => 'required|exists:inspection_points,id',
+    ]);
 
-        // 1. Hapus hasil (result) jika ada
-        $result = InspectionResult::where('inspection_id', $request->inspection_id)
-            ->where('point_id', $request->point_id)
-            ->first();
+    // 1. Hapus hasil (result) jika ada
+    $result = InspectionResult::where('inspection_id', $request->inspection_id)
+        ->where('point_id', $request->point_id)
+        ->first();
 
-        if ($result) {
-            $result->delete();
-        }
-
-        // 2. Ambil semua gambar terkait
-        $images = InspectionImage::where('inspection_id', $request->inspection_id)
-            ->where('point_id', $request->point_id)
-            ->get();
-
-        foreach ($images as $image) {
-            if ($image->image_path) {
-                // Lokasi file fisik
-                $fullPathToDelete = public_path($image->image_path);
-
-                if (file_exists($fullPathToDelete)) {
-                    try {
-                        unlink($fullPathToDelete); // hapus file fisik
-                    } catch (\Exception $e) {
-                        Log::error("Gagal hapus file: {$fullPathToDelete}. Error: {$e->getMessage()}");
-                    }
-                } else {
-                    Log::warning("File tidak ditemukan: {$fullPathToDelete}, skip hapus.");
-                }
-            }
-
-            // Hapus record di DB
-            $image->delete();
-        }
-
+    if ($result) {
+        $result->delete();
     }
+
+    // 2. Ambil semua gambar terkait
+    $images = InspectionImage::where('inspection_id', $request->inspection_id)
+        ->where('point_id', $request->point_id)
+        ->get();
+
+    foreach ($images as $image) {
+        if ($image->image_path) {
+            $fullPathToDelete = public_path($image->image_path);
+
+            if (file_exists($fullPathToDelete)) {
+                try {
+                    unlink($fullPathToDelete); // hapus file fisik
+                } catch (\Exception $e) {
+                    Log::error("Gagal hapus file: {$fullPathToDelete}. Error: {$e->getMessage()}");
+                }
+            } else {
+                Log::warning("File tidak ditemukan: {$fullPathToDelete}, skip hapus.");
+            }
+        }
+
+        $image->delete(); // hapus record
+    }
+
+    // 🔑 Kembalikan response biar inertia tahu sukses
+    return back()->with('success', 'Data berhasil dihapus.');
+}
 
 
     public function finalSubmit(Request $request, $id)
@@ -804,7 +817,7 @@ public function store(Request $request)
         }
     }
 
-        public function approvePdf($id)
+    public function approvePdf($id)
     {
         try {
             $id = Crypt::decrypt($id);
@@ -840,22 +853,21 @@ public function store(Request $request)
         }
     }
 
+    public function sendEmail($id, Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email'
+        ]);
 
-public function sendEmail($id, Request $request)
-{
-    $request->validate([
-        'email' => 'required|email'
-    ]);
+        // Decrypt IDs dan proses pengiriman email
+        $inspection = Inspection::find(decrypt($id));
+        
+        $inspection->addLog('email', 'Report sudah di kirim via email');
+        // Kirim email disini
+        Mail::to($request->email)->send(new InspectionReportMail($inspection));
 
-    // Decrypt IDs dan proses pengiriman email
-    $inspection = Inspection::find(decrypt($id));
-    
-    $inspection->addLog('email', 'Report sudah di kirim via email');
-    // Kirim email disini
-    Mail::to($request->email)->send(new InspectionReportMail($inspection));
-
-    return response()->json(['message' => 'Email berhasil dikirim']);
-}
+        return response()->json(['message' => 'Email berhasil dikirim']);
+    }
 
     public function whatsapp($id)
     {

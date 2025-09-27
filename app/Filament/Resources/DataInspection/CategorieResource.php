@@ -27,7 +27,7 @@ class CategorieResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-                          ->schema([
+            ->schema([
                 Forms\Components\TextInput::make('name')
                     ->label('Nama Kategori')
                     ->required()
@@ -42,8 +42,38 @@ class CategorieResource extends Resource
                 Forms\Components\Toggle::make('is_active')
                     ->label('Status Aktif')
                     ->default(true)
-                    ->inline(false) // Label di atas toggle
-                    
+                    ->inline(false), // Label di atas toggle
+
+                Forms\Components\Select::make('settings.menu_model')
+                    ->label('Model Menu')
+                    ->options([
+                        'horizontal' => 'Horizontal',
+                        'vertical'   => 'Vertical',
+                    ])
+                    ->required()
+                    ->reactive(), // biar bisa trigger perubahan ke input lain
+
+                Forms\Components\Select::make('settings.position')
+                    ->label('Posisi Menu')
+                    ->options(function (callable $get) {
+                        if ($get('settings.menu_model') === 'vertical') {
+                            return [
+                                'top-left'     => 'Atas Kiri',
+                                'top-right'    => 'Atas Kanan',
+                                'bottom-left'  => 'Bawah Kiri',
+                                'bottom-right' => 'Bawah Kanan',
+                            ];
+                        }
+
+                        // default horizontal
+                        return [
+                            'top'    => 'Atas',
+                            'bottom' => 'Bawah',
+                        ];
+                    })
+                    ->required()
+                    ->reactive(),
+
             ]);
     }
 
