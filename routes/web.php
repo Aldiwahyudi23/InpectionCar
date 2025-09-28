@@ -141,6 +141,9 @@ Route::middleware([
         Route::post('/inspections/{id}/final-submit', [InspectionController::class, 'finalSubmit'])
             ->name('inspections.final-submit')
             ->middleware('permission:FrontEnd.final submit inspections');
+
+        Route::post('/inspections/{id}/final-submit-local', [InspectionController::class, 'finalSubmitAll'])
+            ->name('inspections.final-submit-local');
     });
 
     // ========================= INSPECTION REVIEW =========================

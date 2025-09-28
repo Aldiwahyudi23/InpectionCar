@@ -1,1 +1,0 @@
-import{c as e,o as t,t as o,l as n}from"./vendor-CV8_PVEu.js";const l={class:"block font-medium text-sm text-gray-700"},c={key:0},r={key:1},u={__name:"InputLabel",props:{value:String},setup(s){return(a,_)=>(t(),e("label",l,[s.value?(t(),e("span",c,o(s.value),1)):(t(),e("span",r,[n(a.$slots,"default")]))]))}};export{u as _};

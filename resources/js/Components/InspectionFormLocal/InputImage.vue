@@ -154,7 +154,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, inject  } from 'vue';
 import ImageSourceOptionsModal from './Modal-uploader/ImageSourceOptionsModal.vue';
 import WebcamModal from './Modal-uploader/WebcamModal.vue';
 import PreviewModal from './Modal-uploader/PreviewModal.vue';
@@ -196,6 +196,10 @@ const isUploading = ref(false);
 const uploadProgress = ref(0);
 const currentUploading = ref(0);
 const totalToUpload = ref(0);
+
+// TAMBAH: Inject image source setting dari parent
+const imageSourceSetting = inject('imageSourceSetting', ref('all'));
+
 
 // KEY untuk local storage backup
 const STORAGE_KEY = `inspection-${props.inspectionId}-point-${props.pointId}-backup`;
@@ -250,9 +254,21 @@ const getImageSrc = (image) => {
   return image.preview || (image.image_path ? `/${image.image_path}` : '');
 };
 
+// MODIFIKASI: Fungsi openSourceOptions berdasarkan setting
 const openSourceOptions = () => {
   if (showPreviewModal.value) showPreviewModal.value = false;
-  showSourceOptionsModal.value = true;
+  
+  // Berdasarkan setting dari parent
+  if (imageSourceSetting.value === 'camera') {
+    // Langsung buka kamera
+    openWebcam();
+  } else if (imageSourceSetting.value === 'gallery') {
+    // Langsung buka galeri
+    triggerGallery();
+  } else {
+    // Tampilkan pilihan (all/ask)
+    showSourceOptionsModal.value = true;
+  }
 };
 
 const triggerGallery = () => {

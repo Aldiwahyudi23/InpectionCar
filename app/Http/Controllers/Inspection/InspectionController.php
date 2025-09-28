@@ -181,7 +181,7 @@ class InspectionController extends Controller
             //mengambil data categori untuk menu 
             $category = Categorie::find($inspection->category_id);
             // Data untuk frontend
-            return Inertia::render('FrontEnd/Inspection/Induk', [
+            return Inertia::render('FrontEnd/Inspection/IndexLocal', [
             // return Inertia::render('FrontEnd/Inspection/InspectionForm', [
                 'inspection' => $inspection->load(['car', 'user']),
                 'category' => $category,
@@ -572,6 +572,98 @@ public function deleteResultImage(Request $request)
             ->with('success', 'Inspeksi berhasil dikirim untuk review');
     }
 
+public function finalSubmitAll(Request $request, $id)
+{
+    try {
+        DB::beginTransaction();
+
+        $inspection = Inspection::findOrFail($id);
+        
+        // 1. Validasi data yang diperlukan
+        $request->validate([
+            'results' => 'sometimes|array',
+            'conclusion' => 'sometimes|array',
+        ]);
+
+        // 3. Simpan semua results (TANPA handle images)
+        if ($request->has('results') && !empty($request->results)) {
+            foreach ($request->results as $pointId => $resultData) {
+                // Hanya simpan jika ada data (status atau note)
+                if (!empty($resultData['status']) || !empty(trim($resultData['note'] ?? ''))) {
+                    InspectionResult::updateOrCreate(
+                        [
+                            'inspection_id' => $inspection->id,
+                            'point_id' => $pointId
+                        ],
+                        [
+                            'status' => $resultData['status'] ?? null,
+                            'note' => !empty(trim($resultData['note'] ?? '')) ? $resultData['note'] : null,
+                            'updated_at' => now(),
+                        ]
+                    );
+                } else {
+                    // Hapus record jika tidak ada data
+                    InspectionResult::where([
+                        'inspection_id' => $inspection->id,
+                        'point_id' => $pointId
+                    ])->delete();
+                }
+            }
+        }
+
+        // 4. Simpan conclusion data
+        if ($request->has('conclusion')) {
+            $conclusionData = $request->conclusion;
+            
+            // Update inspection notes
+            $inspection->update([
+                'notes' => $conclusionData['notes'] ?? null,
+            ]);
+
+            // Update conclusion settings
+            $settings = $inspection->settings ?? [];
+            $settings['conclusion'] = [
+                'flooded' => $conclusionData['flooded'] ?? null,
+                'collision' => $conclusionData['collision'] ?? null,
+                'collision_severity' => $conclusionData['collision_severity'] ?? null,
+            ];
+            
+            $inspection->update([
+                'settings' => $settings,
+            ]);
+        }
+
+        // 5. Update inspection status dan timestamp
+        $inspection->update([
+            'status' => 'pending_review',
+            'completed_at' => now(),
+        ]);
+
+        // 6. Add log
+        $inspection->addLog('finish', 'Menyelesaikan Inspeksi');
+
+        DB::commit();
+
+        $encryptId = Crypt::encrypt($inspection->id);
+        
+        // Redirect ke halaman review
+        return redirect()->route('inspections.review', ['id' => $encryptId])
+            ->with('success', 'Inspeksi berhasil dikirim untuk review');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        
+        Log::error('Error final submit inspection: ' . $e->getMessage(), [
+            'inspection_id' => $id,
+            'request_data' => $request->all()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Terjadi kesalahan saat menyimpan data inspeksi: ' . $e->getMessage()
+        ], 500);
+    }
+}
 
     public function review($id)
     {

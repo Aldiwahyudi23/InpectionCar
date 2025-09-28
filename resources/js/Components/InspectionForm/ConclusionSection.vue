@@ -3,10 +3,11 @@
     <div class="bg-indigo-200 px-6 py-2 border-b">
       <h3 class="text-xl font-semibold text-indigo-700">Kesimpulan Inspeksi</h3>
     </div>
+    
     <div class="p-4 space-y-4-6">
       <label class="block text-sm font-medium text-gray-700 mb-3">
         Apakah kendaraan pernah terkena banjir?
-         <span class="text-red-500">*</span>
+        <span class="text-red-500">*</span>
       </label>
       <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-2 w-full">
         <label
@@ -98,38 +99,34 @@
     <div class="p-4 space-y-2">
       <label class="block text-sm font-medium text-gray-700 mb-2">Catatan Kesimpulan</label>
       
+      <!-- Formatting Toolbar dengan Status Active -->
       <div class="flex gap-1 mb-2 p-2 bg-gray-100 rounded-md">
         <button
           type="button"
-          @click="formatText('bold')"
-          class="p-2 rounded hover:bg-gray-200 transition-colors"
+          @click="toggleFormat('bold')"
+          class="p-2 rounded transition-colors font-medium"
+          :class="activeFormats.bold ? 'bg-indigo-500 text-white' : 'hover:bg-gray-200'"
           title="Bold"
         >
           <strong>B</strong>
         </button>
         <button
           type="button"
-          @click="formatText('italic')"
-          class="p-2 rounded hover:bg-gray-200 transition-colors"
+          @click="toggleFormat('italic')"
+          class="p-2 rounded transition-colors font-medium"
+          :class="activeFormats.italic ? 'bg-indigo-500 text-white' : 'hover:bg-gray-200'"
           title="Italic"
         >
           <em>I</em>
         </button>
         <button
           type="button"
-          @click="formatText('underline')"
-          class="p-2 rounded hover:bg-gray-200 transition-colors"
+          @click="toggleFormat('underline')"
+          class="p-2 rounded transition-colors font-medium"
+          :class="activeFormats.underline ? 'bg-indigo-500 text-white' : 'hover:bg-gray-200'"
           title="Underline"
         >
           <u>U</u>
-        </button>
-        <!-- <button
-          type="button"
-          @click="insertBulletList()"
-          class="p-2 rounded hover:bg-gray-200 transition-colors"
-          title="Bullet List"
-        >
-          • List
         </button>
         <button
           type="button"
@@ -138,9 +135,18 @@
           title="Clear Formatting"
         >
           🗑️ Clear
-        </button> -->
+        </button>
       </div>
 
+      <!-- Status Format Active -->
+      <div v-if="Object.values(activeFormats).some(val => val)" class="text-xs text-gray-500 mb-2">
+        Format aktif: 
+        <span v-if="activeFormats.bold" class="font-bold mx-1">Bold</span>
+        <span v-if="activeFormats.italic" class="italic mx-1">Italic</span>
+        <span v-if="activeFormats.underline" class="underline mx-1">Underline</span>
+      </div>
+
+      <!-- Text Editor -->
       <div
         ref="editorRef"
         contenteditable="true"
@@ -151,15 +157,18 @@
         @focus="isEditing = true"
         @keydown.enter="handleEnterKey"
         @paste="handlePaste"
+        @mouseup="checkActiveFormats"
+        @keyup="checkActiveFormats"
         placeholder="Tambahkan catatan kesimpulan inspeksi di sini..."
       ></div>
-       <p class="text-xs mt-1 text-gray-500">{{ status }}</p>
+      
+      <p class="text-xs mt-1 text-gray-500">{{ status }}</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted, nextTick, computed } from 'vue'
+import { ref, watch, onMounted, nextTick, computed, reactive } from 'vue'
 import { router } from '@inertiajs/vue3'
 import { debounce } from 'lodash'
 
@@ -173,11 +182,15 @@ const props = defineProps({
 
 const editorRef = ref(null)
 const isEditing = ref(false)
-let savedRange = null;
-const note = ref('')
-const status = ref('') // status indikator
+const status = ref('')
+const STORAGE_KEY = `inspection-${props.inspectionId}-conclusion`
 
-const STORAGE_KEY = `inspection-${props.inspectionId}-note`
+// Track active formats dengan reactive object
+const activeFormats = reactive({
+  bold: false,
+  italic: false,
+  underline: false
+})
 
 // Helper parse settings
 const parseSettings = (settings) => {
@@ -200,14 +213,14 @@ const parseSettings = (settings) => {
 const conclusionSettings = computed(() => {
   const settings = parseSettings(props.inspection.settings);
   return settings.conclusion || {};
-});
+})
 
-// Gunakan ref untuk reactive state
+// Form data dengan reactive object
 const form = ref({
   flooded: conclusionSettings.value.flooded || '',
   collision: conclusionSettings.value.collision || '',
   collision_severity: conclusionSettings.value.collision_severity || '',
-  conclusion_note: '' // isi nanti dari localStorage atau props
+  conclusion_note: ''
 })
 
 // Options
@@ -226,40 +239,110 @@ const severityOptions = [
   { value: 'heavy', label: 'Berat' }
 ]
 
-// Init editor
+// Initialize form dan editor
 onMounted(() => {
   initializeForm();
-
-  // ⬇️ Ambil cadangan dari localStorage
-  const savedNote = localStorage.getItem(STORAGE_KEY)
-  if (savedNote) {
-    form.value.conclusion_note = savedNote
-  } else if (props.inspection.notes) {
-    form.value.conclusion_note = props.inspection.notes
-  }
-
+  loadFromLocalStorage();
+  
   nextTick(() => {
     initializeEditor();
+    checkActiveFormats(); // Check format status awal
   });
-});
+})
 
+// Load dari localStorage
+const loadFromLocalStorage = () => {
+  const savedData = localStorage.getItem(STORAGE_KEY);
+  if (savedData) {
+    try {
+      const parsedData = JSON.parse(savedData);
+      // Merge dengan data dari props, prioritaskan localStorage
+      form.value = { ...form.value, ...parsedData };
+      status.value = '📱 Memuat draft tersimpan...';
+    } catch (e) {
+      console.error('Error loading from localStorage:', e);
+    }
+  } else if (props.inspection.notes) {
+    form.value.conclusion_note = props.inspection.notes;
+  }
+}
+
+// Initialize editor content
 const initializeEditor = () => {
   if (editorRef.value && form.value.conclusion_note) {
     editorRef.value.innerHTML = form.value.conclusion_note;
   }
 }
 
-// Handle input editor
+// Initialize form data
+const initializeForm = () => {
+  const settings = parseSettings(props.inspection.settings);
+  const conclusion = settings.conclusion || {};
+
+  form.value.flooded = conclusion.flooded || '';
+  form.value.collision = conclusion.collision || '';
+  form.value.collision_severity = conclusion.collision_severity || '';
+}
+
+// Check active formats pada selection
+const checkActiveFormats = () => {
+  if (!editorRef.value) return;
+  
+  const selection = window.getSelection();
+  if (selection.rangeCount === 0 || selection.isCollapsed) return;
+
+  activeFormats.bold = document.queryCommandState('bold');
+  activeFormats.italic = document.queryCommandState('italic');
+  activeFormats.underline = document.queryCommandState('underline');
+}
+
+// Toggle format dengan status yang jelas
+const toggleFormat = (format) => {
+  if (!editorRef.value) return;
+  
+  editorRef.value.focus();
+  
+  // Jika format sudah aktif, matikan - jika tidak, aktifkan
+  const isCurrentlyActive = activeFormats[format];
+  
+  switch (format) {
+    case 'bold': 
+      document.execCommand('bold', false, !isCurrentlyActive); 
+      break;
+    case 'italic': 
+      document.execCommand('italic', false, !isCurrentlyActive); 
+      break;
+    case 'underline': 
+      document.execCommand('underline', false, !isCurrentlyActive); 
+      break;
+  }
+  
+  // Update status format setelah toggle
+  setTimeout(() => {
+    checkActiveFormats();
+    handleEditorInput();
+  }, 10);
+}
+
+// Clear semua formatting
+const clearFormatting = () => {
+  if (!editorRef.value) return;
+  
+  editorRef.value.focus();
+  document.execCommand('removeFormat', false, null);
+  
+  // Reset semua status format
+  Object.keys(activeFormats).forEach(key => {
+    activeFormats[key] = false;
+  });
+  
+  handleEditorInput();
+}
+
+// Handle editor events
 const handleEditorInput = debounce(() => {
   if (editorRef.value) {
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-      savedRange = selection.getRangeAt(0);
-    }
-
     form.value.conclusion_note = editorRef.value.innerHTML;
-    // ⬇️ Simpan ke localStorage
-    localStorage.setItem(STORAGE_KEY, form.value.conclusion_note);
     saveToServer();
   }
 }, 500)
@@ -275,36 +358,16 @@ const handlePaste = (event) => {
   document.execCommand('insertText', false, text);
 }
 
-// Format tools
-const formatText = (format) => {
-  if (!editorRef.value) return;
-  
-  editorRef.value.focus();
-  const selection = window.getSelection();
-  if (selection.rangeCount > 0) {
-    savedRange = selection.getRangeAt(0);
-  }
-  
-  switch (format) {
-    case 'bold': document.execCommand('bold'); break;
-    case 'italic': document.execCommand('italic'); break;
-    case 'underline': document.execCommand('underline'); break;
-  }
-  
-  handleEditorInput();
-}
-
-// Save ketika blur
+// Save ketika blur editor
 const saveContent = () => {
   isEditing.value = false;
   if (editorRef.value) {
     form.value.conclusion_note = editorRef.value.innerHTML;
-    localStorage.setItem(STORAGE_KEY, form.value.conclusion_note); // ⬇️ simpan cadangan
     saveToServer();
   }
 }
 
-// Simpan ke server
+// Simpan ke server dengan optimistic update
 const saveToServer = debounce(() => {
   const dataToSend = {
     flooded: form.value.flooded,
@@ -313,43 +376,44 @@ const saveToServer = debounce(() => {
     conclusion_note: form.value.conclusion_note
   }
 
-  router.post(
-    route('inspections.updateConclusion', props.inspectionId),
-    dataToSend,
-    {
-      preserveScroll: true,
-      preserveState: true,
-      only: [],
-      // ⬇️ jangan replace props inspection
-      onSuccess: () => {
-        // hapus backup setelah sukses simpan
-        localStorage.removeItem(STORAGE_KEY)
-        status.value = '⏳ Tersimpan'
-      }
-    }
-  )
-}, 500)
+  // 1. Simpan backup ke localStorage
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSend));
+  status.value = '💾 Menyimpan...';
 
-// Watch radio options, simpan otomatis
+  // 2. Kirim ke server
+  router.post(route('inspections.updateConclusion', props.inspectionId), dataToSend, {
+    preserveScroll: true,
+    preserveState: true,
+    onSuccess: () => {
+      localStorage.removeItem(STORAGE_KEY);
+      status.value = '✅ Tersimpan';
+    },
+    onError: () => {
+      status.value = '❌ Gagal menyimpan - data tersimpan secara lokal';
+      // Auto-retry setelah 3 detik
+      setTimeout(() => saveToServer(), 3000);
+    }
+  })
+}, 1000);
+
+// Watch untuk perubahan radio buttons
 watch([
   () => form.value.flooded,
   () => form.value.collision,
   () => form.value.collision_severity
 ], () => {
-  saveToServer()
+  saveToServer();
 })
 
-// Inisialisasi form (tanpa overwrite notes)
-const initializeForm = () => {
-  const settings = parseSettings(props.inspection.settings);
-  const conclusion = settings.conclusion || {};
-
-  form.value.flooded = conclusion.flooded || '';
-  form.value.collision = conclusion.collision || '';
-  form.value.collision_severity = conclusion.collision_severity || '';
-};
+// Cleanup localStorage ketika component unmount
+import { onBeforeUnmount } from 'vue';
+onBeforeUnmount(() => {
+  // Hanya hapus jika data sudah tersimpan di server (status success)
+  if (status.value === '✅ Tersimpan') {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+});
 </script>
-
 
 <style scoped>
 /* Style untuk placeholder contenteditable */
@@ -386,5 +450,13 @@ const initializeForm = () => {
 
 .prose :deep(u) {
   text-decoration: underline;
+}
+
+/* Style untuk toolbar button active */
+.bg-indigo-500 {
+  background-color: rgb(99 102 241);
+}
+.bg-indigo-500:hover {
+  background-color: rgb(79 70 229);
 }
 </style>

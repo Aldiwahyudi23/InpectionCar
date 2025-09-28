@@ -47,8 +47,8 @@ class CategorieResource extends Resource
                 Forms\Components\Select::make('settings.menu_model')
                     ->label('Model Menu')
                     ->options([
-                        'horizontal' => 'Horizontal',
-                        'vertical'   => 'Vertical',
+                        'horizontal' => 'Slid Kesamping',
+                        'vertical'   => 'Tombol ko Menu',
                     ])
                     ->required()
                     ->reactive(), // biar bisa trigger perubahan ke input lain
