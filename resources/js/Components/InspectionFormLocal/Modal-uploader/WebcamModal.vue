@@ -144,19 +144,23 @@ const initializeWebcam = async () => {
   }
   
   try {
+    // START PERUBAHAN UTAMA DI SINI
     const videoConstraints = {
       facingMode: currentFacingMode.value,
-      width: { ideal: 1920 }, // Resolusi Full HD untuk field of view lebih luas
-      height: { ideal: 1080 }, // Resolusi Full HD untuk field of view lebih luas
+      // Hapus properti width/height spesifik (ideal: 4096 dll.)
+      // Biarkan browser memilih resolusi default yang paling mendekati FoV terluas.
+      
       aspectRatio: { ideal: props.aspectRatio || 4/3 },
       frameRate: { ideal: 30 },
       advanced: [
+        // Tambahkan zoom: 1 untuk memastikan tidak ada zoom/crop yang tidak diinginkan
+        { zoom: 1 }, 
         { focusMode: 'continuous' },
         { exposureMode: 'continuous' },
-        { whiteBalanceMode: 'continuous' },
-        { zoom: { ideal: 1 } } // Pastikan zoom minimal untuk FOV maksimal
+        { whiteBalanceMode: 'continuous' }
       ]
     };
+    // END PERUBAHAN UTAMA
     
     mediaStream = await navigator.mediaDevices.getUserMedia({ 
       video: videoConstraints,
