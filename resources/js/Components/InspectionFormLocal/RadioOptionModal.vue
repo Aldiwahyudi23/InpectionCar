@@ -269,10 +269,17 @@ const isFormValid = computed(() => {
     if (props.point.settings.max_date && props.notesValue.length > props.point.settings.max_date) return false;
   }
 
-  // Jika ada imageTOradio aktif
-  if (props.point.input_type === 'imageTOradio') {
-    if (props.imagesValue.length === 0) return false;
-  }
+    if (props.point.input_type === 'imageTOradio') {
+      if (props.imagesValue.length === 0) return false;
+
+      // cek status upload
+      const hasFailed = props.imagesValue.some(img => img.status === 'error');
+      const stillUploading = props.imagesValue.some(img => img.status === 'uploading');
+      if (hasFailed || stillUploading) return false;
+    }
+
+    
+
 
   // Jika ada radio
   if (props.options.length && !props.selectedValue) return false;
@@ -286,11 +293,15 @@ const isFormValid = computed(() => {
     if (option.settings.max_length && props.notesValue.length > option.settings.max_length) return false;
   }
 
-  // Jika image upload aktif
   if (props.showImageUpload && option?.settings?.show_image_upload) {
-    if (props.imagesValue.length === 0) return false;
-    if (option.settings.max_files && props.imagesValue.length > option.settings.max_files) return false;
-  }
+      if (props.imagesValue.length === 0) return false;
+      if (option.settings.max_files && props.imagesValue.length > option.settings.max_files) return false;
+
+      // cek status upload juga
+      const hasFailed = props.imagesValue.some(img => img.status === 'error');
+      const stillUploading = props.imagesValue.some(img => img.status === 'uploading');
+      if (hasFailed || stillUploading) return false;
+    }
 
   return true;
 });

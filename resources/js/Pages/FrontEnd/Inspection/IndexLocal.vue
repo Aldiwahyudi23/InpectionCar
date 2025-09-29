@@ -46,7 +46,7 @@
     >
       <div 
         ref="menuContainer"
-        class="flex overflow-x-auto scrollbar-hide py-3 px-4 space-x-2"
+        class="flex overflow-x-auto scrollbar-hide py-3 px-4 space-x-2 menu-container"
         @scroll="handleMenuScroll"
       >
         <!-- Tombol Toggle Swipe -->
@@ -257,39 +257,43 @@
 
       <!-- Konten Utama -->
       <div class="relative overflow-hidden">
+        <transition name="category-slide" mode="out-in">
           <!-- Detail Kendaraan -->
-          <VehicleDetails
-            v-if="activeCategory === 'vehicle'"
-            :inspection="inspection"
-            :CarDetail="CarDetail"
-            :allInspections="props.allInspections" 
-            @update-vehicle="updateVehicleDetails"
-            @save-car-details="saveNewCarDetails"
-            @update:validation="handleVehicleValidation"
-            @update:hasUnsavedChanges="handleUnsavedChanges"
-          />
+          <div v-if="activeCategory === 'vehicle'" key="vehicle">
+            <VehicleDetails
+              :inspection="inspection"
+              :CarDetail="CarDetail"
+              :allInspections="props.allInspections" 
+              @update-vehicle="updateVehicleDetails"
+              @save-car-details="saveNewCarDetails"
+              @update:validation="handleVehicleValidation"
+              @update:hasUnsavedChanges="handleUnsavedChanges"
+            />
+          </div>
 
           <!-- Menu Inspeksi Biasa -->
-          <CategoryCadangan
-            v-else-if="activeMenuData && activeCategory !== 'conclusion'"
-            :key="activeMenuData.id"
-            :category="activeMenuData"
-            :inspection-id="inspection.id"
-            :form="form"
-            @updateResult="updateResult" 
-            @hapusPoint="hapusData"
-            @removeImage="removeImage"
-          />
+          <div v-else-if="activeMenuData && activeCategory !== 'conclusion'" :key="activeMenuData.id">
+            <CategoryCadangan
+              :category="activeMenuData"
+              :inspection-id="inspection.id"
+              :form="form"
+              @updateResult="updateResult" 
+              @hapusPoint="hapusData"
+              @removeImage="removeImage"
+            />
+          </div>
 
           <!-- Kesimpulan -->
-          <ConclusionSection
-            v-else-if="activeCategory === 'conclusion'"
-            :form="{ conclusion: conclusionState }"
-            :inspection-id="inspection.id"
-            :inspection="inspection"
-            :settings="inspection.settings || {}"
-            @updateConclusion="updateConclusion"
-          />
+          <div v-else-if="activeCategory === 'conclusion'" key="conclusion">
+            <ConclusionSection
+              :form="{ conclusion: conclusionState }"
+              :inspection-id="inspection.id"
+              :inspection="inspection"
+              :settings="inspection.settings || {}"
+              @updateConclusion="updateConclusion"
+            />
+          </div>
+        </transition>
       </div>
 
       <!-- Tombol Simpan Final -->
@@ -381,7 +385,7 @@
         @touchend="stopDamageDrag"
         @touchmove="onDamageDrag"
         @click="handleDamageClick"
-        class="fixed z-10 p-4 bg-gradient-to-r from-indigo-700 to-sky-600 text-white rounded-full shadow-lg"
+        class="fixed z-5 p-4 bg-gradient-to-r from-indigo-700 to-sky-600 text-white rounded-full shadow-lg"
         :style="{ left: damagePos.x + 'px', top: damagePos.y + 'px' }"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -1026,55 +1030,50 @@ const scrollActiveMenuToCenter = () => {
   });
 };
 
-// TAMBAHKAN: Handler untuk back button (double tap to exit)
+// TAMBAHKAN: Handler untuk back button yang lebih aman
 const handleBackButton = () => {
-  // Reset timer jika sudah melebihi 2 detik
-  if (backButtonPressed.value > 0) {
-    clearTimeout(backButtonPressed.value);
-  }
-  
   // Jika pertama kali tekan
   if (backButtonPressed.value === 0) {
-    backButtonPressed.value = setTimeout(() => {
-      // Reset setelah 2 detik
+    backButtonPressed.value = 1;
+    showExitMessage.value = true;
+    
+    // Reset setelah 2 detik
+    setTimeout(() => {
       backButtonPressed.value = 0;
       showExitMessage.value = false;
     }, 2000);
     
-    // Tampilkan pesan
-    showExitMessage.value = true;
-    return false; // Prevent default back behavior
+    // Selalu prevent default back behavior
+    window.history.pushState(null, null, window.location.href);
+    return false;
   } 
   // Jika kedua kali tekan dalam 2 detik
   else {
-    // Clear timeout dan keluar
-    clearTimeout(backButtonPressed.value);
     backButtonPressed.value = 0;
     showExitMessage.value = false;
     
-    // Keluar dari halaman - bisa menggunakan router atau window history
-    if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      // Jika tidak ada history, redirect ke halaman sebelumnya
-      window.location.href = document.referrer || '/';
-    }
+    // PERBAIKAN: Kembali ke halaman list inspections menggunakan Inertia
+    router.visit(route('job.index'));
     return true;
   }
 };
 
-// TAMBAHKAN: Event listener untuk back button
+// TAMBAHKAN: Setup back button handler yang lebih aman
 const setupBackButtonHandler = () => {
-  // Handle browser back button
+  // Inisialisasi history state
+  if (window.history.state === null) {
+    window.history.replaceState({ isBackButtonControlled: true }, '');
+  }
+  window.history.pushState({ isBackButtonControlled: true }, '');
+  
+  // Handle popstate event
   window.addEventListener('popstate', (event) => {
-    if (!handleBackButton()) {
-      // Jika tidak boleh keluar, push state kembali
-      window.history.pushState(null, null, window.location.href);
+    // Only handle if it's our controlled state
+    if (event.state && event.state.isBackButtonControlled) {
+      event.preventDefault();
+      handleBackButton();
     }
   });
-  
-  // Push state pertama kali agar bisa detect back button
-  window.history.pushState(null, null, window.location.href);
 };
 
 // Pilih point dan buka modal
@@ -1299,8 +1298,8 @@ const setupSwipe = () => {
   const initializeSwipe = () => {
     const mainContentArea = document.querySelector('.relative.overflow-hidden'); 
     if (mainContentArea) {
-      mainContentArea.addEventListener('touchstart', handleTouchStart, false);
-      mainContentArea.addEventListener('touchend', handleTouchEnd, false);
+      mainContentArea.addEventListener('touchstart', handleTouchStart, { passive: true });
+      mainContentArea.addEventListener('touchend', handleTouchEnd, { passive: true });
     }
     
     return () => {
@@ -1425,6 +1424,19 @@ onMounted(() => {
   scrollbar-width: none;
 }
 
+/* Global scroll smoothness */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Main content scroll optimization */
+.main-content {
+  scroll-behavior: smooth;
+  will-change: transform, scroll-position;
+  transform: translateZ(0);
+  -webkit-overflow-scrolling: touch;
+}
+
 /* ================================================= */
 /* MODIFIKASI UNTUK SCROLLING & PERFORMA LEBIH MULUS */
 /* ================================================= */
@@ -1460,6 +1472,7 @@ onMounted(() => {
   width: 100%; 
   top: 0;
   left: 0;
+  height: 100%;
 }
 .category-slide-enter-from {
   transform: translateX(100%); /* Sedikit dikurangi dari 150% agar lebih cepat */
@@ -1478,8 +1491,5 @@ onMounted(() => {
 .fade-leave-to {
   opacity: 0;
 }
-/* Toast message styling */
-.fixed {
-  z-index: 50;
-}
+
 </style>

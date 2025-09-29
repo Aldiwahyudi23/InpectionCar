@@ -1,8 +1,9 @@
+<!-- BottomSheetModal.vue -->
 <template>
   <transition name="bottom-sheet">
     <div v-if="show" class="fixed inset-0 z-50 overflow-hidden">
-      <!-- Backdrop -->
-      <div class="absolute inset-0 bg-black bg-opacity-50" @click="close"></div>
+      <!-- Backdrop - TANPA event click -->
+      <div class="absolute inset-0 bg-black bg-opacity-50"></div>
       
       <!-- Modal Content -->
       <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[85vh] overflow-hidden flex flex-col">
@@ -22,7 +23,7 @@
           <slot></slot>
         </div>
         
-        <!-- Footer (jika ada action) -->
+        <!-- Footer -->
         <div v-if="$slots.footer" class="border-t border-gray-200 p-4 bg-gray-50">
           <slot name="footer"></slot>
         </div>
@@ -32,50 +33,12 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted } from 'vue';
-
 const props = defineProps({
   show: Boolean,
   title: String,
   subtitle: String
 });
 
-const emit = defineEmits(['close']);
-
-const close = () => {
-  emit('close');
-};
-
-// Handle escape key
-const handleEscape = (e) => {
-  if (e.key === 'Escape') {
-    close();
-  }
-};
-
-// Handle swipe down to close
-let touchStartY = 0;
-
-const handleTouchStart = (e) => {
-  touchStartY = e.touches[0].clientY;
-};
-
-const handleTouchMove = (e) => {
-  const touchY = e.touches[0].clientY;
-  const diff = touchY - touchStartY;
-  
-  if (diff > 50) { // Swipe down threshold
-    close();
-  }
-};
-
-onMounted(() => {
-  document.addEventListener('keydown', handleEscape);
-});
-
-onUnmounted(() => {
-  document.removeEventListener('keydown', handleEscape);
-});
 </script>
 
 <style scoped>
