@@ -144,23 +144,18 @@ const initializeWebcam = async () => {
   }
   
   try {
-    // START PERUBAHAN UTAMA DI SINI
     const videoConstraints = {
       facingMode: currentFacingMode.value,
-      // Hapus properti width/height spesifik (ideal: 4096 dll.)
-      // Biarkan browser memilih resolusi default yang paling mendekati FoV terluas.
-      
+      width: { ideal: 1280  }, // Resolusi 4K untuk kualitas terbaik
+      height: { ideal: 720  }, // Resolusi 4K untuk kualitas terbaik
       aspectRatio: { ideal: props.aspectRatio || 4/3 },
       frameRate: { ideal: 30 },
       advanced: [
-        // Tambahkan zoom: 1 untuk memastikan tidak ada zoom/crop yang tidak diinginkan
-        { zoom: 1 }, 
         { focusMode: 'continuous' },
         { exposureMode: 'continuous' },
         { whiteBalanceMode: 'continuous' }
       ]
     };
-    // END PERUBAHAN UTAMA
     
     mediaStream = await navigator.mediaDevices.getUserMedia({ 
       video: videoConstraints,
@@ -483,7 +478,8 @@ onUnmounted(() => {
 .webcam-video {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+object-fit: contain;
+background: black; /* biar ada padding hitam */
   filter: brightness(1.05) contrast(1.05);
 }
 

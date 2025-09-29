@@ -381,7 +381,7 @@
         @touchend="stopDamageDrag"
         @touchmove="onDamageDrag"
         @click="handleDamageClick"
-        class="fixed z-40 p-4 bg-gradient-to-r from-indigo-700 to-sky-600 text-white rounded-full shadow-lg"
+        class="fixed z-10 p-4 bg-gradient-to-r from-indigo-700 to-sky-600 text-white rounded-full shadow-lg"
         :style="{ left: damagePos.x + 'px', top: damagePos.y + 'px' }"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -467,7 +467,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, provide, nextTick  } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, provide, nextTick  } from 'vue';
 import { useForm, usePage, Link, router } from '@inertiajs/vue3';
 import { debounce } from 'lodash';
 import VehicleDetails from '@/Components/InspectionFormLocal/VehicleDetails.vue';
@@ -966,6 +966,7 @@ const imageSourceSetting = ref('all'); // 'all', 'camera', 'gallery'
 const menuContainer = ref(null);
 const menuItems = ref([]);
 
+
 // =========================================================================
 // PROVIDE UNTUK CHILD COMPONENTS
 // =========================================================================
@@ -976,6 +977,14 @@ provide('imageSourceSetting', imageSourceSetting);
 // =========================================================================
 // ACTION HANDLERS
 // =========================================================================
+
+// TAMBAHKAN: Konfirmasi sederhana sebelum keluar halaman
+const handleBeforeUnload = (event) => {
+  // Selalu tampilkan konfirmasi ketika mencoba keluar halaman
+  event.preventDefault();
+  event.returnValue = 'Apakah Anda yakin ingin keluar dari inspeksi? Data inspeksi Anda telah disimpan secara lokal.';
+  return event.returnValue;
+};
 
 // Toggle swipe gesture
 const toggleSwipe = () => {
@@ -1328,12 +1337,21 @@ onMounted(() => {
 
    setupSwipe();
 
+    // TAMBAHKAN: Setup event listener untuk beforeunload
+  window.addEventListener('beforeunload', handleBeforeUnload);
+
     // TAMBAHKAN: Scroll ke tengah setelah mounted
   setTimeout(() => {
     scrollActiveMenuToCenter();
   }, 100);
 
 });
+
+// Cleanup event listeners
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', handleBeforeUnload);
+});
+
 </script>
 
 <style scoped>
