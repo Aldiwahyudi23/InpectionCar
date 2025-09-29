@@ -462,6 +462,15 @@
         @close="closeRadioModal"
         @hapus="hapusData"
       />
+
+        <!-- Toast untuk exit message -->
+      <div
+        v-if="showExitMessage"
+        class="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg z-50 text-center"
+      >
+        <p class="text-sm">Tekan sekali lagi untuk keluar dari inspeksi</p>
+        <p class="text-xs text-gray-300 mt-1">Data inspeksi telah disimpan secara lokal</p>
+      </div>
     </div>
   </div>
 </template>
@@ -966,6 +975,9 @@ const imageSourceSetting = ref('all'); // 'all', 'camera', 'gallery'
 const menuContainer = ref(null);
 const menuItems = ref([]);
 
+// TAMBAHKAN: State untuk double tap to exit
+const backButtonPressed = ref(0);
+const showExitMessage = ref(false);
 
 // =========================================================================
 // PROVIDE UNTUK CHILD COMPONENTS
@@ -1012,6 +1024,57 @@ const scrollActiveMenuToCenter = () => {
       behavior: 'smooth'
     });
   });
+};
+
+// TAMBAHKAN: Handler untuk back button (double tap to exit)
+const handleBackButton = () => {
+  // Reset timer jika sudah melebihi 2 detik
+  if (backButtonPressed.value > 0) {
+    clearTimeout(backButtonPressed.value);
+  }
+  
+  // Jika pertama kali tekan
+  if (backButtonPressed.value === 0) {
+    backButtonPressed.value = setTimeout(() => {
+      // Reset setelah 2 detik
+      backButtonPressed.value = 0;
+      showExitMessage.value = false;
+    }, 2000);
+    
+    // Tampilkan pesan
+    showExitMessage.value = true;
+    return false; // Prevent default back behavior
+  } 
+  // Jika kedua kali tekan dalam 2 detik
+  else {
+    // Clear timeout dan keluar
+    clearTimeout(backButtonPressed.value);
+    backButtonPressed.value = 0;
+    showExitMessage.value = false;
+    
+    // Keluar dari halaman - bisa menggunakan router atau window history
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      // Jika tidak ada history, redirect ke halaman sebelumnya
+      window.location.href = document.referrer || '/';
+    }
+    return true;
+  }
+};
+
+// TAMBAHKAN: Event listener untuk back button
+const setupBackButtonHandler = () => {
+  // Handle browser back button
+  window.addEventListener('popstate', (event) => {
+    if (!handleBackButton()) {
+      // Jika tidak boleh keluar, push state kembali
+      window.history.pushState(null, null, window.location.href);
+    }
+  });
+  
+  // Push state pertama kali agar bisa detect back button
+  window.history.pushState(null, null, window.location.href);
 };
 
 // Pilih point dan buka modal
@@ -1285,6 +1348,18 @@ watch(activeCategory, (newVal) => {
   activeIndex.value = allCategories.value.indexOf(newVal);
 });
 
+// TAMBAHKAN: Handler untuk physical back button di mobile
+const handlePhysicalBackButton = () => {
+  // Untuk Cordova/PhoneGap atau aplikasi hybrid
+  if (window.cordova || window.PhoneGap) {
+    document.addEventListener('deviceready', () => {
+      document.addEventListener('backbutton', (e) => {
+        e.preventDefault();
+        handleBackButton();
+      }, false);
+    });
+  }
+};
 
 onMounted(() => {
   const localData = getLocalData();
@@ -1328,6 +1403,9 @@ onMounted(() => {
   }
 
    setupSwipe();
+
+     // TAMBAHKAN: Setup back button handler
+  setupBackButtonHandler();
 
     // TAMBAHKAN: Scroll ke tengah setelah mounted
   setTimeout(() => {
@@ -1399,5 +1477,9 @@ onMounted(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+/* Toast message styling */
+.fixed {
+  z-index: 50;
 }
 </style>

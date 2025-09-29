@@ -75,13 +75,28 @@
             class="absolute inset-0 w-full h-full object-contain transition-transform duration-300 ease-in-out bg-black"
             :style="{ transform: `rotate(${currentImage.rotation}deg)` }"
           />
-          
+
           <!-- Overlay saat uploading -->
           <div v-if="currentImage && currentImage.isUploading" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <div class="text-center text-white">
               <div class="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
               <p class="text-sm">Mengupload...</p>
             </div>
+          </div>
+
+          <!-- Overlay untuk gambar yang gagal -->
+          <div v-if="currentImage && currentImage.isFailed" class="absolute inset-0 bg-red-500 bg-opacity-80 flex flex-col items-center justify-center text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <p class="text-lg font-medium mb-2">Upload Gagal</p>
+            <button
+              @click="retryCurrentImage"
+              class="px-4 py-2 bg-white text-red-600 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+              :disabled="isUploading"
+            >
+              Coba Lagi
+            </button>
           </div>
         </div>
 
@@ -202,7 +217,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['close', 'saveImages', 'removePreviewImage', 'triggerAddMorePhotos', 'update:images']);
+const emit = defineEmits(['close', 'saveImages', 'removePreviewImage', 'triggerAddMorePhotos', 'update:images', 'retryImage']);
 
 const currentPreviewIndex = ref(0);
 const editableImages = ref([]);
@@ -318,6 +333,12 @@ const removeCurrentImage = () => {
 const triggerAddMorePhotos = () => {
   if (!props.isUploading) {
     emit('triggerAddMorePhotos');
+  }
+};
+
+const retryCurrentImage = () => {
+  if (currentImage.value && !props.isUploading) {
+    emit('retryImage', currentImage.value);
   }
 };
 

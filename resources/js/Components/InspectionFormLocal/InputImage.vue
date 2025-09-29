@@ -94,9 +94,9 @@
 
         <div
           v-for="(image, idx) in allImages"
-          :key="image.id || image.preview" 
+          :key="image.id || image.preview"
           class="relative flex-shrink-0 w-24 h-24 overflow-hidden rounded-md border border-gray-200 cursor-pointer"
-          @click="openPreviewModal(idx)"
+          @click="image.isFailed ? retryUpload(image) : openPreviewModal(idx)"
         >
           <img
             :src="getImageSrc(image)"
@@ -109,6 +109,12 @@
           </div>
           <div v-if="image.isUploading" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
             <div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <div v-if="image.isFailed" class="absolute inset-0 bg-red-500 bg-opacity-80 flex flex-col items-center justify-center text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span class="text-xs font-medium">Retry</span>
           </div>
         </div>
       </div>
@@ -135,7 +141,7 @@
 
     <PreviewModal
       :show="showPreviewModal"
-      :images="allImages" 
+      :images="allImages"
       :point="point"
       :initial-index="currentPreviewIndex"
       :allow-multiple="allowMultiple"
@@ -149,6 +155,7 @@
       @save-images="triggerUploadAndSave"
       @remove-preview-image="handleRemovePreviewImage"
       @trigger-add-more-photos="openSourceOptions"
+      @retry-image="retryUpload"
     />
   </div>
 </template>
@@ -668,109 +675,202 @@ const triggerUploadAndSave = async (imagesToSaveFromPreview) => {
   }
 };
 
-// TAMBAH: Fungsi khusus untuk upload ke server dengan progress tracking
+// TAMBAH: Fungsi khusus untuk upload ke server dengan progress tracking per image
 const uploadImagesToServer = async (imagesToUpload, existingImages) => {
   totalToUpload.value = imagesToUpload.length;
   currentUploading.value = 0;
   uploadProgress.value = 0;
-  
-  try {
-    const formData = new FormData();
-    formData.append('inspection_id', props.inspectionId);
-    formData.append('point_id', props.pointId);
 
-    // Tandai images sedang diupload untuk UI feedback
-    imagesToUpload.forEach((img, index) => {
+  const allUploadedImages = [...existingImages];
+  let successCount = 0;
+
+  try {
+    // Upload satu per satu untuk handle partial failure
+    for (let i = 0; i < imagesToUpload.length; i++) {
+      const img = imagesToUpload[i];
+      const formData = new FormData();
+      formData.append('inspection_id', props.inspectionId);
+      formData.append('point_id', props.pointId);
       formData.append('images[]', img.file);
+
       // Update preview images status
-      const previewIndex = previewImages.value.findIndex(p => 
+      const previewIndex = previewImages.value.findIndex(p =>
         p.preview === img.originalImage?.preview
       );
       if (previewIndex !== -1) {
         previewImages.value[previewIndex].isUploading = true;
+        previewImages.value[previewIndex].isFailed = false; // Reset failed status
       }
-    });
 
-    // Upload dengan progress tracking
-    const response = await axios.post(route('inspections.upload-image'), formData, {
-      headers: { 
-        'Content-Type': 'multipart/form-data',
-      },
-      onUploadProgress: (progressEvent) => {
-        if (progressEvent.total) {
-          uploadProgress.value = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          currentUploading.value = Math.floor((progressEvent.loaded / progressEvent.total) * imagesToUpload.length);
+      try {
+        const response = await axios.post(route('inspections.upload-image'), formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const imgProgress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              uploadProgress.value = Math.round(((i + (progressEvent.loaded / progressEvent.total)) / imagesToUpload.length) * 100);
+              currentUploading.value = i + 1;
+            }
+          }
+        });
+
+        // Process response untuk image ini
+        const serverImages = response.data.images;
+        if (serverImages && serverImages.length > 0) {
+          const imgData = serverImages[0];
+          allUploadedImages.push({
+            id: imgData.image_id,
+            image_path: imgData.path,
+            width: imgData.width || img.width || 0,
+            height: imgData.height || img.height || 0,
+            rotation: img.rotation || 0,
+            preview: imgData.public_url,
+            isUploaded: true
+          });
+
+          // Hapus dari preview images
+          if (previewIndex !== -1) {
+            const removed = previewImages.value.splice(previewIndex, 1)[0];
+            if (removed.preview && removed.preview.startsWith('blob:')) {
+              URL.revokeObjectURL(removed.preview);
+            }
+          }
+
+          successCount++;
+        }
+
+      } catch (imgError) {
+        console.error(`Error uploading image ${i + 1}:`, imgError);
+
+        // Mark as failed
+        if (previewIndex !== -1) {
+          previewImages.value[previewIndex].isUploading = false;
+          previewImages.value[previewIndex].isFailed = true;
         }
       }
-    });
-
-    // Process response dari server
-    const serverImages = response.data.images;
-    const allUploadedImages = [...existingImages];
-    
-    for (let i = 0; i < serverImages.length; i++) {
-      const imgData = serverImages[i];
-      const originalImg = imagesToUpload[i]?.originalImage;
-      
-      allUploadedImages.push({
-        id: imgData.image_id,
-        image_path: imgData.path,
-        width: imgData.width || originalImg?.width || 0,
-        height: imgData.height || originalImg?.height || 0,
-        rotation: imagesToUpload[i]?.rotation || 0,
-        preview: imgData.public_url,
-        isUploaded: true
-      });
-
-      // Hapus blob URL untuk cleanup memory
-      if (originalImg?.preview && originalImg.preview.startsWith('blob:')) {
-        URL.revokeObjectURL(originalImg.preview);
-      }
     }
 
-    // Hapus preview images yang sudah diupload
-    previewImages.value = previewImages.value.filter(img => 
-      !imagesToUpload.some(uploadImg => 
-        uploadImg.originalImage?.preview === img.preview
-      )
-    );
+    // Update state dengan gambar yang berhasil diupload
+    if (successCount > 0) {
+      emit('update:modelValue', allUploadedImages);
+      emit('save', props.pointId);
+      emit('uploaded', {
+        pointId: props.pointId,
+        images: allUploadedImages,
+        newImagesCount: successCount
+      });
+    }
 
-    // 5. UPDATE STATE dengan gambar yang sudah diupload
-    emit('update:modelValue', allUploadedImages);
-    emit('save', props.pointId);
-    emit('uploaded', { 
-      pointId: props.pointId, 
-      images: allUploadedImages,
-      newImagesCount: serverImages.length
-    });
+    // Jika semua berhasil, hapus backup
+    if (successCount === imagesToUpload.length) {
+      clearBackupFromLocalStorage();
+    }
 
-    // 6. HAPUS BACKUP karena sudah sukses diupload
-    clearBackupFromLocalStorage();
-
-    console.log(`✅ Successfully uploaded ${serverImages.length} images`);
+    console.log(`✅ Successfully uploaded ${successCount}/${imagesToUpload.length} images`);
 
   } catch (error) {
-    console.error("Error uploading images:", error);
-    
-    // Reset upload status pada preview images
-    previewImages.value.forEach(img => {
-      img.isUploading = false;
-    });
+    console.error("Error in upload process:", error);
 
-    // Data tetap aman di localStorage untuk retry
-    if (error.response?.data?.message) {
-      alert(`Upload gagal: ${error.response.data.message}. Data tersimpan secara lokal.`);
-    } else {
-      alert(`Upload gagal: ${error.message}. Data tersimpan secara lokal.`);
-    }
-    
-    // Jangan hapus backup jika error
-    throw error;
+    // Mark all remaining as failed
+    imagesToUpload.forEach(img => {
+      const previewIndex = previewImages.value.findIndex(p =>
+        p.preview === img.originalImage?.preview
+      );
+      if (previewIndex !== -1) {
+        previewImages.value[previewIndex].isUploading = false;
+        previewImages.value[previewIndex].isFailed = true;
+      }
+    });
   } finally {
     // Reset progress
     uploadProgress.value = 0;
     currentUploading.value = 0;
     totalToUpload.value = 0;
+    isUploading.value = false;
+  }
+};
+
+// TAMBAH: Fungsi retry upload untuk gambar yang gagal
+const retryUpload = async (failedImage) => {
+  if (!failedImage || !failedImage.file) {
+    console.error("No file to retry upload");
+    return;
+  }
+
+  isUploading.value = true;
+  const allUploadedImages = [...props.modelValue];
+
+  try {
+    const formData = new FormData();
+    formData.append('inspection_id', props.inspectionId);
+    formData.append('point_id', props.pointId);
+    formData.append('images[]', failedImage.file);
+
+    // Update status
+    const previewIndex = previewImages.value.findIndex(p => p.preview === failedImage.preview);
+    if (previewIndex !== -1) {
+      previewImages.value[previewIndex].isUploading = true;
+      previewImages.value[previewIndex].isFailed = false;
+    }
+
+    const response = await axios.post(route('inspections.upload-image'), formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      }
+    });
+
+    // Process response
+    const serverImages = response.data.images;
+    if (serverImages && serverImages.length > 0) {
+      const imgData = serverImages[0];
+      allUploadedImages.push({
+        id: imgData.image_id,
+        image_path: imgData.path,
+        width: imgData.width || failedImage.width || 0,
+        height: imgData.height || failedImage.height || 0,
+        rotation: failedImage.rotation || 0,
+        preview: imgData.public_url,
+        isUploaded: true
+      });
+
+      // Hapus dari preview images
+      if (previewIndex !== -1) {
+        const removed = previewImages.value.splice(previewIndex, 1)[0];
+        if (removed.preview && removed.preview.startsWith('blob:')) {
+          URL.revokeObjectURL(removed.preview);
+        }
+      }
+
+      // Update state
+      emit('update:modelValue', allUploadedImages);
+      emit('save', props.pointId);
+      emit('uploaded', {
+        pointId: props.pointId,
+        images: allUploadedImages,
+        newImagesCount: 1
+      });
+
+      // Jika tidak ada lagi failed images, hapus backup
+      const hasFailedImages = previewImages.value.some(img => img.isFailed);
+      if (!hasFailedImages) {
+        clearBackupFromLocalStorage();
+      }
+
+      console.log("✅ Successfully retried upload for 1 image");
+    }
+
+  } catch (error) {
+    console.error("Error retrying upload:", error);
+
+    // Mark as failed again
+    if (previewIndex !== -1) {
+      previewImages.value[previewIndex].isUploading = false;
+      previewImages.value[previewIndex].isFailed = true;
+    }
+  } finally {
+    isUploading.value = false;
   }
 };
 

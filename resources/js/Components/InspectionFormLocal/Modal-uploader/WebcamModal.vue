@@ -146,15 +146,14 @@ const initializeWebcam = async () => {
   try {
     const videoConstraints = {
       facingMode: currentFacingMode.value,
-      width: { ideal: 1920  }, // Resolusi 4K untuk kualitas terbaik
-      height: { ideal: 1080  }, // Resolusi 4K untuk kualitas terbaik
+      width: { ideal: 4096 }, // Resolusi 4K untuk kualitas terbaik
+      height: { ideal: 2160 }, // Resolusi 4K untuk kualitas terbaik
       aspectRatio: { ideal: props.aspectRatio || 4/3 },
       frameRate: { ideal: 30 },
       advanced: [
         { focusMode: 'continuous' },
         { exposureMode: 'continuous' },
-         { whiteBalanceMode: 'continuous' },
-        { zoom: { ideal: 1 } } // Pastikan zoom minimal untuk FOV maksimal
+        { whiteBalanceMode: 'continuous' }
       ]
     };
     
