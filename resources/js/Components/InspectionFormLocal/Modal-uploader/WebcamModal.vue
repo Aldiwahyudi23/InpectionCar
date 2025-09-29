@@ -146,14 +146,15 @@ const initializeWebcam = async () => {
   try {
     const videoConstraints = {
       facingMode: currentFacingMode.value,
-      width: { ideal: 1280  }, // Resolusi 4K untuk kualitas terbaik
-      height: { ideal: 720  }, // Resolusi 4K untuk kualitas terbaik
+      width: { ideal: 1920  }, // Resolusi 4K untuk kualitas terbaik
+      height: { ideal: 1080  }, // Resolusi 4K untuk kualitas terbaik
       aspectRatio: { ideal: props.aspectRatio || 4/3 },
       frameRate: { ideal: 30 },
       advanced: [
         { focusMode: 'continuous' },
         { exposureMode: 'continuous' },
-        { whiteBalanceMode: 'continuous' }
+         { whiteBalanceMode: 'continuous' },
+        { zoom: { ideal: 1 } } // Pastikan zoom minimal untuk FOV maksimal
       ]
     };
     
@@ -478,8 +479,7 @@ onUnmounted(() => {
 .webcam-video {
   width: 100%;
   height: 100%;
-object-fit: contain;
-background: black; /* biar ada padding hitam */
+  object-fit: cover;
   filter: brightness(1.05) contrast(1.05);
 }
 

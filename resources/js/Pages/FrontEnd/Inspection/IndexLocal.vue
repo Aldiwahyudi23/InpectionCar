@@ -467,7 +467,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, provide, nextTick  } from 'vue';
+import { ref, computed, watch, onMounted, provide, nextTick  } from 'vue';
 import { useForm, usePage, Link, router } from '@inertiajs/vue3';
 import { debounce } from 'lodash';
 import VehicleDetails from '@/Components/InspectionFormLocal/VehicleDetails.vue';
@@ -978,14 +978,6 @@ provide('imageSourceSetting', imageSourceSetting);
 // ACTION HANDLERS
 // =========================================================================
 
-// TAMBAHKAN: Konfirmasi sederhana sebelum keluar halaman
-const handleBeforeUnload = (event) => {
-  // Selalu tampilkan konfirmasi ketika mencoba keluar halaman
-  event.preventDefault();
-  event.returnValue = 'Apakah Anda yakin ingin keluar dari inspeksi? Data inspeksi Anda telah disimpan secara lokal.';
-  return event.returnValue;
-};
-
 // Toggle swipe gesture
 const toggleSwipe = () => {
   isSwipeEnabled.value = !isSwipeEnabled.value;
@@ -1337,21 +1329,12 @@ onMounted(() => {
 
    setupSwipe();
 
-    // TAMBAHKAN: Setup event listener untuk beforeunload
-  window.addEventListener('beforeunload', handleBeforeUnload);
-
     // TAMBAHKAN: Scroll ke tengah setelah mounted
   setTimeout(() => {
     scrollActiveMenuToCenter();
   }, 100);
 
 });
-
-// Cleanup event listeners
-onUnmounted(() => {
-  window.removeEventListener('beforeunload', handleBeforeUnload);
-});
-
 </script>
 
 <style scoped>
