@@ -44,9 +44,13 @@
         'fixed bottom-0 left-0 right-0': menuPosition === 'bottom',
       }"
     >
-      <div class="flex overflow-x-auto scrollbar-hide py-3 px-4 space-x-2">
-         <!-- Tombol Toggle Swipe -->
-        <div class="flex items-center space-x-2">
+      <div 
+        ref="menuContainer"
+        class="flex overflow-x-auto scrollbar-hide py-3 px-4 space-x-2"
+        @scroll="handleMenuScroll"
+      >
+        <!-- Tombol Toggle Swipe -->
+        <div class="flex items-center space-x-2 flex-shrink-0">
           <span class="text-sm text-gray-600">Swipe</span>
           <button
             @click="toggleSwipe"
@@ -64,8 +68,8 @@
           </button>
         </div>
 
-          <!-- TAMBAHKAN: Pengaturan Sumber Gambar -->
-        <div class="flex items-center space-x-2 border-l pl-4">
+        <!-- TAMBAHKAN: Pengaturan Sumber Gambar -->
+        <div class="flex items-center space-x-2 flex-shrink-0">
           <span class="text-sm text-gray-600">Sumber</span>
           <select 
             v-model="imageSourceSetting"
@@ -80,12 +84,14 @@
 
         <!-- Menu Detail Kendaraan -->
         <button
+          ref="menuItems"
           @click="changeCategory('vehicle')"
-          class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200"
+          class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200 menu-item"
           :class="{
             'bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white': activeCategory === 'vehicle',
             'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== 'vehicle'
           }"
+          :data-category="'vehicle'"
         >
           Detail Kendaraan
           <span 
@@ -100,12 +106,14 @@
         <button
           v-for="menu in appMenus"
           :key="menu.id"
+          ref="menuItems"
           @click="changeCategory(menu.id)"
-          class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200"
+          class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200 menu-item"
           :class="{
             'bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white': activeCategory === menu.id,
             'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== menu.id
           }"
+          :data-category="menu.id"
         >
           {{ menu.name }}
           <span 
@@ -118,12 +126,14 @@
           
         <!-- Menu Kesimpulan -->
         <button
+          ref="menuItems"
           @click="changeCategory('conclusion')"
-          class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200"
+          class="flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-200 menu-item"
           :class="{
             'bg-gradient-to-r from-indigo-700 to-sky-600 shadow-lg text-white': activeCategory === 'conclusion',
             'bg-gray-100 text-gray-700 hover:bg-gray-200': activeCategory !== 'conclusion'
           }"
+          :data-category="'conclusion'"
         >
           Kesimpulan
           <span 
@@ -181,8 +191,8 @@
           </div>
 
            <!-- TAMBAHKAN: Pengaturan Sumber Gambar -->
-          <div class="flex items-center space-x-2 border-l pl-4">
-            <span class="text-sm text-gray-600">Sumber Gambar</span>
+          <div class="flex items-center space-x-2">
+            <span class="text-sm text-gray-600">Sumber</span>
             <select 
               v-model="imageSourceSetting"
               @change="updateImageSourceSetting"
@@ -457,7 +467,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, provide } from 'vue';
+import { ref, computed, watch, onMounted, provide, nextTick  } from 'vue';
 import { useForm, usePage, Link, router } from '@inertiajs/vue3';
 import { debounce } from 'lodash';
 import VehicleDetails from '@/Components/InspectionFormLocal/VehicleDetails.vue';
@@ -952,6 +962,10 @@ const isSwipeEnabled = ref(true);
 // TAMBAHKAN: State untuk image source setting
 const imageSourceSetting = ref('all'); // 'all', 'camera', 'gallery'
 
+// TAMBAHKAN: Refs untuk scroll menu
+const menuContainer = ref(null);
+const menuItems = ref([]);
+
 // =========================================================================
 // PROVIDE UNTUK CHILD COMPONENTS
 // =========================================================================
@@ -973,6 +987,30 @@ const toggleSwipe = () => {
 const updateImageSourceSetting = () => {
   setImageSourceSetting(imageSourceSetting.value);
   console.log('Image source setting updated to:', imageSourceSetting.value);
+};
+
+// TAMBAHKAN: Fungsi untuk scroll menu ke tengah
+const scrollActiveMenuToCenter = () => {
+  if (!menuContainer.value) return;
+  
+  nextTick(() => {
+    const activeItem = menuContainer.value.querySelector(`[data-category="${activeCategory.value}"]`);
+    if (!activeItem) return;
+    
+    const container = menuContainer.value;
+    const containerWidth = container.clientWidth;
+    const itemOffsetLeft = activeItem.offsetLeft;
+    const itemWidth = activeItem.clientWidth;
+    
+    // Hitung posisi scroll agar item aktif di tengah
+    const scrollPosition = itemOffsetLeft - (containerWidth / 2) + (itemWidth / 2);
+    
+    // Smooth scroll ke posisi yang dihitung
+    container.scrollTo({
+      left: scrollPosition,
+      behavior: 'smooth'
+    });
+  });
 };
 
 // Pilih point dan buka modal
@@ -1143,9 +1181,17 @@ const closeRadioModal = () => {
   tempNotes.value = '';
 };
 
+// TAMBAHKAN: Handle menu scroll (optional, untuk tracking)
+const handleMenuScroll = () => {
+  // Bisa ditambahkan logic untuk handle scroll event jika diperlukan
+};
 // Navigasi
 const changeCategory = (menuId) => {
   activeCategory.value = menuId;
+
+    // Scroll ke tengah setelah perubahan kategori
+  scrollActiveMenuToCenter();
+
 };
 
 const navigate = (direction) => {
@@ -1153,6 +1199,8 @@ const navigate = (direction) => {
   
   if (newIndex >= 0 && newIndex < allCategories.value.length) {
     activeCategory.value = allCategories.value[newIndex];
+     // Scroll ke tengah setelah navigasi
+    scrollActiveMenuToCenter();
   }
 };
 
@@ -1220,6 +1268,23 @@ const setupSwipe = () => {
   };
 };
 
+
+// =========================================================================
+// WATCHERS
+// =========================================================================
+
+// TAMBAHKAN: Watcher untuk active category change
+watch(activeCategory, (newCategory, oldCategory) => {
+  // Scroll ke tengah ketika category berubah
+  scrollActiveMenuToCenter();
+});
+
+// Watcher untuk sinkronisasi activeIndex dengan activeCategory
+watch(activeCategory, (newVal) => {
+  activeIndex.value = allCategories.value.indexOf(newVal);
+});
+
+
 onMounted(() => {
   const localData = getLocalData();
   
@@ -1262,6 +1327,12 @@ onMounted(() => {
   }
 
    setupSwipe();
+
+    // TAMBAHKAN: Scroll ke tengah setelah mounted
+  setTimeout(() => {
+    scrollActiveMenuToCenter();
+  }, 100);
+
 });
 </script>
 
@@ -1275,26 +1346,54 @@ onMounted(() => {
   scrollbar-width: none;
 }
 
+/* ================================================= */
+/* MODIFIKASI UNTUK SCROLLING & PERFORMA LEBIH MULUS */
+/* ================================================= */
+
+.menu-container {
+  /* scroll-behavior: smooth; (Baik untuk scroll programatik, tapi tidak untuk user scroll) */
+  scroll-behavior: smooth;
+  
+  /* PENTING 1: Beri tahu browser bahwa properti ini akan berubah (untuk persiapan rendering) */
+  will-change: transform, scroll-position, content; 
+  
+  /* PENTING 2: Memaksa browser menggunakan akselerasi Hardware (GPU) */
+  /* Ini adalah kunci untuk menghilangkan 'patah-patah' saat scrolling */
+  transform: translateZ(0); 
+  
+  /* PENTING 3: Memperbaiki elastisitas scroll pada perangkat iOS/Mobile Webkit */
+  -webkit-overflow-scrolling: touch;
+}
+
+.menu-item {
+  /* Ganti 'all' dengan properti yang diakselerasi (opacity & transform) */
+  /* Ini membuat transisi lebih cepat dan tidak membebani layout */
+  transition: opacity 0.3s ease, transform 0.3s ease; 
+  transform: translateZ(0); /* Akselerasi GPU untuk item itu sendiri */
+}
+
+
 .category-slide-enter-active,
 .category-slide-leave-active {
-  transition: all 0.3s ease-out;
+  /* Transisi dioptimalkan untuk Transform */
+  transition: transform 0.4s ease-out, opacity 0.4s ease-out; 
   position: absolute; 
   width: 100%; 
   top: 0;
   left: 0;
 }
 .category-slide-enter-from {
-  transform: translateX(150%);
+  transform: translateX(100%); /* Sedikit dikurangi dari 150% agar lebih cepat */
   opacity: 0;
 }
 .category-slide-leave-to {
-  transform: translateX(-150%);
+  transform: translateX(-100%); /* Sedikit dikurangi dari 150% agar lebih cepat */
   opacity: 0;
 }
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.5s;
+  transition: opacity 0.4s; /* Naikkan sedikit dari 0.3s menjadi 0.4s untuk rasa smooth */
 }
 .fade-enter-from,
 .fade-leave-to {
