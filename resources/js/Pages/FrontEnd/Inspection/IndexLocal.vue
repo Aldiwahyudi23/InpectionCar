@@ -905,6 +905,12 @@ const allMenusComplete = computed(() => {
 
 // Check if menu is complete
 const isMenuComplete = (menu) => {
+
+    if (menu.input_type === 'damage') {
+    const pointsWithData = getVisiblePoints(menu.menu_point, true);
+    return pointsWithData.length > 0;
+  }
+  
   if (menu.id === 'conclusion') {
     return isConclusionComplete();
   }
@@ -1347,18 +1353,6 @@ watch(activeCategory, (newVal) => {
   activeIndex.value = allCategories.value.indexOf(newVal);
 });
 
-// TAMBAHKAN: Handler untuk physical back button di mobile
-const handlePhysicalBackButton = () => {
-  // Untuk Cordova/PhoneGap atau aplikasi hybrid
-  if (window.cordova || window.PhoneGap) {
-    document.addEventListener('deviceready', () => {
-      document.addEventListener('backbutton', (e) => {
-        e.preventDefault();
-        handleBackButton();
-      }, false);
-    });
-  }
-};
 
 onMounted(() => {
   const localData = getLocalData();
