@@ -109,55 +109,8 @@
     </div>
 
     <div class="p-4 space-y-2">
-      <div class="flex items-center justify-between mb-2">
-        <label class="block text-sm font-medium text-gray-700">Catatan Kesimpulan</label>
-        
-        <!-- Template Selector Button -->
-        <button
-          type="button"
-          @click="showTemplates = !showTemplates"
-          class="flex items-center gap-2 px-3 py-2 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-all duration-200"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
-          </svg>
-          Template
-        </button>
-      </div>
-
-      <!-- Template Selection Modal -->
-      <transition
-        enter-active-class="transition-all duration-200 ease-out"
-        enter-from-class="opacity-0 transform scale-95"
-        enter-to-class="opacity-100 transform scale-100"
-        leave-active-class="transition-all duration-150 ease-in"
-        leave-from-class="opacity-100 transform scale-100"
-        leave-to-class="opacity-0 transform scale-95"
-      >
-        <div v-if="showTemplates" class="mb-4 p-4 bg-white border border-gray-200 rounded-lg shadow-lg">
-          <div class="flex items-center justify-between mb-3">
-            <h5 class="text-sm font-semibold text-gray-700">Pilih Template Kesimpulan</h5>
-            <button @click="showTemplates = false" class="text-gray-400 hover:text-gray-600">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-              </svg>
-            </button>
-          </div>
-          
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
-            <button
-              v-for="template in conclusionTemplates"
-              :key="template.id"
-              @click="applyTemplate(template)"
-              class="p-3 text-left border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-all duration-150"
-            >
-              <div class="text-sm font-medium text-gray-800 mb-1">{{ template.name }}</div>
-              <div class="text-xs text-gray-600 line-clamp-2">{{ template.description }}</div>
-            </button>
-          </div>
-        </div>
-      </transition>
-
+      <label class="block text-sm font-medium text-gray-700 mb-2">Catatan Kesimpulan</label>
+      
       <!-- Formatting Toolbar dengan Status Active -->
       <div class="flex flex-wrap gap-1 mb-2 p-2 bg-gray-100 rounded-md">
         <button
@@ -187,13 +140,11 @@
         >
           <u>U</u>
         </button>
-        
-        <!-- Clear Template Button -->
         <button
           type="button"
-          @click="clearTemplate()"
+          @click="clearFormatting()"
           class="p-2 rounded transition-all duration-150 ease-in-out hover:bg-gray-200 hover:shadow-sm ml-2"
-          title="Clear Template"
+          title="Clear Formatting"
         >
           🗑️ Clear
         </button>
@@ -235,22 +186,8 @@
         placeholder="Tambahkan catatan kesimpulan inspeksi di sini..."
       ></div>
       
-      <!-- Template Variables Helper -->
-      <div class="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <div class="text-xs font-medium text-yellow-800 mb-2">Variabel yang tersedia:</div>
-        <div class="flex flex-wrap gap-2">
-          <span 
-            v-for="variable in availableVariables" 
-            :key="variable"
-            class="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded border border-yellow-300"
-          >
-            {{ variable }}
-          </span>
-        </div>
-        <div class="text-xs text-yellow-600 mt-2">
-          *Variabel akan otomatis terisi berdasarkan data inspeksi
-        </div>
-      </div>
+      <!-- HAPUS: Status message yang mengganggu -->
+      <!-- <p class="text-xs mt-1 text-gray-500">{{ status }}</p> -->
     </div>
   </div>
 </template>
@@ -275,7 +212,6 @@ const emit = defineEmits(['updateConclusion'])
 
 const editorRef = ref(null)
 const isEditing = ref(false)
-const showTemplates = ref(false)
 
 // Track active formats dengan reactive object
 const activeFormats = reactive({
@@ -291,114 +227,6 @@ const conclusionData = reactive({
   collision_severity: '',
   notes: ''
 })
-
-// Template kesimpulan yang tersedia
-const conclusionTemplates = ref([
-  {
-    id: 1,
-    name: 'Kendaraan Normal',
-    description: 'Template untuk kendaraan dalam kondisi normal tanpa masalah signifikan',
-    content: `<p>Berdasarkan hasil inspeksi yang telah dilakukan pada kendaraan <strong>{PLATE_NUMBER}</strong> (<strong>{CAR_NAME}</strong>), berikut adalah kesimpulan:</p>
-<ul>
-<li>Kondisi kendaraan secara umum: <strong>BAIK</strong></li>
-<li>Tidak ditemukan indikasi kerusakan signifikan</li>
-<li>Semua sistem berfungsi dengan normal</li>
-<li>Rekomendasi: Perawatan rutin sesuai jadwal</li>
-</ul>`
-  },
-  {
-    id: 2,
-    name: 'Kendaraan Bekas Tabrakan Ringan',
-    description: 'Template untuk kendaraan dengan riwayat tabrakan ringan',
-    content: `<p>Berdasarkan hasil inspeksi menyeluruh pada kendaraan <strong>{PLATE_NUMBER}</strong> (<strong>{CAR_NAME}</strong>), diperoleh kesimpulan:</p>
-<ul>
-<li>Kendaraan memiliki riwayat tabrakan dengan tingkat kerusakan: <strong>RINGAN</strong></li>
-<li>Area yang terdampak: {DAMAGED_AREA}</li>
-<li>Perbaikan yang dilakukan: {REPAIR_DETAILS}</li>
-<li>Rekomendasi: Perbaikan tambahan pada area yang terdampak</li>
-</ul>`
-  },
-  {
-    id: 3,
-    name: 'Kendaraan Bekas Banjir',
-    description: 'Template untuk kendaraan dengan riwayat terkena banjir',
-    content: `<p>Setelah melakukan inspeksi komprehensif pada kendaraan <strong>{PLATE_NUMBER}</strong> (<strong>{CAR_NAME}</strong>), berikut temuan utama:</p>
-<ul>
-<li>Kendaraan memiliki riwayat terkena banjir</li>
-<li>Tingkat paparan air: {WATER_LEVEL}</li>
-<li>Komponen yang terdampak: {AFFECTED_COMPONENTS}</li>
-<li>Rekomendasi: Pengecekan sistem elektrik dan interior secara berkala</li>
-</ul>`
-  },
-  {
-    id: 4,
-    name: 'Kendaraan dengan Multiple Issues',
-    description: 'Template untuk kendaraan dengan beberapa masalah',
-    content: `<p>Hasil inspeksi kendaraan <strong>{PLATE_NUMBER}</strong> (<strong>{CAR_NAME}</strong>) menunjukkan beberapa temuan:</p>
-<ul>
-<li>Kondisi umum kendaraan: {OVERALL_CONDITION}</li>
-<li>Masalah utama yang ditemukan: {MAIN_ISSUES}</li>
-<li>Komponen yang perlu perhatian: {ATTENTION_NEEDED}</li>
-<li>Estimasi biaya perbaikan: {REPAIR_COST_ESTIMATE}</li>
-<li>Rekomendasi: {RECOMMENDATION}</li>
-</ul>`
-  },
-  {
-    id: 5,
-    name: 'Template Singkat',
-    description: 'Template ringkas untuk kesimpulan cepat',
-    content: `<p><strong>KESIMPULAN INSPEKSI</strong></p>
-<p>Kendaraan: <strong>{PLATE_NUMBER}</strong> - <strong>{CAR_NAME}</strong></p>
-<p>Status: {OVERALL_STATUS}</p>
-<p>Catatan: {ADDITIONAL_NOTES}</p>`
-  },
-  {
-    id: 6,
-    name: 'Template Teknis Detail',
-    description: 'Template detail untuk laporan teknis lengkap',
-    content: `<p><strong>LAPORAN HASIL INSPEKSI TEKNIS</strong></p>
-<p>Kendaraan: <strong>{PLATE_NUMBER}</strong></p>
-<p>Model: <strong>{CAR_NAME}</strong></p>
-<p>Tanggal Inspeksi: {INSPECTION_DATE}</p>
-
-<p><strong>HASIL INSPEKSI:</strong></p>
-<ul>
-<li>Kondisi Mesin: {ENGINE_CONDITION}</li>
-<li>Kondisi Transmisi: {TRANSMISSION_CONDITION}</li>
-<li>Kondisi Suspensi: {SUSPENSION_CONDITION}</li>
-<li>Kondisi Rem: {BRAKE_CONDITION}</li>
-<li>Kondisi Body: {BODY_CONDITION}</li>
-<li>Kondisi Interior: {INTERIOR_CONDITION}</li>
-</ul>
-
-<p><strong>KESIMPULAN:</strong> {FINAL_CONCLUSION}</p>`
-  }
-])
-
-// Variabel yang tersedia untuk template
-const availableVariables = ref([
-  '{PLATE_NUMBER}',
-  '{CAR_NAME}',
-  '{INSPECTION_DATE}',
-  '{DAMAGED_AREA}',
-  '{REPAIR_DETAILS}',
-  '{WATER_LEVEL}',
-  '{AFFECTED_COMPONENTS}',
-  '{OVERALL_CONDITION}',
-  '{MAIN_ISSUES}',
-  '{ATTENTION_NEEDED}',
-  '{REPAIR_COST_ESTIMATE}',
-  '{RECOMMENDATION}',
-  '{OVERALL_STATUS}',
-  '{ADDITIONAL_NOTES}',
-  '{ENGINE_CONDITION}',
-  '{TRANSMISSION_CONDITION}',
-  '{SUSPENSION_CONDITION}',
-  '{BRAKE_CONDITION}',
-  '{BODY_CONDITION}',
-  '{INTERIOR_CONDITION}',
-  '{FINAL_CONCLUSION}'
-])
 
 // Helper parse settings
 const parseSettings = (settings) => {
@@ -470,40 +298,6 @@ const initializeForm = () => {
   conclusionData.notes = localConclusion.notes || props.inspection.notes || '';
 }
 
-// Apply template ke editor
-const applyTemplate = (template) => {
-  if (!editorRef.value) return;
-  
-  let processedContent = template.content;
-  
-  // Replace variables dengan data aktual jika tersedia
-  processedContent = processedContent
-    .replace(/{PLATE_NUMBER}/g, props.inspection.plate_number || '[NOMOR_PLAT]')
-    .replace(/{CAR_NAME}/g, props.inspection.car_name || '[NAMA_MOBIL]')
-    .replace(/{INSPECTION_DATE}/g, new Date().toLocaleDateString('id-ID'))
-    .replace(/{FLOOD_STATUS}/g, conclusionData.flooded === 'yes' ? 'Pernah terkena banjir' : 'Tidak pernah terkena banjir')
-    .replace(/{COLLISION_STATUS}/g, conclusionData.collision === 'yes' ? 'Pernah mengalami tabrakan' : 'Tidak pernah mengalami tabrakan');
-  
-  editorRef.value.innerHTML = processedContent;
-  conclusionData.notes = processedContent;
-  showTemplates.value = false;
-  
-  // Focus ke editor setelah apply template
-  nextTick(() => {
-    editorRef.value.focus();
-    updateConclusion();
-  });
-}
-
-// Clear template dan reset ke default
-const clearTemplate = () => {
-  if (editorRef.value) {
-    editorRef.value.innerHTML = '';
-    conclusionData.notes = '';
-    updateConclusion();
-  }
-}
-
 // Check active formats pada selection
 const checkActiveFormats = () => {
   if (!editorRef.value) return;
@@ -543,13 +337,28 @@ const toggleFormat = (format) => {
   }, 10);
 }
 
+// Clear semua formatting
+const clearFormatting = () => {
+  if (!editorRef.value) return;
+  
+  editorRef.value.focus();
+  document.execCommand('removeFormat', false, null);
+  
+  // Reset semua status format
+  Object.keys(activeFormats).forEach(key => {
+    activeFormats[key] = false;
+  });
+  
+  handleEditorInput();
+}
+
 // Handle editor events dengan debounce yang lebih cepat
 const handleEditorInput = debounce(() => {
   if (editorRef.value) {
     conclusionData.notes = editorRef.value.innerHTML;
     updateConclusion();
   }
-}, 200)
+}, 200) // Lebih cepat dari sebelumnya
 
 const handleEnterKey = (event) => {
   event.preventDefault();
@@ -581,7 +390,7 @@ const handleRadioChange = () => {
   updateConclusion();
 }
 
-// Update conclusion data dan emit ke parent
+// Update conclusion data dan emit ke parent - TANPA pesan mengganggu
 const updateConclusion = () => {
   const conclusionToEmit = {
     flooded: conclusionData.flooded,
@@ -590,6 +399,7 @@ const updateConclusion = () => {
     notes: conclusionData.notes
   };
   
+  // Emit data ke parent component - silent dan smooth
   emit('updateConclusion', conclusionToEmit);
 }
 
@@ -656,12 +466,12 @@ watch([
   text-decoration: underline;
 }
 
-/* Style untuk line clamp */
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+/* Style untuk toolbar button active */
+.bg-indigo-500 {
+  background-color: rgb(99 102 241);
+}
+.bg-indigo-500:hover {
+  background-color: rgb(79 70 229);
 }
 
 /* Smooth transitions untuk semua elemen */
