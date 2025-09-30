@@ -103,17 +103,19 @@
       <h2 class="text-2xl font-bold border-b-2 border-gray-800 pb-2 mb-6">Hasil Inspeksi</h2>
 
       <!-- Loop untuk setiap komponen inspeksi -->
-      <div v-for="(points, componentName) in groupedPoints" :key="componentName" 
-          :class="['section mb-6', componentName === 'Foto Kendaraan' ? 'photo-component' : '']">
-        
+      <div 
+        v-for="group in groupedPoints" 
+        :key="group.component.id"
+        :class="['section mb-6', group.component.name === 'Foto Kendaraan' ? 'photo-component' : '']">
+
         <!-- Judul Komponen -->
         <div class="component-title bg-gray-100 px-3 py-2 border-l-4 border-gray-800 font-bold rounded-l-lg">
-          {{ componentName || 'Tanpa Komponen' }}
+          {{ group.component.name || 'Tanpa Komponen' }}
         </div>
 
         <!-- Bagian Foto Kendaraan -->
-        <div v-if="componentName === 'Foto Kendaraan'" class="images flex flex-wrap gap-2 mt-4">
-          <div v-for="point in points" :key="point.id">
+        <div v-if="group.component.name === 'Foto Kendaraan'" class="images flex flex-wrap gap-2 mt-4">
+          <div v-for="point in group.points" :key="point.id">
             <div v-for="img in point.inspection_point?.images" :key="img.id" class="image-container">
               <img 
                 v-if="imageExists(img.image_path)"
@@ -130,14 +132,14 @@
 
         <!-- Bagian Poin Inspeksi non-foto -->
         <template v-else>
-          <div v-for="point in points" :key="point.id" class="point ml-4 py-3 border-b border-gray-100">
+          <div v-for="point in group.points" :key="point.id" class="point ml-4 py-3 border-b border-gray-100">
             <template v-if="hasResult(point) || hasImage(point)">
               <!-- Nama Poin Inspeksi -->
               <span class="point-name inline-block min-w-[160px] font-bold align-top text-gray-700">
                 {{ point.inspection_point?.name || '-' }}
               </span>
               
-              <div class="point-content inline-block w-[calc(100%-170px)] align-top">
+              <div class="point-content inline-block w-[calc(100%-70px)] align-top">
                 <template v-if="hasResult(point)">
                   <!-- Badge Status -->
                   <span v-if="shouldShowStatusBadge(point)" 
@@ -175,6 +177,7 @@
           </div>
         </template>
       </div>
+
     </div>
     
     <!-- Tampilan Jika Data Tidak Ada -->
@@ -271,16 +274,43 @@ onMounted(() => {
 
 
 const groupedPoints = computed(() => {
-  const groups = {}
+  if (!menuPoints.value) return []
+
+  // Group berdasarkan komponen
+  const map = new Map()
   menuPoints.value.forEach(point => {
-    const componentName = point.inspection_point?.component?.name || 'Tanpa Komponen'
-    if (!groups[componentName]) {
-      groups[componentName] = []
+    const comp = point.inspection_point?.component
+    const compId = comp?.id || 0
+    if (!map.has(compId)) {
+      map.set(compId, {
+        component: comp || { id: 0, name: 'Tanpa Komponen', order: 9999 },
+        points: []
+      })
     }
-    groups[componentName].push(point)
+    map.get(compId).points.push(point)
   })
+
+  // Sort komponen berdasar order → fallback created_at
+  const groups = Array.from(map.values()).sort((a, b) => {
+    if (a.component.order === b.component.order) {
+      return new Date(a.component.created_at) - new Date(b.component.created_at)
+    }
+    return (a.component.order || 9999) - (b.component.order || 9999)
+  })
+
+  // Sort point di dalam komponen berdasar order
+  groups.forEach(group => {
+    group.points.sort((a, b) => {
+      if (a.order === b.order) {
+        return new Date(a.created_at) - new Date(b.created_at)
+      }
+      return (a.order || 9999) - (b.order || 9999)
+    })
+  })
+
   return groups
 })
+
 
 
 const approveReport = () => {
@@ -401,19 +431,31 @@ const formatNote = (point) => {
 </script>
 
 <style scoped>
+/* Ukuran font dasar lebih kecil */
+* {
+  font-size: 13px; 
+  line-height: 1.4;
+}
+
+
 .point-name {
-  min-width: 160px;
+  min-width: 140px;
+  font-size: 13px;
 }
+
 .point-content {
-  width: calc(100% - 170px);
+  width: calc(100% - 150px);
+  font-size: 12px;
+  line-height: 1.4;
 }
+
 .status-badge {
   display: inline-block;
-  padding: 2px 8px;
+  padding: 2px 6px;
   border-radius: 9999px; /* rounded-full */
-  font-size: 12px;
-  margin-right: 8px;
-  margin-bottom: 10px;
+  font-size: 11px;
+  margin-right: 6px;
+  margin-bottom: 6px;
 }
 .status-good {
   background-color: #d4edda;
@@ -427,47 +469,70 @@ const formatNote = (point) => {
   background-color: #fff3cd;
   color: #856404;
 }
+
 .photo-component .point {
   display: none;
 }
+
 .conclusion {
-  margin-top: 20px;
-  padding: 15px;
+  margin-top: 15px;
+  padding: 12px;
   background-color: #f9f9f9;
-  border-left: 4px solid #333;
+  border-left: 3px solid #333;
   border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.5;
 }
+
 .textarea-note {
-  margin: 5px 0;
+  margin: 4px 0;
   font-style: italic;
   color: #555;
+  font-size: 12px;
 }
+
 .car-info table {
-  margin-top: 10px;
+  margin-top: 8px;
   border-collapse: collapse;
   width: 100%;
+  font-size: 12px;
 }
 .car-info td {
-  padding: 3px 6px;
+  padding: 3px 5px;
   vertical-align: top;
   border: 1px solid #ddd;
 }
 .car-info td:first-child {
-  width: 30%;
+  width: 28%;
   font-weight: bold;
+  font-size: 12px;
 }
+
 .component-title {
   font-weight: bold;
-  font-size: 14px;
-  margin-top: 15px;
+  font-size: 13px;
+  margin-top: 12px;
   background-color: #f5f5f5;
-  padding: 5px 10px;
+  padding: 4px 8px;
   border-left: 3px solid #333;
 }
+
 .point {
-  margin-left: 15px;
-  margin-bottom: 10px;
-  padding: 5px 0;
+  margin-left: 12px;
+  margin-bottom: 8px;
+  padding: 4px 0;
   border-bottom: 1px dotted #eee;
+  font-size: 12px;
+}
+
+/* Ukuran gambar lebih kecil agar seimbang */
+img {
+  max-width: 80px;
+  max-height: 80px;
+}
+.photo-component img {
+  max-width: 100px;
+  max-height: 100px;
 }
 </style>
+

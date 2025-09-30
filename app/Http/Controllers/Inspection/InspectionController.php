@@ -639,6 +639,7 @@ public function finalSubmitAll(Request $request, $id)
             'completed_at' => now(),
         ]);
 
+
         // 6. Add log
         $inspection->addLog('finish', 'Menyelesaikan Inspeksi');
 
@@ -763,7 +764,7 @@ public function finalSubmitAll(Request $request, $id)
             'encryptedIds' => $encryptedIds,
         ]);
 
-        // return view('inspection.report.report2', compact('inspection', 'menu_points', 'coverImage')); 
+        // return view('inspection.report.mPDF1', compact('inspection', 'menu_points', 'coverImage')); 
     }
 
     public function detail($id)

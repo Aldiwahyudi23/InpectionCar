@@ -127,8 +127,26 @@
     </div>
     @endif
 
-    @foreach($menu_points->groupBy('inspection_point.component.name') as $componentName => $points)
     @php
+    $groupedMenuPoints = $menu_points
+        ->sortBy(function ($point) {
+            $component = $point->inspection_point->component;
+            return $component->order ?? $component->created_at;
+        })
+        ->groupBy(function ($point) {
+            return $point->inspection_point->component->id ?? 0;
+        });
+    @endphp
+
+    @foreach($groupedMenuPoints as $componentId => $points)
+    @php
+       $componentName = optional($points->first()->inspection_point->component)->name ?? 'Tanpa Komponen';
+
+        // Urutkan point dalam komponen berdasarkan order menu_point
+        $points = $points->sortBy(function ($point) {
+            return $point->order ?? $point->created_at;
+        });
+        
         $hasData = false;
         if ($componentName == 'Interior (Validasi Banjir)' && $flooded == 'yes') {
             $hasData = true;

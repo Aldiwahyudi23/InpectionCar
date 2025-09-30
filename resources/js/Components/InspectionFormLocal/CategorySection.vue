@@ -2,28 +2,20 @@
   <div class="bg-gray-50 shadow-lg rounded-xl overflow-hidden border border-gray-100">
 
     <div class="bg-indigo-200 px-6 py-2 border-b flex items-center justify-between">
-      <h3 class="text-xl font-semibold text-indigo-700">
+      <h4 class="text-base font-semibold text-indigo-700">
         {{ category.name }}
-      </h3>
+      </h4>
 
       <button
         v-if="hasHiddenPoints"
         @click="showHidden = !showHidden"
         class="text-sm text-indigo-700 hover:underline focus:outline-none"
       >
-        {{ showHidden ? 'Sembunyikan Point Yang Tidak Perlu' : 'Tampilkan Point Tersembunyi' }}
+        {{ showHidden ? 'Sembunyikan' : 'Tampilkan Point Lain' }}
       </button>
     </div>
 
     <div class="p-4 space-y-4"> 
-      <!-- Local storage indicator -->
-      <div v-if="hasLocalChanges" class="flex items-center justify-center text-sm text-blue-500 mb-4">
-        <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-        </svg>
-        Data tersimpan di lokal
-      </div>
-
       <div v-for="menuPoint in filteredPoints" :key="menuPoint.id" 
         class="space-y-2 pb-2 border-b border-gray-100 last:border-0 last:pb-0" >
         <div class="flex items-start justify-between">
@@ -192,6 +184,7 @@ import { computed, ref, watch } from 'vue';
 const props = defineProps({
   category: Object,
   form: Object,
+  head: Object,
   inspectionId: String,
   selectedPoint: Object
 });
@@ -200,16 +193,6 @@ const props = defineProps({
 const emit = defineEmits(['updateResult', 'removeImage', 'hapusPoint', 'updateImages']);
 
 const showHidden = ref(false);
-const hasLocalChanges = ref(false);
-
-// Watcher untuk menampilkan indikator perubahan lokal
-watch(() => props.form, () => {
-  hasLocalChanges.value = true;
-  // Reset indikator setelah beberapa detik
-  setTimeout(() => {
-    hasLocalChanges.value = false;
-  }, 2000);
-}, { deep: true, immediate: false });
 
 // PERBAIKAN: Gunakan computed untuk reactive values
 const getResultValue = (pointId, field) => {
@@ -340,9 +323,7 @@ const removeImage = (pointId, imageIndex) => {
 };
 
 const HapusPoint = (pointId) => {
-  if (confirm("Apakah Anda yakin ingin menghapus data ini dari penyimpanan lokal?")) {
-    emit("hapusPoint", pointId);
-  }
+  emit("hapusPoint", pointId);
 };
 </script>
 

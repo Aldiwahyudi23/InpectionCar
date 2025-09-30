@@ -2,20 +2,18 @@
   <div class="bg-gray-50 shadow-lg rounded-xl overflow-hidden border border-gray-100">
 
     <div class="bg-indigo-200 px-6 py-2 border-b flex items-center justify-between">
-      <h3 class="text-xl font-semibold text-indigo-700">
+      <h4 class="text-base font-semibold text-indigo-700">
         {{ category.name }}
-      </h3>
+      </h4>
 
-      <!-- Tombol muncul kalau ada hidden points -->
       <button
         v-if="hasHiddenPoints"
         @click="showHidden = !showHidden"
         class="text-sm text-indigo-700 hover:underline focus:outline-none"
       >
-        {{ showHidden ? 'Sembunyikan Point Yang Tidak Perlu' : 'Tampilkan Point Tersembunyi' }}
+        {{ showHidden ? 'Sembunyikan' : 'Tampilkan Point Lain' }}
       </button>
     </div>
-
     
     <div class="p-4 space-y-4"> 
       <!-- PERBAIKAN: Gunakan filteredPoints bukan category.menu_point -->
@@ -193,6 +191,7 @@ import { usePage } from '@inertiajs/vue3';
 const props = defineProps({
   category: Object,
   form: Object,
+  head: Object,
   inspectionId: String,
   selectedPoint: Object,
 });

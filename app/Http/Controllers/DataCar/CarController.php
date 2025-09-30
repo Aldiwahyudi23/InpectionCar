@@ -338,57 +338,51 @@ class CarController extends Controller
         return response()->json(['exists' => $exists]);
     }
 
-    public function storeCarDetail(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'brand_id' => 'required|exists:brands,id',
-            'car_model_id' => 'required|exists:car_models,id',
-            'car_type_id' => 'required|exists:car_types,id',
-            'year' => 'required|integer|min:1900|max:' . (date('Y') + 1),
-            'cc' => 'nullable|integer|min:0',
-            'transmission' => 'required|in:AT,MT',
-            'fuel_type' => 'required|string|max:50',
-            'production_period' => 'required|string|max:50',
-            'description' => 'nullable|string'
-        ]);
+public function storeCarDetail(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'brand_id' => 'required|exists:brands,id',
+        'car_model_id' => 'required|exists:car_models,id',
+        'car_type_id' => 'required|exists:car_types,id',
+        'year' => 'required|integer|min:1900|max:' . (date('Y') + 1),
+        'cc' => 'nullable|integer|min:0',
+        'transmission' => 'required|in:AT,MT',
+        'fuel_type' => 'required|string|max:50',
+        'production_period' => 'required|string|max:50',
+        'description' => 'nullable|string',
+    ]);
 
-        // Check for duplicate car detail
-        $validator->after(function ($validator) use ($request) {
-            $exists = CarDetail::where('brand_id', $request->brand_id)
-                ->where('car_model_id', $request->car_model_id)
-                ->where('car_type_id', $request->car_type_id)
-                ->where('year', $request->year)
-                ->where('transmission', $request->transmission)
-                ->where('fuel_type', $request->fuel_type)
-                ->where('production_period', $request->production_period)
-                ->exists();
+    // Cek duplikat
+    $validator->after(function ($validator) use ($request) {
+        $exists = CarDetail::where('brand_id', $request->brand_id)
+            ->where('car_model_id', $request->car_model_id)
+            ->where('car_type_id', $request->car_type_id)
+            ->where('year', $request->year)
+            ->where('transmission', $request->transmission)
+            ->where('fuel_type', $request->fuel_type)
+            ->where('production_period', $request->production_period)
+            ->exists();
 
-            if ($exists) {
-                $validator->errors()->add('duplicate', 'Mobil sudah ada untuk sfek ini');
-            }
-        });
-
-        if ($validator->fails()) {
-            return response()->json([
-                'error' => 'Validasi Gagal',
-                'messages' => $validator->errors()
-            ], 422);
+        if ($exists) {
+            $validator->errors()->add('duplicate', 'Mobil sudah ada untuk spesifikasi ini.');
         }
+    });
 
-        try {
-            $carDetail = CarDetail::create($request->all());
-
-            return response()->json([
-                'success' => true,
-                'data' => $carDetail
-            ], 201);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Gagal menyimpan Car'
-            ], 500);
-        }
+    if ($validator->fails()) {
+        return redirect()->back()
+            ->withErrors($validator)
+            ->withInput(); // biar input sebelumnya tetap ada
     }
+
+    try {
+        CarDetail::create($request->all());
+
+        return redirect()->back()->with('success', 'Data mobil berhasil disimpan.');
+    } catch (\Exception $e) {
+        return redirect()->back()->with('error', 'Gagal menyimpan data mobil.');
+    }
+}
+
 
 
 }

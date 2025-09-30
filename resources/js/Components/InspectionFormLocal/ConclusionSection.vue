@@ -1,16 +1,10 @@
 <template>
   <div class="bg-gray-50 shadow-lg rounded-xl overflow-hidden border border-gray-100">
-    <div class="bg-indigo-200 px-6 py-2 border-b">
-      <h3 class="text-xl font-semibold text-indigo-700">Kesimpulan Inspeksi</h3>
+    <div class="bg-indigo-200 px-6 py-2 border-b flex items-center justify-between">
+        <h4 class="text-base font-semibold text-indigo-700">
+        Detail Kendaraan
+        </h4>
     </div>
-
-    <!-- HAPUS: Local storage indicator yang mengganggu -->
-    <!-- <div v-if="hasLocalChanges" class="flex items-center justify-center text-sm text-blue-500 mt-4 mx-4 p-2 bg-blue-50 rounded-lg">
-      <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-      </svg>
-      Data tersimpan di penyimpanan lokal
-    </div> -->
 
     <div class="p-4 space-y-4-6">
       <label class="block text-sm font-medium text-gray-700 mb-3">

@@ -107,6 +107,8 @@ class HomeController extends Controller
                           ->orWhere('notes', 'like', '%'.$search.'%');
                     });
                 }
+                 // Urutkan inspection_point sesuai field 'order'
+                $query->orderBy('order', 'asc');
             }])
             ->when($search, function($query) use ($search) {
                 return $query->where(function($q) use ($search) {
@@ -119,7 +121,8 @@ class HomeController extends Controller
                       });
                 });
             })
-            ->orderBy('name')
+           // Urutkan komponen sesuai urutan juga
+            ->orderBy('order', 'asc')
             ->get();
 
 

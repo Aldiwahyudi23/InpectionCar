@@ -1,7 +1,9 @@
 <template>
     <div class="bg-gray-50 shadow-lg rounded-xl overflow-hidden border border-gray-100">
-        <div class="bg-indigo-200 px-6 py-2 border-b ">
-            <h3 class="text-xl font-semibold text-indigo-700">Detail Kendaraan</h3>
+        <div class="bg-indigo-200 px-6 py-2 border-b flex items-center justify-between">
+            <h4 class="text-base font-semibold text-indigo-700">
+            Detail Kendaraan
+            </h4>
         </div>
 
         <div v-if="inspection" class="p-4 space-y-2">

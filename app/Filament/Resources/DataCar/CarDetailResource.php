@@ -169,6 +169,19 @@ class CarDetailResource extends Resource
                         return $state;
                     })
                     ->columnSpanFull(),
+                
+                Forms\Components\TextInput::make('engine_code')
+                    ->label('Engine Code')
+                    ->placeholder('Masukkan kode mesin')
+                    ->maxLength(255)
+                    ->nullable(),
+
+                Forms\Components\TextInput::make('segment')
+                    ->label('Segment')
+                    ->placeholder('Masukkan segment')
+                    ->maxLength(255)
+                    ->nullable(),
+
                Forms\Components\RichEditor::make('description')
                     ->label('Deskripsi')
                     ->toolbarButtons([
