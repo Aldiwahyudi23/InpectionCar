@@ -84,7 +84,7 @@
     :key="selectedPoint?.id"
       :show="showOptionModal"
       :title="pointName || 'Detail'"
-      :subtitle="selectedOption?.description"
+      :subtitle="subtitle || ''"
       :name="'modal-radio-' + pointId"
       :options="options"
       :selected-value="tempRadioValue"
@@ -121,6 +121,7 @@ const props = defineProps({
   point: Object,
   pointId: [String, Number],
   pointName: String,
+  subtitle: String,
   inspectionId: [String, Number],
   options: {
     type: Array,

@@ -72,17 +72,43 @@
         </div>
 
         <div v-else class="space-y-2">
+          <!-- Header dengan compatibility badge -->
           <div class="flex items-start justify-between">
-            <label class="block text-sm font-medium text-gray-700">
-              {{ item.inspection_point?.name }}
+            <div class="flex-1">
+              <label class="block text-sm font-medium text-gray-700">
+                {{ item.inspection_point?.name }}
+                
+                <span v-if="item.settings?.is_required" class="text-red-500">*</span>
+                <span v-if="!item.is_default && !hasPointData(item.inspection_point?.id)"
+                  class="italic text-xs text-gray-400 ml-2"
+                >
+                  (opsional)
+                </span>
+              </label>
               
-              <span v-if="item.settings?.is_required" class="text-red-500">*</span>
-              <span v-if="!item.is_default && !hasPointData(item.inspection_point?.id)"
-                class="italic text-xs text-gray-400 ml-2"
-              >
-                (opsional)
-              </span>
-            </label>
+              <!-- Compatibility Info -->
+              <div v-if="showCompatibilityInfo(item)" class="mt-1">
+                <div v-if="hasCompatibilitySettings(item)"
+                  class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                     <div v-if="item.settings?.transmission">
+                        {{ item.settings.transmission.join(', ') }}
+                      </div>
+                      <div v-if="item.settings?.fuel_type">
+                      {{ item.settings.fuel_type }}
+                      </div>
+                      <div v-if="item.settings?.rear_door">
+                        Pintu Belakang
+                      </div>
+                      <div v-if="item.settings?.pick_up">
+                        Tipe Pick Up
+                      </div>
+                      <div v-if="item.settings?.box">
+                        Memiliki Box
+                      </div>
+                </div>
+              </div>
+            </div>
+            
             <span 
               v-if="isPointComplete(item)"
               class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"
@@ -92,7 +118,7 @@
           </div>
           
           <input-text
-            v-if="item.input_type === 'text'"
+            v-if="item.input_type === 'text' && isFullyCompatible(item)"
             v-model="form.results[item.inspection_point?.id].note"
             :required="item.settings?.is_required"
             :min-length="item.settings?.min_length"
@@ -106,7 +132,7 @@
           />
           
           <input-number
-            v-if="item.input_type === 'number'"
+            v-if="item.input_type === 'number' && isFullyCompatible(item)"
             v-model="form.results[item.inspection_point?.id].note"
             :required="item.settings?.is_required"
             :min="item.settings?.min"
@@ -119,7 +145,7 @@
           />
 
           <input-account
-            v-if="item.input_type === 'account'"
+            v-if="item.input_type === 'account' && isFullyCompatible(item)"
             v-model="form.results[item.inspection_point?.id].note"
             :required="item.settings?.is_required"
             :placeholder="item.settings?.placeholder || 'Masukkan nilai'"
@@ -131,7 +157,7 @@
           />
           
           <input-date
-            v-if="item.input_type === 'date'"
+            v-if="item.input_type === 'date' && isFullyCompatible(item)"
             v-model="form.results[item.inspection_point?.id].note"
             :required="item.settings?.is_required"
             :min-date="item.settings?.min_date"
@@ -142,7 +168,7 @@
           />
           
           <input-textarea
-            v-if="item.input_type === 'textarea'"
+            v-if="item.input_type === 'textarea' && isFullyCompatible(item)"
             v-model="form.results[item.inspection_point?.id].note"
             :required="item.settings?.is_required"
             :min-length="item.settings?.min_length"
@@ -155,7 +181,7 @@
           />
 
           <input-radio
-            v-if="item.input_type === 'radio'"
+            v-if="item.input_type === 'radio' && isFullyCompatible(item)"
             v-model="form.results[item.inspection_point?.id].status"
             :notes="form.results[item.inspection_point?.id].note"
             :images="form.images[item.inspection_point?.id]"
@@ -165,6 +191,7 @@
             :inspection-id="inspectionId" 
             :settings="item.settings"
             :point-name="item.inspection_point?.name"
+            :subtitle="item.inspection_point?.description"
             :selected-point="item.inspection_point ?? null"
             :options="item.settings?.radios || defaultRadioOptions"
             :error="form.errors[`results.${item.inspection_point?.id}.status`]"
@@ -176,7 +203,7 @@
           />
 
           <InputImageToRadio
-            v-if="item.input_type === 'imageTOradio'"
+            v-if="item.input_type === 'imageTOradio' && isFullyCompatible(item)"
             v-model="form.results[item.inspection_point?.id].status"
             :notes="form.results[item.inspection_point?.id].note"
             :images="form.images[item.inspection_point?.id]"
@@ -185,6 +212,7 @@
             :inspection-id="inspectionId" 
             :settings="item.settings"
             :point-name="item.inspection_point?.name"
+            :subtitle="item.inspection_point?.description"
             :point="item"
             :selected-point="item.inspection_point ?? null"
             :options="item.settings?.radios || defaultRadioOptions"
@@ -197,7 +225,7 @@
           />
           
           <input-image
-            v-if="item.input_type === 'image'"
+            v-if="item.input_type === 'image' && isFullyCompatible(item)"
             v-model="form.images[item.inspection_point?.id]"
             :error="form.errors[`images.${item.inspection_point?.id}`]"
             :inspection-id="inspectionId"
@@ -210,13 +238,31 @@
           />
 
           <input-select
-            v-if="item.input_type === 'select'"
+            v-if="item.input_type === 'select' && isFullyCompatible(item)"
             v-model="form.results[item.inspection_point?.id].status"
             :required="item.settings?.is_required"
             :error="form.errors[`results.${item.inspection_point?.id}.status`]"
             @update:modelValue="updateResult(item.inspection_point?.id, $event, 'status')"
             @save="saveResult(item.inspection_point?.id)"
           />
+
+          <!-- Not Compatible Message -->
+          <div v-if="!isFullyCompatible(item) && hasCompatibilitySettings(item)" 
+               class="p-3 bg-gray-100 rounded text-sm text-gray-600">
+            <p class="font-medium">Tidak tersedia untuk kendaraan ini</p>
+            <p class="text-xs mt-1">Point ini hanya tersedia untuk:</p>
+            <ul class="text-xs mt-1 list-disc list-inside">
+              <li v-if="item.settings?.transmission">
+                Transmisi: {{ getTransmissionLabels(item.settings.transmission).join(', ') }}
+              </li>
+              <li v-if="item.settings?.fuel_type">
+                Bahan bakar: {{ item.settings.fuel_type }}
+              </li>
+              <li v-if="item.settings?.rear_door">Kendaraan dengan pintu belakang</li>
+              <li v-if="item.settings?.pick_up">Tipe pick up</li>
+              <li v-if="item.settings?.box">Kendaraan dengan box</li>
+            </ul>
+          </div>
         </div>
         
       </div>
@@ -235,7 +281,10 @@
 </template>
 
 <script setup>
-// ... Import components dan setup lainnya tetap sama ...
+import { onMounted, onUnmounted, computed, ref, watch, inject, provide } from 'vue';
+import { usePage } from '@inertiajs/vue3';
+
+// Import components
 import InputText from './InputText.vue';
 import InputNumber from './InputNumber.vue';
 import InputDate from './InputDate.vue';
@@ -245,8 +294,6 @@ import InputSelect from './InputSelect.vue';
 import InputRadio from './InputRadio.vue';
 import InputImage from './InputImage.vue';
 import InputImageToRadio from './InputImageToRadio.vue';
-import {onMounted, onUnmounted, computed, ref, watch } from 'vue';
-import { usePage } from '@inertiajs/vue3';
 
 const props = defineProps({
   category: Object,
@@ -254,57 +301,158 @@ const props = defineProps({
   head: Object,
   inspectionId: String,
   selectedPoint: Object,
+  car: Object, // Data kendaraan dari parent
 });
 
-const emit = defineEmits(['saveResult', 'updateResult', 'removeImage', 'hapusPoint']);
+const emit = defineEmits(['updateResult', 'removeImage', 'hapusPoint']);
 
+// Inject dari parent untuk local storage features
+const vehicleFeatures = inject('vehicleFeatures', ref(null));
+
+// Setelah data di-load dari localStorage
+vehicleFeatures.value = JSON.parse(localStorage.getItem('vehicle_features') || '{}');
+
+provide('vehicleFeatures', vehicleFeatures);
+
+// State untuk tampilan
 const showGlobalHidden = ref(false); 
 const manuallyShownPoints = ref([]); 
+const isHeaderVisible = ref(true);
+const categoryHeader = ref(null);
 
 const page = usePage();
 
-const isHeaderVisible = ref(true)
-const categoryHeader = ref(null)
+// Transmission mapping untuk label
+const transmissionLabels = {
+  'MT': 'Manual Transmission (MT)',
+  'AT': 'Automatic Transmission (AT)', 
+  'CVT': 'Continuously Variable Transmission (CVT)',
+  'e-CVT': 'Electronic CVT (e-CVT)',
+  'DCT': 'Dual Clutch Transmission (DCT)',
+  'AMT': 'Automated Manual Transmission (AMT)',
+  'IVT': 'Intelligent Variable Transmission (IVT)',
+  'SSG': 'Seamless Shift Gearbox (SSG)',
+  'AGS': 'Auto Gear Shift (AGS)',
+  'DHT': 'Dedicated Hybrid Transmission (DHT)'
+};
 
+// Setup intersection observer untuk header
 onMounted(() => {
   const observer = new IntersectionObserver(([entry]) => {
-    isHeaderVisible.value = entry.isIntersecting
-  }, { threshold: 0.1 })
+    isHeaderVisible.value = entry.isIntersecting;
+  }, { threshold: 0.1 });
 
   if (categoryHeader.value) {
-    observer.observe(categoryHeader.value)
+    observer.observe(categoryHeader.value);
   }
 
   onUnmounted(() => {
-    if (categoryHeader.value) observer.unobserve(categoryHeader.value)
-  })
-})
+    if (categoryHeader.value) observer.unobserve(categoryHeader.value);
+  });
+});
 
+// Toggle untuk menampilkan/sembunyikan semua point tersembunyi
 const toggleGlobalHidden = () => {
   showGlobalHidden.value = !showGlobalHidden.value;
   
-  if (showGlobalHidden.value || !showGlobalHidden.value) {
-     manuallyShownPoints.value = [];
+  if (!showGlobalHidden.value) {
+    manuallyShownPoints.value = [];
   }
 };
 
-
+// Computed properties
 const hasHiddenPoints = computed(() => {
   return (props.category.points || []).some(p => p.is_default === false);
 });
 
+// Fungsi untuk mendapatkan transmission labels
+const getTransmissionLabels = (transmissionCodes) => {
+  if (!transmissionCodes || !Array.isArray(transmissionCodes)) return [];
+  return transmissionCodes.map(code => transmissionLabels[code] || code);
+};
+
+// Fungsi utama untuk kompatibilitas kendaraan
+const isFullyCompatible = (point) => {
+  const vehicleConfig = point.settings;
+  
+  // Jika tidak ada config kompatibilitas, langsung return true
+  if (!hasCompatibilitySettings(point)) {
+    return true;
+  }
+
+  const carTransmission = props.car?.transmission;
+  const carFuelType = props.car?.fuel_type;
+  
+  // Check transmission - HANYA jika ada pengaturan transmission
+  if (vehicleConfig.transmission && Array.isArray(vehicleConfig.transmission) && vehicleConfig.transmission.length > 0) {
+    if (carTransmission && !vehicleConfig.transmission.includes(carTransmission)) {
+      return false;
+    }
+  }
+
+  // Check fuel type - HANYA jika ada pengaturan fuel_type
+  if (vehicleConfig.fuel_type && vehicleConfig.fuel_type.trim() !== '') {
+    if (carFuelType && vehicleConfig.fuel_type !== carFuelType) {
+      return false;
+    }
+  }
+
+    // Check vehicle features dari local storage - HANYA jika ada pengaturannya
+    if (vehicleConfig.rear_door) {
+      if (!vehicleFeatures.value || !vehicleFeatures.value.rear_door) {
+        return false;
+      }
+    }
+
+    if (vehicleConfig.pick_up) {
+      if (!vehicleFeatures.value || !vehicleFeatures.value.pick_up) {
+        return false;
+      }
+    }
+
+    if (vehicleConfig.box) {
+      if (!vehicleFeatures.value || !vehicleFeatures.value.box) {
+        return false;
+      }
+    }
+
+  return true;
+};
+
+// Cek apakah point memiliki pengaturan kompatibilitas
+const hasCompatibilitySettings = (point) => {
+  const settings = point.settings;
+  return !!(
+    (settings?.transmission && Array.isArray(settings.transmission) && settings.transmission.length > 0) ||
+    (settings?.fuel_type && settings.fuel_type.trim() !== '') ||
+    settings?.rear_door ||
+    settings?.pick_up ||
+    settings?.box
+  );
+};
+
+// Tampilkan info kompatibilitas
+const showCompatibilityInfo = (point) => {
+  return hasCompatibilitySettings(point) && (showGlobalHidden.value || isFullyCompatible(point));
+};
+
+// Tampilkan detail kompatibilitas
+const showCompatibilityDetails = (point) => {
+  return hasCompatibilitySettings(point) && showGlobalHidden.value;
+};
+
 /**
- * FUNGSI UTAMA BARU: Memproses daftar poin untuk menyisipkan tombol "Tampilkan"
+ * FUNGSI UTAMA: Gabungkan logika lama dengan filter kompatibilitas
  */
 const renderedItems = computed(() => {
   const points = props.category.points || [];
   const itemsToRender = [];
   let hiddenGroup = []; 
 
-  // KONDISI 1: Jika toggle global aktif (Tampilkan Semua), HANYA tampilkan poin
+  // KONDISI 1: Jika toggle global aktif (Tampilkan Semua), tampilkan semua poin
   if (showGlobalHidden.value) {
     if (props.category.isDamageMenu) {
-        return points.filter(p => p.is_default || hasPointData(p.inspection_point?.id) || showGlobalHidden.value);
+      return points.filter(p => p.is_default || hasPointData(p.inspection_point?.id) || showGlobalHidden.value);
     }
     return points; 
   }
@@ -312,19 +460,25 @@ const renderedItems = computed(() => {
   // KONDISI 2: Jika damage menu non-global (gunakan logika lama)
   if (props.category.isDamageMenu) {
     return points.filter(point => {
-        const pointId = point.inspection_point?.id
-        return hasPointData(pointId) || point.is_default || manuallyShownPoints.value.includes(pointId);
+      const pointId = point.inspection_point?.id;
+      return hasPointData(pointId) || point.is_default || manuallyShownPoints.value.includes(pointId);
     });
   }
 
-  // KONDISI 3: Logika inline untuk non-damage menu
+  // KONDISI 3: Logika inline untuk non-damage menu dengan GABUNGAN filter
   points.forEach((point) => {
     const pointId = point.inspection_point?.id;
     const hasData = hasPointData(pointId);
     const isShownManually = manuallyShownPoints.value.includes(pointId);
+    
+    // LOGIKA BARU: Filter berdasarkan kompatibilitas HANYA jika point memiliki setting kompatibilitas
+    const shouldCheckCompatibility = hasCompatibilitySettings(point);
+    const isCompatible = !shouldCheckCompatibility || isFullyCompatible(point);
 
-    // Kriteria tampil: is_default TRUE, ATAU sudah ada data, ATAU sudah dibuka manual
-    const isVisible = point.is_default || hasData || isShownManually;
+    // Kriteria tampil: 
+    // - is_default TRUE, ATAU sudah ada data, ATAU sudah dibuka manual
+    // - DAN harus compatible (jika ada setting kompatibilitas)
+    const isVisible = (point.is_default || hasData || isShownManually) && isCompatible;
 
     if (isVisible) {
       if (hiddenGroup.length > 0) {
@@ -335,16 +489,20 @@ const renderedItems = computed(() => {
         });
         
         hiddenGroup.forEach(hiddenPoint => {
-             if (manuallyShownPoints.value.includes(hiddenPoint.inspection_point.id)) {
-                 itemsToRender.push(hiddenPoint);
-             }
-         });
+          if (manuallyShownPoints.value.includes(hiddenPoint.inspection_point.id)) {
+            itemsToRender.push(hiddenPoint);
+          }
+        });
         
         hiddenGroup = []; 
       }
       itemsToRender.push(point);
     } else {
-      hiddenGroup.push(point);
+      // Hanya masukkan ke hidden group jika compatible
+      // Point yang tidak compatible tidak akan pernah ditampilkan, bahkan di hidden group
+      if (!hasCompatibilitySettings(point) || isFullyCompatible(point)) {
+        hiddenGroup.push(point);
+      }
     }
   });
 
@@ -355,32 +513,38 @@ const renderedItems = computed(() => {
       count: hiddenGroup.length,
       hiddenIds: hiddenGroup.map(p => p.inspection_point.id),
     });
-     hiddenGroup.forEach(hiddenPoint => {
-        if (manuallyShownPoints.value.includes(hiddenPoint.inspection_point.id)) {
-            itemsToRender.push(hiddenPoint);
-        }
+    
+    hiddenGroup.forEach(hiddenPoint => {
+      if (manuallyShownPoints.value.includes(hiddenPoint.inspection_point.id)) {
+        itemsToRender.push(hiddenPoint);
+      }
     });
   }
   
-  return itemsToRender.filter(item => item.is_link || item.is_default || hasPointData(item.inspection_point?.id) || manuallyShownPoints.value.includes(item.inspection_point?.id));
+  return itemsToRender.filter(item => 
+    item.is_link || 
+    item.is_default || 
+    hasPointData(item.inspection_point?.id) || 
+    manuallyShownPoints.value.includes(item.inspection_point?.id)
+  );
 });
 
-
 const filteredPoints = computed(() => {
-    return renderedItems.value.filter(item => !item.is_link);
-})
+  return renderedItems.value.filter(item => !item.is_link);
+});
 
-
+// Fungsi untuk menampilkan point tersembunyi
 const revealHiddenPoints = (hiddenIds) => {
-    showGlobalHidden.value = false; 
+  showGlobalHidden.value = false; 
 
-    hiddenIds.forEach(id => {
-        if (!manuallyShownPoints.value.includes(id)) {
-            manuallyShownPoints.value.push(id);
-        }
-    });
+  hiddenIds.forEach(id => {
+    if (!manuallyShownPoints.value.includes(id)) {
+      manuallyShownPoints.value.push(id);
+    }
+  });
 };
 
+// Cek apakah point sudah memiliki data
 const hasPointData = (pointId) => {
   if (!pointId) {
     return false;
@@ -397,12 +561,14 @@ const hasPointData = (pointId) => {
   return hasServerResult || hasServerImages || hasLocalResult || hasLocalImages;
 };
 
+// Default radio options
 const defaultRadioOptions = [
   { value: 'good', label: 'Good' },
   { value: 'bad', label: 'Bad' },
   { value: 'na', label: 'N/A' }
 ];
 
+// Cek apakah point sudah lengkap
 const isPointComplete = (menuPoint) => {
   const result = props.form.results[menuPoint.inspection_point?.id];
   const image = props.form.images[menuPoint.inspection_point?.id];
@@ -451,20 +617,15 @@ const isPointComplete = (menuPoint) => {
   }
 };
 
-watch(() => props.form.results, (newResults) => {
-  // ...
-}, { deep: true });
-
-watch(() => props.form.images, (newImages) => {
-  // ...
-}, { deep: true });
-
+// Event handlers
 const updateResult = (pointId, value, type) => {
   emit('updateResult', { pointId, type, value });
 };
 
 const saveResult = (pointId) => {
-  emit('saveResult', pointId);
+  // Untuk sekarang, kita hanya update state lokal
+  // Simpan otomatis sudah ditangani oleh watcher di parent
+  console.log('Save result for point:', pointId);
 };
 
 const removeImage = (pointId, imageIndex) => {
@@ -474,6 +635,25 @@ const removeImage = (pointId, imageIndex) => {
 const HapusPoint = (pointId) => {
   emit("hapusPoint", pointId);
 };
+
+// Watchers untuk perubahan data
+watch(() => props.form.results, (newResults) => {
+  // Handle perubahan results jika diperlukan
+}, { deep: true });
+
+watch(() => props.form.images, (newImages) => {
+  // Handle perubahan images jika diperlukan
+}, { deep: true });
+
+// Watch untuk perubahan data kendaraan
+watch(() => props.car, (newCar) => {
+  console.log('Car data updated:', newCar);
+}, { deep: true });
+
+// Watch untuk perubahan vehicle features
+watch(vehicleFeatures, (newFeatures) => {
+  console.log('Vehicle features updated:', newFeatures);
+}, { deep: true });
 </script>
 
 <style scoped>

@@ -189,7 +189,9 @@ class InspectionController extends Controller
                 });
             });
 
-            
+            $car = CarDetail::with(['brand', 'model', 'type'])
+                ->where('id', $inspection->car_id)
+                ->first();
 
             //mengambil data id yang sudah di eccrypt
             $inspectionID = Crypt::encrypt($inspection->id);
@@ -215,6 +217,7 @@ class InspectionController extends Controller
                 'existingImages' => $optimizedImages,
                 'inspectionId' => $inspectionID,
                 'allInspections' => $allInspections,
+                'car' => $car,
                 'CarDetail' => CarDetail::with(['brand', 'model', 'type'])->get(),
             ]);
 

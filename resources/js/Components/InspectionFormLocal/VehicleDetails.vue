@@ -51,6 +51,82 @@
                     <span v-if="inspectionCountMessage" class="text-xs text-green-500 font-normal ml-2">{{ inspectionCountMessage }}</span>
             </div>
 
+<!-- Jenis Kendaraan -->
+<div class="space-y-2 pb-2 border-b border-gray-100 last:border-0 last:pb-0">
+    <label class="block text-sm font-medium text-gray-700 mb-3">
+        Jenis Kendaraan
+    </label>
+    
+    <!-- Container untuk semua opsi -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <!-- Pintu Belakang (Toggle Button) -->
+        <div
+            class="w-full px-4 py-3 border-2 rounded-lg text-center transition-all duration-200 whitespace-nowrap text-sm font-medium cursor-pointer"
+            :class="{
+                'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm': vehicleFeatures.rear_door,
+                'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400': !vehicleFeatures.rear_door
+            }"
+            @click="toggleRearDoor"
+        >
+            <span>Pintu Belakang</span>
+        </div>
+
+        <!-- Pick Up & Box dalam 1 baris -->
+        <div class="col-span-2 flex space-x-3">
+            <!-- Pick Up -->
+            <div
+                class="flex-1 px-4 py-3 border-2 rounded-lg text-center transition-all duration-200 whitespace-nowrap text-sm font-medium cursor-pointer"
+                :class="{
+                    'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm': vehicleType === 'pick_up',
+                    'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400': vehicleType !== 'pick_up'
+                }"
+                @click="selectVehicleType('pick_up')"
+            >
+                Pick Up
+            </div>
+
+            <!-- Box -->
+            <div
+                class="flex-1 px-4 py-3 border-2 rounded-lg text-center transition-all duration-200 whitespace-nowrap text-sm font-medium cursor-pointer"
+                :class="{
+                    'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm': vehicleType === 'box',
+                    'border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400': vehicleType !== 'box'
+                }"
+                @click="selectVehicleType('box')"
+            >
+                Box
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Info -->
+    <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="flex items-start">
+            <svg class="w-4 h-4 text-blue-600 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+            </svg>
+            <div class="text-sm text-blue-700">
+                <p class="font-medium">Status Kendaraan:</p>
+                <p class="mt-1">
+                    <span v-if="vehicleFeatures.rear_door" class="inline-flex items-center px-2 py-1 rounded bg-blue-100 text-blue-800 text-xs font-medium mr-2">
+                        ✓ Mobil Pada Umum nya yang memiliki Pintu Belakang
+                    </span>
+                    <span v-if="vehicleType === 'pick_up'" class="inline-flex items-center px-2 py-1 rounded bg-green-100 text-green-800 text-xs font-medium mr-2">
+                        ✓ Pick Up
+                    </span>
+                    <span v-if="vehicleType === 'box'" class="inline-flex items-center px-2 py-1 rounded bg-green-100 text-green-800 text-xs font-medium">
+                        ✓ Box
+                    </span>
+                    <span v-if="!vehicleFeatures.rear_door && !vehicleType" class="text-blue-600">
+                        Pilih jenis kendaraan agar point bisa menyesuaikan dengan tipe kendaraan anda
+                    </span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
             <!-- Form Input Car Name with Auto-complete -->
             <div class="space-y-2 pb-2 border-b border-gray-100 last:border-0 last:pb-0">
                 <label class="block text-sm font-medium text-gray-700">
@@ -260,7 +336,7 @@ const props = defineProps({
     }
 });
 
-const emit = defineEmits(['update-vehicle', 'update:validation', 'update:hasUnsavedChanges']);
+const emit = defineEmits(['update-vehicle', 'update:validation', 'update:hasUnsavedChanges', 'update:vehicle-type']);
 
 const form = useForm({
     plate_number: props.inspection?.plate_number || '',
@@ -277,6 +353,12 @@ const initialCarName = ref(props.inspection?.car_name || '');
 const plateAreaCode = ref('');
 const plateNumber = ref('');
 const plateSuffix = ref('');
+
+// State untuk jenis kendaraan
+const vehicleType = ref(null); // 'pick_up', 'box', atau null
+const vehicleFeatures = ref({
+    rear_door: false // Default false untuk pintu belakang
+});
 
 // State untuk fungsionalitas validasi baru
 const isPlateInvalid = ref(false);
@@ -310,17 +392,94 @@ onMounted(() => {
     }
     window.addEventListener('keydown', handleKeydown);
 
-     // Kirim status ke parent bahwa ada perubahan yang belum disimpan
+    // Load vehicle type dari localStorage
+    loadVehicleTypeFromLocal();
+
+    // Kirim status ke parent bahwa ada perubahan yang belum disimpan
     emit('update:hasUnsavedChanges', isFormChanged.value);
 
     // Kirim status validasi awal ke induk
     emit('update:validation', isFormInvalid.value);
-
 });
 
 onUnmounted(() => {
     window.removeEventListener('keydown', handleKeydown);
 });
+
+// --- Fungsi untuk Vehicle Type ---
+const loadVehicleTypeFromLocal = () => {
+    try {
+        const saved = localStorage.getItem('vehicle_features');
+        if (saved) {
+            const savedFeatures = JSON.parse(saved);
+            vehicleFeatures.value.rear_door = savedFeatures.rear_door || false;
+            
+            // Set vehicleType berdasarkan data yang tersimpan
+            if (savedFeatures.pick_up) {
+                vehicleType.value = 'pick_up';
+            } else if (savedFeatures.box) {
+                vehicleType.value = 'box';
+            } else {
+                vehicleType.value = null;
+            }
+        } else {
+            // Default values jika tidak ada data di localStorage
+            vehicleFeatures.value.rear_door = false;
+            vehicleType.value = null;
+        }
+        // Emit nilai awal ke parent
+        emitVehicleTypeToParent();
+    } catch (error) {
+        console.error('Error loading vehicle type from localStorage:', error);
+        vehicleFeatures.value.rear_door = false;
+        vehicleType.value = null;
+        emitVehicleTypeToParent();
+    }
+};
+
+const toggleRearDoor = () => {
+    vehicleFeatures.value.rear_door = !vehicleFeatures.value.rear_door;
+    saveVehicleTypeToLocal();
+};
+
+const selectVehicleType = (type) => {
+    // Jika memilih type yang sama, unselect
+    if (vehicleType.value === type) {
+        vehicleType.value = null;
+    } else {
+        vehicleType.value = type;
+    }
+    saveVehicleTypeToLocal();
+};
+
+const saveVehicleTypeToLocal = () => {
+    try {
+        const featuresToSave = {
+            rear_door: vehicleFeatures.value.rear_door,
+            pick_up: vehicleType.value === 'pick_up',
+            box: vehicleType.value === 'box'
+        };
+        
+        localStorage.setItem('vehicle_features', JSON.stringify(featuresToSave));
+        
+        // Emit perubahan ke parent
+        emitVehicleTypeToParent();
+        
+        console.log('Vehicle features saved to localStorage:', featuresToSave);
+    } catch (error) {
+        console.error('Error saving vehicle type to localStorage:', error);
+    }
+};
+
+const emitVehicleTypeToParent = () => {
+    const vehicleFeaturesData = {
+        rear_door: vehicleFeatures.value.rear_door,
+        pick_up: vehicleType.value === 'pick_up',
+        box: vehicleType.value === 'box'
+    };
+    
+    emit('update:vehicle-type', vehicleFeaturesData);
+};
 
 // --- Logic Plate Number ---
 const parsePlateNumber = (plateStr) => {
@@ -632,6 +791,11 @@ watch([() => form.plate_number, () => form.car_name], (newValues) => {
     // Emit status validasi ke induk setelah semua pengecekan selesai
     emit('update:validation', isFormInvalid.value);
 }, { deep: true });
+
+// Watch untuk vehicle type changes
+watch([() => vehicleFeatures.value.rear_door, () => vehicleType.value], () => {
+    saveVehicleTypeToLocal();
+});
 </script>
 
 <style scoped>

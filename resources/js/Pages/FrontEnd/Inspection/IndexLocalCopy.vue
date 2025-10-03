@@ -494,7 +494,6 @@ import { ref, computed, watch, onMounted, provide, nextTick  } from 'vue';
 import { useForm, usePage, Link, router } from '@inertiajs/vue3';
 import { debounce } from 'lodash';
 import VehicleDetails from '@/Components/InspectionFormLocal/VehicleDetails.vue';
-import CategoryCadangan from '@/Components/InspectionFormLocal/CategoryCadangan.vue';
 import CategorySection from '@/Components/InspectionFormLocal/CategorySection.vue';
 import ConclusionSection from '@/Components/InspectionFormLocal/ConclusionSection.vue';
 import RadioOptionModal from '@/Components/InspectionFormLocal/RadioOptionModal.vue';

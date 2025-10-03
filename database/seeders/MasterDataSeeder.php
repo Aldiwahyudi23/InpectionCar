@@ -143,7 +143,26 @@ $inspectionPoints = [
         ['name' => 'Spion Kanan', 'description' => 'Kondisi spion kanan', 'order' => 20],
         ['name' => 'Fender Kanan', 'description' => 'Kondisi fender kanan', 'order' => 21],
         ['name' => 'Atap', 'description' => 'Kondisi atap mobil', 'order' => 22],
+
+        // ================================
+        // 🔹 Khusus PICK UP
+        // ================================
+        ['name' => 'Bak Samping Kiri Pickup', 'description' => 'Kondisi sisi samping kiri bak pickup', 'order' => 23],
+        ['name' => 'Bak Samping Kanan Pickup', 'description' => 'Kondisi sisi samping kanan bak pickup', 'order' => 24],
+        ['name' => 'Bak Belakang Pickup', 'description' => 'Kondisi pintu belakang bak pickup', 'order' => 25],
+        ['name' => 'Lantai Bak Pickup', 'description' => 'Kondisi lantai bak pickup', 'order' => 26],
+        ['name' => 'Pintu Belakang Pickup', 'description' => 'Kondisi pintu belakang khusus pickup', 'order' => 27],
+
+        // ================================
+        // 🔹 Khusus BOX
+        // ================================
+        ['name' => 'Dinding Kiri Box', 'description' => 'Kondisi dinding kiri box', 'order' => 28],
+        ['name' => 'Dinding Kanan Box', 'description' => 'Kondisi dinding kanan box', 'order' => 29],
+        ['name' => 'Pintu Belakang Box', 'description' => 'Kondisi pintu belakang box', 'order' => 30],
+        ['name' => 'Atap Box', 'description' => 'Kondisi atap box', 'order' => 31],
+        ['name' => 'Lantai Box', 'description' => 'Kondisi lantai box', 'order' => 32],
     ],
+
 
     // Interior - OK
     'Interior' => [
@@ -155,36 +174,71 @@ $inspectionPoints = [
         ['name' => 'Karpet', 'description' => 'Kondisi karpet interior', 'order' => 8],
     ],
 
-    // Mesin - Perbaikan order number
-    'Mesin' => [
-        ['name' => 'Mesin', 'description' => 'Pemeriksaan umum kondisi mesin secara keseluruhan', 'order' => 1],
-        ['name' => 'Starter Mesin', 'description' => 'Periksa apakah mesin mudah distarter dan langsung hidup', 'order' => 2],
-        ['name' => 'Putaran Idle', 'description' => 'Pastikan idle stabil tanpa naik turun RPM', 'order' => 3],
-        ['name' => 'Suara Mesin', 'description' => 'Cek apakah ada bunyi abnormal seperti ngelitik, ketukan, atau dengung', 'order' => 4],
-        ['name' => 'Getaran Mesin', 'description' => 'Pastikan mesin tidak bergetar berlebihan saat idle', 'order' => 5],
-        ['name' => 'Asap Knalpot', 'description' => 'Periksa warna asap (normal, biru, hitam, atau putih)', 'order' => 6],
+// Mesin - Perbaikan order number
+'Mesin' => [
+    // ================================
+    // 🔹 Mesin Umum (semua kendaraan berbahan bakar)
+    // ================================
+    ['name' => 'Mesin', 'description' => 'Pemeriksaan umum kondisi mesin secara keseluruhan', 'order' => 1],
+    ['name' => 'Starter Mesin', 'description' => 'Periksa apakah mesin mudah distarter dan langsung hidup', 'order' => 2],
+    ['name' => 'Putaran Idle', 'description' => 'Pastikan idle stabil tanpa naik turun RPM', 'order' => 3],
+    ['name' => 'Suara Mesin', 'description' => 'Cek apakah ada bunyi abnormal seperti ngelitik, ketukan, atau dengung', 'order' => 4],
+    ['name' => 'Getaran Mesin', 'description' => 'Pastikan mesin tidak bergetar berlebihan saat idle', 'order' => 5],
+    ['name' => 'Asap Knalpot', 'description' => 'Periksa warna asap (normal, biru, hitam, atau putih)', 'order' => 6],
 
-        ['name' => 'Oli Mesin', 'description' => 'Pemeriksaan level dan kondisi oli mesin', 'order' => 7],
-        ['name' => 'Radiator', 'description' => 'Kondisi radiator dan cairan pendingin', 'order' => 8],
-        ['name' => 'Filter Udara', 'description' => 'Kondisi filter udara mesin', 'order' => 9],
-        ['name' => 'Busi', 'description' => 'Kondisi dan jarak busi', 'order' => 10],
-        ['name' => 'Timing Belt', 'description' => 'Kondisi timing belt dan tensioner', 'order' => 11],
-        ['name' => 'Fan Belt', 'description' => 'Kondisi dan ketegangan fan belt', 'order' => 12],
-        ['name' => 'Filter Bahan Bakar', 'description' => 'Kondisi filter bahan bakar', 'order' => 13],
-        ['name' => 'Injektor/Karburator', 'description' => 'Kondisi sistem pengabutan', 'order' => 14],
-        ['name' => 'Respon Gas', 'description' => 'Mesin harus responsif saat pedal gas ditekan', 'order' => 15],
-        ['name' => 'Tarikan Mesin', 'description' => 'Pastikan tenaga mesin normal tanpa gejala tersendat', 'order' => 16],
+    ['name' => 'Oli Mesin', 'description' => 'Pemeriksaan level dan kondisi oli mesin', 'order' => 7],
+    ['name' => 'Radiator', 'description' => 'Kondisi radiator dan cairan pendingin', 'order' => 8],
+    ['name' => 'Filter Udara', 'description' => 'Kondisi filter udara mesin', 'order' => 9],
+    ['name' => 'Filter Bahan Bakar', 'description' => 'Kondisi filter bahan bakar', 'order' => 10],
+    ['name' => 'Injektor/Karburator', 'description' => 'Kondisi sistem pengabutan', 'order' => 11],
+    ['name' => 'Respon Gas', 'description' => 'Mesin harus responsif saat pedal gas ditekan', 'order' => 12],
+    ['name' => 'Tarikan Mesin', 'description' => 'Pastikan tenaga mesin normal tanpa gejala tersendat', 'order' => 13],
 
-        ['name' => 'Knalpot', 'description' => 'Kondisi sistem pembuangan', 'order' => 17],
-        ['name' => 'Mounting Mesin', 'description' => 'Kondisi mounting mesin', 'order' => 18],
-        ['name' => 'Selang Radiator', 'description' => 'Kondisi selang atas, bawah, dan heater untuk kebocoran', 'order' => 19],
-        ['name' => 'Tutup Radiator', 'description' => 'Kondisi dan fungsi pressure cap radiator', 'order' => 20],
-        ['name' => 'Water Pump', 'description' => 'Kondisi dan kebocoran water pump', 'order' => 21],
-        ['name' => 'Thermostat', 'description' => 'Fungsi thermostat dalam mengatur sirkulasi coolant', 'order' => 22],
-        ['name' => 'Coolant Reservoir', 'description' => 'Level dan kondisi cairan coolant di reservoir', 'order' => 23],
-        ['name' => 'Kipas Radiator', 'description' => 'Fungsi motor kipas radiator dan sensor suhu', 'order' => 24],
-        ['name' => 'Selang Mesin', 'description' => 'Selang dan klem mesin untuk kebocoran', 'order' => 25],
-    ],
+    ['name' => 'Knalpot', 'description' => 'Kondisi sistem pembuangan', 'order' => 14],
+    ['name' => 'Mounting Mesin', 'description' => 'Kondisi mounting mesin', 'order' => 15],
+    ['name' => 'Timing Belt / Rantai Keteng', 'description' => 'Kondisi timing belt atau rantai mesin', 'order' => 16],
+    ['name' => 'Fan Belt', 'description' => 'Kondisi dan ketegangan fan belt', 'order' => 17],
+    ['name' => 'Selang Radiator', 'description' => 'Kondisi selang atas, bawah, dan heater untuk kebocoran', 'order' => 18],
+    ['name' => 'Tutup Radiator', 'description' => 'Kondisi dan fungsi pressure cap radiator', 'order' => 19],
+    ['name' => 'Water Pump', 'description' => 'Kondisi dan kebocoran water pump', 'order' => 20],
+    ['name' => 'Thermostat', 'description' => 'Fungsi thermostat dalam mengatur sirkulasi coolant', 'order' => 21],
+    ['name' => 'Coolant Reservoir', 'description' => 'Level dan kondisi cairan coolant di reservoir', 'order' => 22],
+    ['name' => 'Kipas Radiator', 'description' => 'Fungsi motor kipas radiator dan sensor suhu', 'order' => 23],
+    ['name' => 'Selang Mesin', 'description' => 'Selang dan klem mesin untuk kebocoran', 'order' => 24],
+
+    // ================================
+    // 🔹 Mesin Diesel (tambahan khusus)
+    // ================================
+    ['name' => 'Turbocharger', 'description' => 'Kondisi dan fungsi turbocharger (jika ada)', 'order' => 25],
+    ['name' => 'Asap Knalpot Diesel', 'description' => 'Pemeriksaan asap putih, hitam, atau biru dari knalpot', 'order' => 26],
+    ['name' => 'Blow-by Engine', 'description' => 'Periksa apakah ada asap keluar dari stik oli atau tutup oli', 'order' => 27],
+    ['name' => 'Pompa Solar', 'description' => 'Kondisi dan kebocoran pompa bahan bakar diesel', 'order' => 28],
+    ['name' => 'Glow Plug', 'description' => 'Pemeriksaan fungsi glow plug untuk starting dingin', 'order' => 29],
+
+    // ================================
+    // 🔹 Mesin Bensin (tambahan khusus)
+    // ================================
+    ['name' => 'Busi', 'description' => 'Kondisi, jarak, dan pengapian busi', 'order' => 30],
+    ['name' => 'Koil Pengapian', 'description' => 'Kondisi dan fungsi koil pengapian', 'order' => 31],
+    ['name' => 'Knocking / Ngelitik', 'description' => 'Cek apakah ada gejala knocking saat akselerasi', 'order' => 32],
+
+    // ================================
+    // 🔹 Hybrid (tambahan khusus)
+    // ================================
+    ['name' => 'Battery Pack Hybrid', 'description' => 'Kondisi dan level baterai hybrid', 'order' => 33],
+    ['name' => 'Inverter Hybrid', 'description' => 'Kondisi inverter dan pendinginan inverter', 'order' => 34],
+    ['name' => 'Motor Listrik', 'description' => 'Fungsi motor listrik saat mode EV berjalan', 'order' => 35],
+    ['name' => 'Transisi Mesin-Listrik', 'description' => 'Kelancaran perpindahan dari mesin bensin ke motor listrik', 'order' => 36],
+
+    // ================================
+    // 🔹 EV (Electric Vehicle)
+    // ================================
+    ['name' => 'Battery Pack EV', 'description' => 'Kondisi, tegangan, dan suhu baterai EV', 'order' => 37],
+    ['name' => 'Motor Listrik Utama', 'description' => 'Kinerja motor listrik utama', 'order' => 38],
+    ['name' => 'Inverter EV', 'description' => 'Kondisi inverter listrik', 'order' => 39],
+    ['name' => 'Sistem Pendingin Baterai', 'description' => 'Pendinginan baterai EV (liquid/air cooling)', 'order' => 40],
+    ['name' => 'Port Charging', 'description' => 'Kondisi port charging dan fungsi pengisian', 'order' => 41],
+],
 
     // Transmisi - OK
     'Transmisi' => [
