@@ -426,7 +426,7 @@
               </svg>
             </div>
           </div>
-
+<!-- Mantap di coba lagi ya  -->
           <!-- List Hasil Pencarian -->
           <div class="max-h-64 overflow-y-auto">
             <div v-if="filteredDamagePoints.length === 0" class="text-center py-4 text-gray-500">
