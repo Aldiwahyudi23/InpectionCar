@@ -22,6 +22,7 @@ use App\Models\Team\RegionTeam;
 use App\Models\User;
 use App\Services\InspectionmPdfGenerator;
 use App\Services\InspectionPdfGenerator;
+use App\Services\NativeImageCompressor;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -162,10 +163,33 @@ class InspectionController extends Controller
                 ->get()
                 ->keyBy('point_id');
 
+            // $existingImages = InspectionImage::where('inspection_id', $inspection->id)
+            //     ->whereIn('point_id', $inspectionPointIds)
+            //     ->get()
+            //     ->groupBy('point_id');
+
+                    // Ambil semua gambar
             $existingImages = InspectionImage::where('inspection_id', $inspection->id)
                 ->whereIn('point_id', $inspectionPointIds)
-                ->get()
-                ->groupBy('point_id');
+                ->get();
+
+            // Compress images untuk web display
+            $compressor = new NativeImageCompressor();
+            
+            $optimizedImages = $existingImages->groupBy('point_id')->map(function ($images) use ($compressor) {
+                return $images->map(function ($image) use ($compressor) {
+                    return [
+                        'id' => $image->id,
+                        'original_url' => Storage::url($image->image_path),
+                        'optimized_url' => $compressor->compressForWeb($image->image_path, 50), // 50% quality
+                        'file_name' => $image->file_name,
+                        'file_size' => $image->file_size,
+                        'created_at' => $image->created_at,
+                    ];
+                });
+            });
+
+            
 
             //mengambil data id yang sudah di eccrypt
             $inspectionID = Crypt::encrypt($inspection->id);
@@ -188,7 +212,7 @@ class InspectionController extends Controller
                 'appMenus' => $appMenus,
                 'damagePoints' => $damagePoints,
                 'existingResults' => $existingResults,
-                'existingImages' => $existingImages,
+                'existingImages' => $optimizedImages,
                 'inspectionId' => $inspectionID,
                 'allInspections' => $allInspections,
                 'CarDetail' => CarDetail::with(['brand', 'model', 'type'])->get(),

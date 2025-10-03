@@ -129,11 +129,21 @@ class CarDetailResource extends Resource
 
                 Forms\Components\Select::make('transmission')
                     ->label('Transmisi')
+                    ->native(false)   // pakai JS renderer (Choices.js) supaya HTML di dalam option dirender
+                    ->allowHtml()     // IZINKAN HTML di option label
                     ->options([
-                        'AT' => 'Automatic',
-                        'MT' => 'Manual',
-                        'CVT' => 'CVT'
+                        'MT'   => "Manual Transmission (MT)<br><small><em>Transmisi manual dengan pedal kopling, perpindahan gigi manual</em></small>",
+                        'AT'   => "Automatic Transmission (AT)<br><small><em>Transmisi otomatis konvensional dengan torque converter</em></small>",
+                        'CVT'  => "Continuously Variable Transmission (CVT)<br><small><em>Transmisi otomatis dengan puli & sabuk, perpindahan halus</em></small>",
+                        'e-CVT'=> "Electronic CVT (e-CVT)<br><small><em>Khusus hybrid/EV, menggabungkan motor listrik & mesin bensin</em></small>",
+                        'DCT'  => "Dual Clutch Transmission (DCT)<br><small><em>Transmisi kopling ganda, perpindahan gigi cepat & efisien</em></small>",
+                        'AMT'  => "Automated Manual Transmission (AMT)<br><small><em>Manual yang dikendalikan otomatis (semi otomatis)</em></small>",
+                        'IVT'  => "Intelligent Variable Transmission (IVT)<br><small><em>Varian CVT dengan kontrol elektronik, lebih efisien</em></small>",
+                        'SSG'  => "Seamless Shift Gearbox (SSG)<br><small><em>Transmisi kopling ganda performa tinggi (sport car)</em></small>",
+                        'AGS'  => "Auto Gear Shift (AGS)<br><small><em>Versi AMT Suzuki, hemat & sederhana</em></small>",
+                        'DHT'  => "Dedicated Hybrid Transmission (DHT)<br><small><em>Khusus hybrid, mengatur mesin bensin & motor listrik</em></small>",
                     ])
+                    ->helperText('Pilih tipe transmisi sesuai kendaraan')
                     ->default('AT')
                     ->required(),
                 Forms\Components\Select::make('fuel_type')

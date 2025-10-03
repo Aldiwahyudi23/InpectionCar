@@ -2,14 +2,18 @@
 
 namespace App\Filament\Resources\DataInspection\AppMenuResource\RelationManagers;
 
+use App\Models\DataInspection\AppMenu;
+use App\Models\DataInspection\Categorie;
 use App\Models\DataInspection\InspectionPoint;
 use App\Models\DataInspection\MenuPoint;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class MenuPointRelationManager extends RelationManager
@@ -679,6 +683,65 @@ public function updatedSelectAll($value)
 
                         return array_merge($commonSettings, $schema);
                     })
+                    ->columnSpanFull(),
+                                                // FIELDSET PENGATURAN KHUSUS - VERSI SIMPLE
+                Forms\Components\Fieldset::make('Pengaturan Khusus')
+                    ->schema([
+                        Forms\Components\Grid::make(2)
+                            ->schema([
+                                // Transmission (Multi Select)
+                                Forms\Components\Select::make('settings.transmission')
+                                    ->label('Tipe Transmisi')
+                                    ->multiple()
+                                    ->native(false)   // pakai JS renderer (Choices.js) supaya HTML di dalam option dirender
+                                    ->allowHtml()     // IZINKAN HTML di option label
+                                    ->options([
+                                        'MT'   => "Manual Transmission (MT)<br><small><em>Transmisi manual dengan pedal kopling, perpindahan gigi manual</em></small>",
+                                        'AT'   => "Automatic Transmission (AT)<br><small><em>Transmisi otomatis konvensional dengan torque converter</em></small>",
+                                        'CVT'  => "Continuously Variable Transmission (CVT)<br><small><em>Transmisi otomatis dengan puli & sabuk, perpindahan halus</em></small>",
+                                        'e-CVT'=> "Electronic CVT (e-CVT)<br><small><em>Khusus hybrid/EV, menggabungkan motor listrik & mesin bensin</em></small>",
+                                        'DCT'  => "Dual Clutch Transmission (DCT)<br><small><em>Transmisi kopling ganda, perpindahan gigi cepat & efisien</em></small>",
+                                        'AMT'  => "Automated Manual Transmission (AMT)<br><small><em>Manual yang dikendalikan otomatis (semi otomatis)</em></small>",
+                                        'IVT'  => "Intelligent Variable Transmission (IVT)<br><small><em>Varian CVT dengan kontrol elektronik, lebih efisien</em></small>",
+                                        'SSG'  => "Seamless Shift Gearbox (SSG)<br><small><em>Transmisi kopling ganda performa tinggi (sport car)</em></small>",
+                                        'AGS'  => "Auto Gear Shift (AGS)<br><small><em>Versi AMT Suzuki, hemat & sederhana</em></small>",
+                                        'DHT'  => "Dedicated Hybrid Transmission (DHT)<br><small><em>Khusus hybrid, mengatur mesin bensin & motor listrik</em></small>",
+                                    ])
+                                    ->helperText('Pilih tipe transmisi sesuai kendaraan')
+                                    ->columnSpan(1),
+
+
+                                // Fuel Type (Select)
+                                Forms\Components\Select::make('settings.fuel_type')
+                                    ->label('Tipe Bahan Bakar')
+                                    ->options([
+                                    'Bensin' => 'Bensin',
+                                        'Solar' => 'Solar',
+                                        'Listrik' => 'Listrik',
+                                        'Hybrid' => 'Hybrid'
+                                    ])
+                                    ->helperText('Pilih bahan bakar')
+                                    ->columnSpan(1),
+                            ]),
+
+                        Forms\Components\Grid::make(3)
+                            ->schema([
+                                Forms\Components\Toggle::make('settings.rear_door')
+                                    ->label('Pintu Belakang')
+                                    ->default(false)
+                                    ->helperText('Ada pintu belakang'),
+                                
+                                Forms\Components\Toggle::make('settings.pick_up')
+                                    ->label('Pick Up')
+                                    ->default(false)
+                                    ->helperText('Tipe pick up'),
+                                
+                                Forms\Components\Toggle::make('settings.box')
+                                    ->label('Box')
+                                    ->default(false)
+                                    ->helperText('Memiliki box'),
+                            ]),
+                    ])
                     ->columnSpanFull()
             ]);
     }
@@ -1740,8 +1803,69 @@ Forms\Components\Group::make()
                                             ->columns(2);
                                     }
 
+                                    
                                     return array_merge($commonSettings, $schema);
                                 })
+                                ->columnSpanFull(),
+
+                                // FIELDSET PENGATURAN KHUSUS - VERSI SIMPLE
+                            Forms\Components\Fieldset::make('Pengaturan Khusus')
+                                ->schema([
+                                    Forms\Components\Grid::make(2)
+                                        ->schema([
+                                           // Transmission (Multi Select)
+                                            Forms\Components\Select::make('settings.transmission')
+                                                ->label('Tipe Transmisi')
+                                                ->multiple()
+                                                ->native(false)   // pakai JS renderer (Choices.js) supaya HTML di dalam option dirender
+                                                ->allowHtml()     // IZINKAN HTML di option label
+                                                ->options([
+                                                    'MT'   => "Manual Transmission (MT)<br><small><em>Transmisi manual dengan pedal kopling, perpindahan gigi manual</em></small>",
+                                                    'AT'   => "Automatic Transmission (AT)<br><small><em>Transmisi otomatis konvensional dengan torque converter</em></small>",
+                                                    'CVT'  => "Continuously Variable Transmission (CVT)<br><small><em>Transmisi otomatis dengan puli & sabuk, perpindahan halus</em></small>",
+                                                    'e-CVT'=> "Electronic CVT (e-CVT)<br><small><em>Khusus hybrid/EV, menggabungkan motor listrik & mesin bensin</em></small>",
+                                                    'DCT'  => "Dual Clutch Transmission (DCT)<br><small><em>Transmisi kopling ganda, perpindahan gigi cepat & efisien</em></small>",
+                                                    'AMT'  => "Automated Manual Transmission (AMT)<br><small><em>Manual yang dikendalikan otomatis (semi otomatis)</em></small>",
+                                                    'IVT'  => "Intelligent Variable Transmission (IVT)<br><small><em>Varian CVT dengan kontrol elektronik, lebih efisien</em></small>",
+                                                    'SSG'  => "Seamless Shift Gearbox (SSG)<br><small><em>Transmisi kopling ganda performa tinggi (sport car)</em></small>",
+                                                    'AGS'  => "Auto Gear Shift (AGS)<br><small><em>Versi AMT Suzuki, hemat & sederhana</em></small>",
+                                                    'DHT'  => "Dedicated Hybrid Transmission (DHT)<br><small><em>Khusus hybrid, mengatur mesin bensin & motor listrik</em></small>",
+                                                ])
+                                                ->helperText('Pilih tipe transmisi sesuai kendaraan')
+                                                ->columnSpan(1),
+
+
+                                            // Fuel Type (Select)
+                                            Forms\Components\Select::make('settings.fuel_type')
+                                                ->label('Tipe Bahan Bakar')
+                                                ->options([
+                                                  'Bensin' => 'Bensin',
+                                                    'Solar' => 'Solar',
+                                                    'Listrik' => 'Listrik',
+                                                    'Hybrid' => 'Hybrid'
+                                                ])
+                                                ->helperText('Pilih bahan bakar')
+                                                ->columnSpan(1),
+                                        ]),
+
+                                    Forms\Components\Grid::make(3)
+                                        ->schema([
+                                            Forms\Components\Toggle::make('settings.rear_door')
+                                                ->label('Pintu Belakang')
+                                                ->default(false)
+                                                ->helperText('Ada pintu belakang'),
+                                            
+                                            Forms\Components\Toggle::make('settings.pick_up')
+                                                ->label('Pick Up')
+                                                ->default(false)
+                                                ->helperText('Tipe pick up'),
+                                            
+                                            Forms\Components\Toggle::make('settings.box')
+                                                ->label('Box')
+                                                ->default(false)
+                                                ->helperText('Memiliki box'),
+                                        ]),
+                                ])
                                 ->columnSpanFull()
                         ];
                     })
@@ -1783,11 +1907,60 @@ Forms\Components\Group::make()
                     })
             ])
 
-
-
-
             ->actions([
                 Tables\Actions\EditAction::make(),
+
+Tables\Actions\Action::make('move_point')
+    ->label('Pindah Point')
+    ->icon('heroicon-o-arrow-right-circle')
+    ->form([
+        Forms\Components\Select::make('target_menu_id')
+            ->label('Pindah ke Menu')
+            ->options(function ($record) {
+                // Ambil category_id dari record saat ini
+                $currentCategoryId = $record->app_menu->category_id;
+                $currentMenuId = $record->app_menu_id;
+                
+                // Ambil semua app_menu dalam category yang sama, kecuali menu saat ini
+                return AppMenu::where('category_id', $currentCategoryId)
+                    ->where('id', '!=', $currentMenuId) // Exclude current menu
+                    ->pluck('name', 'id');
+            })
+            ->searchable()
+            ->preload()
+            ->required()
+            ->helperText('Pilih menu tujuan dalam kategori yang sama'),
+    ])
+    ->action(function (Model $record, array $data): void {
+        $targetMenuId = $data['target_menu_id'];
+        $targetMenu = AppMenu::find($targetMenuId);
+        
+         // VALIDASI DENGAN NOTIFIKASI (tidak menggunakan throw Exception)
+        if ($record->app_menu_id == $targetMenuId) {
+            \Filament\Notifications\Notification::make()
+                ->title('Tidak dapat memindahkan point')
+                ->body('Tidak bisa memindahkan point ke menu yang sama')
+                ->danger()
+                ->send();
+            return; // Stop execution
+        }
+        
+        // Update hanya app_menu_id saja
+        $record->update([
+            'app_menu_id' => $targetMenuId
+        ]);
+        
+        \Filament\Notifications\Notification::make()
+            ->title('Point berhasil dipindahkan')
+            ->body("Point '{$record->inspection_point->name}' telah dipindahkan ke '{$targetMenu->name}'")
+            ->success()
+            ->send();
+    })
+    ->requiresConfirmation()
+    ->modalHeading('Pindah Point')
+    ->modalSubheading(fn ($record) => 'Pilih menu tujuan untuk point: ' . $record->inspection_point->name)
+    ->modalButton('Pindah Point'),
+
                 Tables\Actions\ViewAction::make(),
                 // Tables\Actions\DeleteAction::make(),
             ])

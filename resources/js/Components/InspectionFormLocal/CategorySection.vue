@@ -1,213 +1,227 @@
 <template>
-      <div v-if="props.head === 'vertical'"
-        class="px-6 py-2 border-b flex items-center justify-between bg-indigo-200"
-        :class=" 'fixed top-0 left-0 right-0 z-20'"
-        >
-        <h4 class="text-base font-semibold text-indigo-700">
-          {{ category.name }}
-        </h4>
+  <div v-if="props.head === 'vertical'"
+    class="px-6 py-2 border-b flex items-center justify-between bg-indigo-200"
+    :class=" 'fixed top-0 left-0 right-0 z-20'"
+  >
+    <h4 class="text-base font-semibold text-indigo-700">
+      {{ category.name }}
+    </h4>
 
-        <button
-          v-if="hasHiddenPoints"
-          @click="showHidden = !showHidden"
-          class="text-sm text-indigo-700 hover:underline focus:outline-none"
-        >
-          {{ showHidden ? 'Sembunyikan' : 'Tampilkan Point Lain' }}
-        </button>
-      </div>
-      <div class="bg-gray-50 shadow-lg rounded-xl overflow-hidden border border-gray-100"
-      :class="props.head === 'vertical' ? 'pt-6' : ''"
-      >
+    <button
+      v-if="hasHiddenPoints"
+      @click="toggleGlobalHidden"
+      class="text-sm text-indigo-700 hover:underline focus:outline-none"
+    >
+      {{ showGlobalHidden ? 'Sembunyikan Semua' : 'Tampilkan Point Lain' }}
+    </button>
+  </div>
+  <div class="bg-gray-50 shadow-lg rounded-xl overflow-hidden border border-gray-100"
+    :class="props.head === 'vertical' ? 'pt-6' : ''"
+  >
 
-          <!-- Floating Eye Icon -->
-      <!-- Floating Eye Icon -->
-      <button
-        v-if="!isHeaderVisible && hasHiddenPoints"
-        @click="showHidden = !showHidden"
-        class="fixed top-3 right-2 z-50 bg-indigo-600 text-white p-2 rounded-full shadow-lg"
-      >
-        <!-- Kalau aktif (showHidden true) → mata terbuka -->
-        <svg v-if="showHidden" xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-        </svg>
+    <button
+      v-if="!isHeaderVisible && hasHiddenPoints"
+      @click="toggleGlobalHidden"
+      class="fixed top-3 right-2 z-50 bg-indigo-600 text-white p-2 rounded-full shadow-lg"
+    >
+      <svg v-if="showGlobalHidden" xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+      </svg>
 
-        <!-- Kalau tidak aktif (showHidden false) → mata dicoret -->
-        <svg v-else xmlns="http://www.w3.org/2000/svg"
-            class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.006-3.362M9.88 9.88a3 3 0 104.24 4.24M6.1 6.1l11.8 11.8" />
-        </svg>
-      </button>
+      <svg v-else xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.006-3.362M9.88 9.88a3 3 0 104.24 4.24M6.1 6.1l11.8 11.8" />
+      </svg>
+    </button>
 
 
     <div v-if="props.head === 'horizontal'"
       ref="categoryHeader"
-     class="bg-indigo-200 px-6 py-2 border-b flex items-center justify-between">
+      class="bg-indigo-200 px-6 py-2 border-b flex items-center justify-between">
       <h4 class="text-base font-semibold text-indigo-700">
         {{ category.name }}
       </h4>
 
       <button
         v-if="hasHiddenPoints"
-        @click="showHidden = !showHidden"
+        @click="toggleGlobalHidden"
         class="text-sm text-indigo-700 hover:underline focus:outline-none"
       >
-        {{ showHidden ? 'Sembunyikan' : 'Tampilkan Point Lain' }}
+        {{ showGlobalHidden ? 'Sembunyikan' : 'Tampilkan Point Lain' }}
       </button>
     </div>
     
     <div class="p-4 space-y-4"> 
-      <!-- PERBAIKAN: Gunakan filteredPoints bukan category.menu_point -->
-      <div v-for="menuPoint in filteredPoints" :key="menuPoint.id" 
-        class="space-y-2 pb-2 border-b border-gray-100 last:border-0 last:pb-0" >
-        <div class="flex items-start justify-between">
-          <label class="block text-sm font-medium text-gray-700">
-            {{ menuPoint.inspection_point?.name }}
-            <span v-if="menuPoint.settings?.is_required" class="text-red-500">*</span>
-          </label>
-          <span 
-            v-if="isPointComplete(menuPoint)"
-            class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"
+      <div v-for="(item, index) in renderedItems" :key="index" 
+        class="space-y-2 last:border-0 last:pb-0"
+        :class="item.is_link ? 'pb-0' : 'pb-2 border-b border-gray-100'"
+      >
+        
+        <div v-if="item.is_link" 
+          class="flex justify-end py-1"> <button
+            @click="revealHiddenPoints(item.hiddenIds)"
+            class="text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline focus:outline-none"
           >
-            ✓
-          </span>
+            Tampilkan {{ item.count }} Point Tersembunyi
+          </button>
         </div>
-        
-        <input-text
-          v-if="menuPoint.input_type === 'text'"
-          v-model="form.results[menuPoint.inspection_point?.id].note"
-          :required="menuPoint.settings?.is_required"
-          :min-length="menuPoint.settings?.min_length"
-          :max-length="menuPoint.settings?.max_length"
-          :allowSpace="menuPoint.settings?.allow_space"
-          :textTransform="menuPoint.settings?.text_transform"
-          :placeholder="menuPoint.settings?.placeholder || 'Masukan text'"
-          :error="form.errors[`results.${menuPoint.inspection_point?.id}.note`]"
-          @update:modelValue="updateResult(menuPoint.inspection_point?.id, $event, 'note')"
-          @save="saveResult(menuPoint.inspection_point?.id)"
-        />
-        
-        <input-number
-          v-if="menuPoint.input_type === 'number'"
-          v-model="form.results[menuPoint.inspection_point?.id].note"
-          :required="menuPoint.settings?.is_required"
-          :min="menuPoint.settings?.min"
-          :max="menuPoint.settings?.max"
-          :step="menuPoint.settings?.step || 1"
-          :placeholder="menuPoint.settings?.placeholder || 'Masukan number'"
-          :error="form.errors[`results.${menuPoint.inspection_point?.id}.note`]"
-          @update:modelValue="updateResult(menuPoint.inspection_point?.id, $event, 'note')"
-          @save="saveResult(menuPoint.inspection_point?.id)"
-        />
 
-        <input-account
-          v-if="menuPoint.input_type === 'account'"
-          v-model="form.results[menuPoint.inspection_point?.id].note"
-          :required="menuPoint.settings?.is_required"
-          :placeholder="menuPoint.settings?.placeholder || 'Masukkan nilai'"
-          :error="form.errors[`results.${menuPoint.inspection_point?.id}.note`]"
-          :point-id="menuPoint.inspection_point?.id"
-          :settings="menuPoint.settings"
-          @update:modelValue="updateResult(menuPoint.inspection_point?.id, $event, 'note')"
-          @save="saveResult(menuPoint.inspection_point?.id)"
-        />
-        
-        <input-date
-          v-if="menuPoint.input_type === 'date'"
-          v-model="form.results[menuPoint.inspection_point?.id].note"
-          :required="menuPoint.settings?.is_required"
-          :min-date="menuPoint.settings?.min_date"
-          :max-date="menuPoint.settings?.max_date"
-          :error="form.errors[`results.${menuPoint.inspection_point?.id}.note`]"
-          @update:modelValue="updateResult(menuPoint.inspection_point?.id, $event, 'note')"
-          @save="saveResult(menuPoint.inspection_point?.id)"
-        />
-        
-        <input-textarea
-          v-if="menuPoint.input_type === 'textarea'"
-          v-model="form.results[menuPoint.inspection_point?.id].note"
-          :required="menuPoint.settings?.is_required"
-          :min-length="menuPoint.settings?.min_length"
-          :max-length="menuPoint.settings?.max_length"
-          :placeholder="menuPoint.settings?.placeholder || 'Masukkan teks di sini'"
-          :settings="menuPoint.settings"
-          :error="form.errors[`results.${menuPoint.inspection_point?.id}.note`]"
-          @update:modelValue="updateResult(menuPoint.inspection_point?.id, $event, 'note')"
-          @save="saveResult(menuPoint.inspection_point?.id)"
-        />
+        <div v-else class="space-y-2">
+          <div class="flex items-start justify-between">
+            <label class="block text-sm font-medium text-gray-700">
+              {{ item.inspection_point?.name }}
+              
+              <span v-if="item.settings?.is_required" class="text-red-500">*</span>
+              <span v-if="!item.is_default && !hasPointData(item.inspection_point?.id)"
+                class="italic text-xs text-gray-400 ml-2"
+              >
+                (opsional)
+              </span>
+            </label>
+            <span 
+              v-if="isPointComplete(item)"
+              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"
+            >
+              ✓
+            </span>
+          </div>
+          
+          <input-text
+            v-if="item.input_type === 'text'"
+            v-model="form.results[item.inspection_point?.id].note"
+            :required="item.settings?.is_required"
+            :min-length="item.settings?.min_length"
+            :max-length="item.settings?.max_length"
+            :allowSpace="item.settings?.allow_space"
+            :textTransform="item.settings?.text_transform"
+            :placeholder="item.settings?.placeholder || 'Masukan text'"
+            :error="form.errors[`results.${item.inspection_point?.id}.note`]"
+            @update:modelValue="updateResult(item.inspection_point?.id, $event, 'note')"
+            @save="saveResult(item.inspection_point?.id)"
+          />
+          
+          <input-number
+            v-if="item.input_type === 'number'"
+            v-model="form.results[item.inspection_point?.id].note"
+            :required="item.settings?.is_required"
+            :min="item.settings?.min"
+            :max="item.settings?.max"
+            :step="item.settings?.step || 1"
+            :placeholder="item.settings?.placeholder || 'Masukan number'"
+            :error="form.errors[`results.${item.inspection_point?.id}.note`]"
+            @update:modelValue="updateResult(item.inspection_point?.id, $event, 'note')"
+            @save="saveResult(item.inspection_point?.id)"
+          />
 
-        <input-radio
-          v-if="menuPoint.input_type === 'radio'"
-          v-model="form.results[menuPoint.inspection_point?.id].status"
-          :notes="form.results[menuPoint.inspection_point?.id].note"
-          :images="form.images[menuPoint.inspection_point?.id]"
-          :required="menuPoint.settings?.is_required"
-          :point-id="menuPoint.inspection_point?.id"
-          :point="menuPoint.inspection_point"
-          :inspection-id="inspectionId" 
-          :settings="menuPoint.settings"
-          :point-name="menuPoint.inspection_point?.name"
-          :selected-point="menuPoint.inspection_point ?? null"
-          :options="menuPoint.settings?.radios || defaultRadioOptions"
-          :error="form.errors[`results.${menuPoint.inspection_point?.id}.status`]"
-          @update:modelValue="updateResult(menuPoint.inspection_point?.id, $event, 'status')"
-          @update:notes="val => form.results[menuPoint.inspection_point?.id].note = val"
-          @update:images="val => form.images[menuPoint.inspection_point?.id] = val"
-          @save="saveResult(menuPoint.inspection_point?.id)"
-          @hapus="HapusPoint(menuPoint.inspection_point?.id)"
-        />
+          <input-account
+            v-if="item.input_type === 'account'"
+            v-model="form.results[item.inspection_point?.id].note"
+            :required="item.settings?.is_required"
+            :placeholder="item.settings?.placeholder || 'Masukkan nilai'"
+            :error="form.errors[`results.${item.inspection_point?.id}.note`]"
+            :point-id="item.inspection_point?.id"
+            :settings="item.settings"
+            @update:modelValue="updateResult(item.inspection_point?.id, $event, 'note')"
+            @save="saveResult(item.inspection_point?.id)"
+          />
+          
+          <input-date
+            v-if="item.input_type === 'date'"
+            v-model="form.results[item.inspection_point?.id].note"
+            :required="item.settings?.is_required"
+            :min-date="item.settings?.min_date"
+            :max-date="item.settings?.max_date"
+            :error="form.errors[`results.${item.inspection_point?.id}.note`]"
+            @update:modelValue="updateResult(item.inspection_point?.id, $event, 'note')"
+            @save="saveResult(item.inspection_point?.id)"
+          />
+          
+          <input-textarea
+            v-if="item.input_type === 'textarea'"
+            v-model="form.results[item.inspection_point?.id].note"
+            :required="item.settings?.is_required"
+            :min-length="item.settings?.min_length"
+            :max-length="item.settings?.max_length"
+            :placeholder="item.settings?.placeholder || 'Masukkan teks di sini'"
+            :settings="item.settings"
+            :error="form.errors[`results.${item.inspection_point?.id}.note`]"
+            @update:modelValue="updateResult(item.inspection_point?.id, $event, 'note')"
+            @save="saveResult(item.inspection_point?.id)"
+          />
 
-        <InputImageToRadio
-          v-if="menuPoint.input_type === 'imageTOradio'"
-          v-model="form.results[menuPoint.inspection_point?.id].status"
-          :notes="form.results[menuPoint.inspection_point?.id].note"
-          :images="form.images[menuPoint.inspection_point?.id]"
-          :required="menuPoint.settings?.is_required"
-          :point-id="menuPoint.inspection_point?.id"
-          :inspection-id="inspectionId" 
-          :settings="menuPoint.settings"
-          :point-name="menuPoint.inspection_point?.name"
-          :point="menuPoint"
-          :selected-point="menuPoint.inspection_point ?? null"
-          :options="menuPoint.settings?.radios || defaultRadioOptions"
-          :error="form.errors[`results.${menuPoint.inspection_point?.id}.status`]"
-          @update:modelValue="updateResult(menuPoint.inspection_point?.id, $event,'status')"
-          @update:notes="val => form.results[menuPoint.inspection_point?.id].note = val"
-          @update:images="val => form.images[menuPoint.inspection_point?.id] = val"
-          @save="saveResult(menuPoint.inspection_point?.id)"
-          @hapus="HapusPoint(menuPoint.inspection_point?.id)"
-        />
-        
-        <input-image
-          v-if="menuPoint.input_type === 'image'"
-          v-model="form.images[menuPoint.inspection_point?.id]"
-          :error="form.errors[`images.${menuPoint.inspection_point?.id}`]"
-          :inspection-id="inspectionId"
-          :point-id="menuPoint.inspection_point?.id"
-          :point="menuPoint.inspection_point"
-          :point-name="menuPoint.inspection_point?.name"
-          :settings="menuPoint.settings"
-          @update:notes="val => form.results[menuPoint.inspection_point?.id].note = val"
-          @update:status="val => form.results[menuPoint.inspection_point?.id].status = val"
-        />
+          <input-radio
+            v-if="item.input_type === 'radio'"
+            v-model="form.results[item.inspection_point?.id].status"
+            :notes="form.results[item.inspection_point?.id].note"
+            :images="form.images[item.inspection_point?.id]"
+            :required="item.settings?.is_required"
+            :point-id="item.inspection_point?.id"
+            :point="item.inspection_point"
+            :inspection-id="inspectionId" 
+            :settings="item.settings"
+            :point-name="item.inspection_point?.name"
+            :selected-point="item.inspection_point ?? null"
+            :options="item.settings?.radios || defaultRadioOptions"
+            :error="form.errors[`results.${item.inspection_point?.id}.status`]"
+            @update:modelValue="updateResult(item.inspection_point?.id, $event, 'status')"
+            @update:notes="val => form.results[item.inspection_point?.id].note = val"
+            @update:images="val => form.images[item.inspection_point?.id] = val"
+            @save="saveResult(item.inspection_point?.id)"
+            @hapus="HapusPoint(item.inspection_point?.id)"
+          />
 
-        <input-select
-          v-if="menuPoint.input_type === 'select'"
-          v-model="form.results[menuPoint.inspection_point?.id].status"
-          :required="menuPoint.settings?.is_required"
-          :error="form.errors[`results.${menuPoint.inspection_point?.id}.status`]"
-          @update:modelValue="updateResult(menuPoint.inspection_point?.id, $event, 'status')"
-          @save="saveResult(menuPoint.inspection_point?.id)"
-        />
+          <InputImageToRadio
+            v-if="item.input_type === 'imageTOradio'"
+            v-model="form.results[item.inspection_point?.id].status"
+            :notes="form.results[item.inspection_point?.id].note"
+            :images="form.images[item.inspection_point?.id]"
+            :required="item.settings?.is_required"
+            :point-id="item.inspection_point?.id"
+            :inspection-id="inspectionId" 
+            :settings="item.settings"
+            :point-name="item.inspection_point?.name"
+            :point="item"
+            :selected-point="item.inspection_point ?? null"
+            :options="item.settings?.radios || defaultRadioOptions"
+            :error="form.errors[`results.${item.inspection_point?.id}.status`]"
+            @update:modelValue="updateResult(item.inspection_point?.id, $event,'status')"
+            @update:notes="val => form.results[item.inspection_point?.id].note = val"
+            @update:images="val => form.images[item.inspection_point?.id] = val"
+            @save="saveResult(item.inspection_point?.id)"
+            @hapus="HapusPoint(item.inspection_point?.id)"
+          />
+          
+          <input-image
+            v-if="item.input_type === 'image'"
+            v-model="form.images[item.inspection_point?.id]"
+            :error="form.errors[`images.${item.inspection_point?.id}`]"
+            :inspection-id="inspectionId"
+            :point-id="item.inspection_point?.id"
+            :point="item.inspection_point"
+            :point-name="item.inspection_point?.name"
+            :settings="item.settings"
+            @update:notes="val => form.results[item.inspection_point?.id].note = val"
+            @update:status="val => form.results[item.inspection_point?.id].status = val"
+          />
+
+          <input-select
+            v-if="item.input_type === 'select'"
+            v-model="form.results[item.inspection_point?.id].status"
+            :required="item.settings?.is_required"
+            :error="form.errors[`results.${item.inspection_point?.id}.status`]"
+            @update:modelValue="updateResult(item.inspection_point?.id, $event, 'status')"
+            @save="saveResult(item.inspection_point?.id)"
+          />
+        </div>
         
       </div>
 
-      <!-- Tampilkan pesan jika tidak ada points yang visible -->
-      <div v-if="filteredPoints.length === 0" class="text-center py-8 text-gray-500">
+      <div v-if="renderedItems.filter(i => !i.is_link).length === 0" class="text-center py-8 text-gray-500">
         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
         </svg>
@@ -221,6 +235,7 @@
 </template>
 
 <script setup>
+// ... Import components dan setup lainnya tetap sama ...
 import InputText from './InputText.vue';
 import InputNumber from './InputNumber.vue';
 import InputDate from './InputDate.vue';
@@ -243,7 +258,8 @@ const props = defineProps({
 
 const emit = defineEmits(['saveResult', 'updateResult', 'removeImage', 'hapusPoint']);
 
-const showHidden = ref(false); // kontrol link toggle
+const showGlobalHidden = ref(false); 
+const manuallyShownPoints = ref([]); 
 
 const page = usePage();
 
@@ -264,90 +280,121 @@ onMounted(() => {
   })
 })
 
-// apakah kategori punya menuPoint dengan is_default false
+const toggleGlobalHidden = () => {
+  showGlobalHidden.value = !showGlobalHidden.value;
+  
+  if (showGlobalHidden.value || !showGlobalHidden.value) {
+     manuallyShownPoints.value = [];
+  }
+};
+
+
 const hasHiddenPoints = computed(() => {
   return (props.category.points || []).some(p => p.is_default === false);
 });
 
-const filteredPoints = computed(() => {
-  console.log('CategorySection - Filtering points:', {
-    categoryName: props.category.name,
-    isDamageMenu: props.category.isDamageMenu,
-    allPoints: props.category.points,
-    allPointsCount: props.category.points?.length
-  });
+/**
+ * FUNGSI UTAMA BARU: Memproses daftar poin untuk menyisipkan tombol "Tampilkan"
+ */
+const renderedItems = computed(() => {
+  const points = props.category.points || [];
+  const itemsToRender = [];
+  let hiddenGroup = []; 
 
-  // Kalau bukan damage menu
-  if (!props.category.isDamageMenu) {
-    const filtered = (props.category.points || []).filter(point => {
-      const pointId = point.inspection_point?.id
-      const hasData = hasPointData(pointId)
-
-      // kalau showHidden aktif → semua tampil
-      if (showHidden.value) return true
-
-      // tampilkan kalau default atau ada data
-      if (point.is_default) return true
-      if (hasData) return true
-
-      console.log(`Non-damage Point ${pointId}: is_default=${point.is_default}, hasData=${hasData}`)
-      return false
-    })
-
-    console.log('Filtered non-damage points:', filtered)
-    return filtered
+  // KONDISI 1: Jika toggle global aktif (Tampilkan Semua), HANYA tampilkan poin
+  if (showGlobalHidden.value) {
+    if (props.category.isDamageMenu) {
+        return points.filter(p => p.is_default || hasPointData(p.inspection_point?.id) || showGlobalHidden.value);
+    }
+    return points; 
+  }
+  
+  // KONDISI 2: Jika damage menu non-global (gunakan logika lama)
+  if (props.category.isDamageMenu) {
+    return points.filter(point => {
+        const pointId = point.inspection_point?.id
+        return hasPointData(pointId) || point.is_default || manuallyShownPoints.value.includes(pointId);
+    });
   }
 
-  // Kalau damage menu (aturan lama, tidak diubah)
-  const filtered = (props.category.points || []).filter(point => {
-    const pointId = point.inspection_point?.id
-    const hasData = hasPointData(pointId)
+  // KONDISI 3: Logika inline untuk non-damage menu
+  points.forEach((point) => {
+    const pointId = point.inspection_point?.id;
+    const hasData = hasPointData(pointId);
+    const isShownManually = manuallyShownPoints.value.includes(pointId);
 
-    if (showHidden.value) return true
-    if (point.is_default) return true
-    if (!point.is_default && hasData) return true
+    // Kriteria tampil: is_default TRUE, ATAU sudah ada data, ATAU sudah dibuka manual
+    const isVisible = point.is_default || hasData || isShownManually;
 
-    console.log(`Damage Point ${pointId}: hasData=${hasData}`)
-    return hasData
-  })
+    if (isVisible) {
+      if (hiddenGroup.length > 0) {
+        itemsToRender.push({
+          is_link: true,
+          count: hiddenGroup.length,
+          hiddenIds: hiddenGroup.map(p => p.inspection_point.id), 
+        });
+        
+        hiddenGroup.forEach(hiddenPoint => {
+             if (manuallyShownPoints.value.includes(hiddenPoint.inspection_point.id)) {
+                 itemsToRender.push(hiddenPoint);
+             }
+         });
+        
+        hiddenGroup = []; 
+      }
+      itemsToRender.push(point);
+    } else {
+      hiddenGroup.push(point);
+    }
+  });
 
-  console.log('Filtered damage points:', filtered)
-  return filtered
+  // Setelah loop selesai, jika masih ada hiddenGroup yang tersisa di akhir
+  if (hiddenGroup.length > 0) {
+    itemsToRender.push({
+      is_link: true,
+      count: hiddenGroup.length,
+      hiddenIds: hiddenGroup.map(p => p.inspection_point.id),
+    });
+     hiddenGroup.forEach(hiddenPoint => {
+        if (manuallyShownPoints.value.includes(hiddenPoint.inspection_point.id)) {
+            itemsToRender.push(hiddenPoint);
+        }
+    });
+  }
+  
+  return itemsToRender.filter(item => item.is_link || item.is_default || hasPointData(item.inspection_point?.id) || manuallyShownPoints.value.includes(item.inspection_point?.id));
+});
+
+
+const filteredPoints = computed(() => {
+    return renderedItems.value.filter(item => !item.is_link);
 })
 
 
+const revealHiddenPoints = (hiddenIds) => {
+    showGlobalHidden.value = false; 
 
-// PERBAIKAN: Cek apakah point sudah memiliki data
+    hiddenIds.forEach(id => {
+        if (!manuallyShownPoints.value.includes(id)) {
+            manuallyShownPoints.value.push(id);
+        }
+    });
+};
+
 const hasPointData = (pointId) => {
   if (!pointId) {
-    console.log('hasPointData: pointId is null/undefined');
     return false;
   }
   
-  // Cek di existingResults (data dari server)
   const hasServerResult = page.props.existingResults[pointId] !== undefined;
-  
-  // Cek di existingImages (data dari server)
   const hasServerImages = page.props.existingImages[pointId] && page.props.existingImages[pointId].length > 0;
   
-  // Cek di form results (data lokal yang belum disimpan)
   const hasLocalResult = props.form.results[pointId] && 
-                        (props.form.results[pointId].status || props.form.results[pointId].note);
+                       (props.form.results[pointId].status || props.form.results[pointId].note);
   
-  // Cek di form images (data lokal yang belum disimpan)
   const hasLocalImages = props.form.images[pointId] && props.form.images[pointId].length > 0;
 
-  const result = hasServerResult || hasServerImages || hasLocalResult || hasLocalImages;
-
-  console.log(`Point ${pointId} data check:`, {
-    hasServerResult,
-    hasServerImages,
-    hasLocalResult,
-    hasLocalImages,
-    finalResult: result
-  });
-  
-  return result;
+  return hasServerResult || hasServerImages || hasLocalResult || hasLocalImages;
 };
 
 const defaultRadioOptions = [
@@ -404,23 +451,12 @@ const isPointComplete = (menuPoint) => {
   }
 };
 
-// Watcher untuk reset state ketika point dihapus
 watch(() => props.form.results, (newResults) => {
-  // Cek jika hasil untuk point tertentu dihapus
-  Object.keys(newResults).forEach(pointId => {
-    if (!newResults[pointId] || (!newResults[pointId].status && !newResults[pointId].note)) {
-      // Reset state lokal jika perlu
-    }
-  });
+  // ...
 }, { deep: true });
 
-// Watcher untuk images
 watch(() => props.form.images, (newImages) => {
-  Object.keys(newImages).forEach(pointId => {
-    if (!newImages[pointId] || newImages[pointId].length === 0) {
-      // Reset state lokal jika perlu
-    }
-  });
+  // ...
 }, { deep: true });
 
 const updateResult = (pointId, value, type) => {

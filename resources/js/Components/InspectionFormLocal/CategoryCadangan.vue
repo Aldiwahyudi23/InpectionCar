@@ -1,132 +1,246 @@
 <template>
-  <div class="category-container">
-    <!-- Header untuk mode vertical -->
-    <div 
-      v-if="props.head === 'vertical'"
-      class="category-header vertical-header"
-      :class="{ 'header-hidden': !isHeaderVisible }"
+  <div v-if="props.head === 'vertical'"
+    class="px-6 py-2 border-b flex items-center justify-between bg-indigo-200"
+    :class=" 'fixed top-0 left-0 right-0 z-20'"
+  >
+    <h4 class="text-base font-semibold text-indigo-700">
+      {{ category.name }}
+    </h4>
+
+    <button
+      v-if="hasHiddenPoints"
+      @click="toggleGlobalHidden"
+      class="text-sm text-indigo-700 hover:underline focus:outline-none"
     >
+      {{ showGlobalHidden ? 'Sembunyikan Semua' : 'Tampilkan Point Lain' }}
+    </button>
+  </div>
+  <div class="bg-gray-50 shadow-lg rounded-xl overflow-hidden border border-gray-100"
+    :class="props.head === 'vertical' ? 'pt-6' : ''"
+  >
+
+    <button
+      v-if="!isHeaderVisible && hasHiddenPoints"
+      @click="toggleGlobalHidden"
+      class="fixed top-3 right-2 z-50 bg-indigo-600 text-white p-2 rounded-full shadow-lg"
+    >
+      <svg v-if="showGlobalHidden" xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+      </svg>
+
+      <svg v-else xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.006-3.362M9.88 9.88a3 3 0 104.24 4.24M6.1 6.1l11.8 11.8" />
+      </svg>
+    </button>
+
+
+    <div v-if="props.head === 'horizontal'"
+      ref="categoryHeader"
+      class="bg-indigo-200 px-6 py-2 border-b flex items-center justify-between">
       <h4 class="text-base font-semibold text-indigo-700">
         {{ category.name }}
       </h4>
 
       <button
         v-if="hasHiddenPoints"
-        @click="toggleHidden"
-        class="toggle-button"
+        @click="toggleGlobalHidden"
+        class="text-sm text-indigo-700 hover:underline focus:outline-none"
       >
-        {{ showHidden ? 'Sembunyikan' : 'Tampilkan Point Lain' }}
+        {{ showGlobalHidden ? 'Sembunyikan' : 'Tampilkan Point Lain' }}
       </button>
     </div>
-
-    <!-- Main Content Container -->
-    <div 
-      class="content-wrapper"
-      :class="{ 'vertical-padding': props.head === 'vertical' }"
-    >
-      <!-- Floating Eye Icon -->
-      <button
-        v-if="!isHeaderVisible && hasHiddenPoints"
-        @click="toggleHidden"
-        class="floating-eye-button"
+    
+    <div class="p-4 space-y-4"> 
+      <div v-for="(item, index) in renderedItems" :key="index" 
+        class="space-y-2 last:border-0 last:pb-0"
+        :class="item.is_link ? 'pb-0' : 'pb-2 border-b border-gray-100'"
       >
-        <svg 
-          v-if="showHidden" 
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5" 
-          fill="none" 
-          viewBox="0 0 24 24" 
-          stroke="currentColor"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-        </svg>
+        
+        <div v-if="item.is_link" 
+          class="flex justify-end py-1"> <button
+            @click="revealHiddenPoints(item.hiddenIds)"
+            class="text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline focus:outline-none"
+          >
+            Tampilkan {{ item.count }} Point Tersembunyi
+          </button>
+        </div>
 
-        <svg 
-          v-else 
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5" 
-          fill="none" 
-          viewBox="0 0 24 24" 
-          stroke="currentColor"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.956 9.956 0 012.006-3.362M9.88 9.88a3 3 0 104.24 4.24M6.1 6.1l11.8 11.8" />
-        </svg>
-      </button>
-
-      <!-- Header untuk mode horizontal -->
-      <div 
-        v-if="props.head === 'horizontal'"
-        ref="categoryHeader"
-        class="category-header horizontal-header"
-      >
-        <h4 class="text-base font-semibold text-indigo-700">
-          {{ category.name }}
-        </h4>
-
-        <button
-          v-if="hasHiddenPoints"
-          @click="toggleHidden"
-          class="toggle-button"
-        >
-          {{ showHidden ? 'Sembunyikan' : 'Tampilkan Point Lain' }}
-        </button>
-      </div>
-      
-      <!-- Points Container - Dioptimalkan untuk scroll -->
-      <div class="points-container">
-        <div 
-          v-for="menuPoint in filteredPoints" 
-          :key="menuPoint.id" 
-          class="point-item"
-        >
-          <div class="point-header">
-            <label class="point-label">
-              {{ menuPoint.inspection_point?.name }}
-              <span v-if="menuPoint.settings?.is_required" class="required-star">*</span>
+        <div v-else class="space-y-2">
+          <div class="flex items-start justify-between">
+            <label class="block text-sm font-medium text-gray-700">
+              {{ item.inspection_point?.name }}
+              
+              <span v-if="item.settings?.is_required" class="text-red-500">*</span>
+              <span v-if="!item.is_default && !hasPointData(item.inspection_point?.id)"
+                class="italic text-xs text-gray-400 ml-2"
+              >
+                (opsional)
+              </span>
             </label>
             <span 
-              v-if="isPointComplete(menuPoint)"
-              class="completion-badge"
+              v-if="isPointComplete(item)"
+              class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"
             >
               ✓
             </span>
           </div>
           
-          <!-- Dynamic Input Components menggunakan ComponentWrapper -->
-          <ComponentWrapper 
-            :menuPoint="menuPoint" 
-            @update:modelValue="handleComponentUpdate"
-            @update:notes="handleNotesUpdate"
-            @update:images="handleImagesUpdate"
-            @save="handleSave"
-            @hapus="handleHapus"
+          <input-text
+            v-if="item.input_type === 'text'"
+            :model-value="form.results[item.inspection_point?.id]?.note"
+            :required="item.settings?.is_required"
+            :min-length="item.settings?.min_length"
+            :max-length="item.settings?.max_length"
+            :allowSpace="item.settings?.allow_space"
+            :textTransform="item.settings?.text_transform"
+            :placeholder="item.settings?.placeholder || 'Masukan text'"
+            :error="form.errors[`results.${item.inspection_point?.id}.note`]"
+            @update:modelValue="updateResult(item.inspection_point?.id, $event, 'note')"
+            @save="saveResult(item.inspection_point?.id)"
+          />
+          
+          <input-number
+            v-if="item.input_type === 'number'"
+            :model-value="form.results[item.inspection_point?.id]?.note"
+            :required="item.settings?.is_required"
+            :min="item.settings?.min"
+            :max="item.settings?.max"
+            :step="item.settings?.step || 1"
+            :placeholder="item.settings?.placeholder || 'Masukan number'"
+            :error="form.errors[`results.${item.inspection_point?.id}.note`]"
+            @update:modelValue="updateResult(item.inspection_point?.id, $event, 'note')"
+            @save="saveResult(item.inspection_point?.id)"
+          />
+
+          <input-account
+            v-if="item.input_type === 'account'"
+            :model-value="form.results[item.inspection_point?.id]?.note"
+            :required="item.settings?.is_required"
+            :placeholder="item.settings?.placeholder || 'Masukkan nilai'"
+            :error="form.errors[`results.${item.inspection_point?.id}.note`]"
+            :point-id="item.inspection_point?.id"
+            :settings="item.settings"
+            @update:modelValue="updateResult(item.inspection_point?.id, $event, 'note')"
+            @save="saveResult(item.inspection_point?.id)"
+          />
+          
+          <input-date
+            v-if="item.input_type === 'date'"
+            :model-value="form.results[item.inspection_point?.id]?.note"
+            :required="item.settings?.is_required"
+            :min-date="item.settings?.min_date"
+            :max-date="item.settings?.max_date"
+            :error="form.errors[`results.${item.inspection_point?.id}.note`]"
+            @update:modelValue="updateResult(item.inspection_point?.id, $event, 'note')"
+            @save="saveResult(item.inspection_point?.id)"
+          />
+          
+          <input-textarea
+            v-if="item.input_type === 'textarea'"
+            :model-value="form.results[item.inspection_point?.id]?.note"
+            :required="item.settings?.is_required"
+            :min-length="item.settings?.min_length"
+            :max-length="item.settings?.max_length"
+            :placeholder="item.settings?.placeholder || 'Masukkan teks di sini'"
+            :settings="item.settings"
+            :error="form.errors[`results.${item.inspection_point?.id}.note`]"
+            @update:modelValue="updateResult(item.inspection_point?.id, $event, 'note')"
+            @save="saveResult(item.inspection_point?.id)"
+          />
+
+          <input-radio
+            v-if="item.input_type === 'radio'"
+            :model-value="form.results[item.inspection_point?.id]?.status"
+            :notes="form.results[item.inspection_point?.id]?.note"
+            :images="form.images[item.inspection_point?.id]"
+            :required="item.settings?.is_required"
+            :point-id="item.inspection_point?.id"
+            :point="item.inspection_point"
+            :inspection-id="inspectionId" 
+            :settings="item.settings"
+            :point-name="item.inspection_point?.name"
+            :selected-point="item.inspection_point ?? null"
+            :options="item.settings?.radios || defaultRadioOptions"
+            :error="form.errors[`results.${item.inspection_point?.id}.status`]"
+            @update:modelValue="updateResult(item.inspection_point?.id, $event, 'status')"
+            @update:notes="val => updateResult(item.inspection_point?.id, val, 'note')"
+            @update:images="val => updateImages(item.inspection_point?.id, val)"
+            @save="saveResult(item.inspection_point?.id)"
+            @hapus="HapusPoint(item.inspection_point?.id)"
+          />
+
+          <InputImageToRadio
+            v-if="item.input_type === 'imageTOradio'"
+            :model-value="form.results[item.inspection_point?.id]?.status"
+            :notes="form.results[item.inspection_point?.id]?.note"
+            :images="form.images[item.inspection_point?.id]"
+            :required="item.settings?.is_required"
+            :point-id="item.inspection_point?.id"
+            :inspection-id="inspectionId" 
+            :settings="item.settings"
+            :point-name="item.inspection_point?.name"
+            :point="item"
+            :selected-point="item.inspection_point ?? null"
+            :options="item.settings?.radios || defaultRadioOptions"
+            :error="form.errors[`results.${item.inspection_point?.id}.status`]"
+            @update:modelValue="updateResult(item.inspection_point?.id, $event,'status')"
+            @update:notes="val => updateResult(item.inspection_point?.id, val, 'note')"
+            @update:images="val => updateImages(item.inspection_point?.id, val)"
+            @save="saveResult(item.inspection_point?.id)"
+            @hapus="HapusPoint(item.inspection_point?.id)"
+          />
+          
+          <!-- MODIFIED: InputImage dengan direct upload -->
+          <input-image
+            v-if="item.input_type === 'image'"
+            :model-value="form.images[item.inspection_point?.id]"
+            :error="form.errors[`images.${item.inspection_point?.id}`]"
+            :inspection-id="inspectionId"
+            :point-id="item.inspection_point?.id"
+            :point="item.inspection_point"
+            :point-name="item.inspection_point?.name"
+            :settings="item.settings"
+            :direct-upload="true"
+            @update:modelValue="updateImages(item.inspection_point?.id, $event)"
+            @image-saved="handleDirectImageSave"
+          />
+
+          <input-select
+            v-if="item.input_type === 'select'"
+            :model-value="form.results[item.inspection_point?.id]?.status"
+            :required="item.settings?.is_required"
+            :error="form.errors[`results.${item.inspection_point?.id}.status`]"
+            @update:modelValue="updateResult(item.inspection_point?.id, $event, 'status')"
+            @save="saveResult(item.inspection_point?.id)"
           />
         </div>
+        
+      </div>
 
-        <!-- Empty State -->
-        <div v-if="filteredPoints.length === 0" class="empty-state">
-          <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-          </svg>
-          <p class="empty-text">Tidak ada data untuk ditampilkan</p>
-          <p v-if="category.isDamageMenu" class="empty-subtext">
-            Tambahkan data melalui tombol "+" di pojok kanan bawah
-          </p>
-        </div>
+      <div v-if="renderedItems.filter(i => !i.is_link).length === 0" class="text-center py-8 text-gray-500">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        <p class="mt-2 text-sm">Tidak ada data untuk ditampilkan</p>
+        <p v-if="category.isDamageMenu" class="text-xs text-gray-400">
+          Tambahkan data melalui tombol "+" di pojok kanan bawah
+        </p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, computed, ref, watch, nextTick, h } from 'vue';
+import { onMounted, onUnmounted, computed, ref, watch, inject } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 
-// Components
+// Import components
 import InputText from './InputText.vue';
 import InputNumber from './InputNumber.vue';
 import InputDate from './InputDate.vue';
@@ -145,96 +259,182 @@ const props = defineProps({
   selectedPoint: Object,
 });
 
-const emit = defineEmits(['saveResult', 'updateResult', 'removeImage', 'hapusPoint']);
+const emit = defineEmits(['updateResult', 'removeImage', 'hapusPoint', 'imageSaved']);
 
-// Refs
-const showHidden = ref(false);
+// Inject dari parent component untuk background upload system
+const addToUploadQueue = inject('addToUploadQueue');
+const globalUploadQueue = inject('globalUploadQueue');
+const retryFailedUpload = inject('retryFailedUpload');
+const uploadStats = inject('uploadStats');
+const isUploading = inject('isUploading');
+
+// State untuk tampilan
+const showGlobalHidden = ref(false); 
+const manuallyShownPoints = ref([]); 
 const isHeaderVisible = ref(true);
 const categoryHeader = ref(null);
 
-// Computed properties dengan caching dan optimasi
-const hasHiddenPoints = computed(() => {
-  const points = props.category.points || [];
-  return points.some(p => p.is_default === false);
-});
+const page = usePage();
 
-// Optimasi filteredPoints dengan memoization
-const filteredPoints = computed(() => {
-  const points = props.category.points || [];
-  const isDamageMenu = props.category.isDamageMenu;
-  
-  if (!isDamageMenu) {
-    if (showHidden.value) return points;
-    
-    return points.filter(point => {
-      const pointId = point.inspection_point?.id;
-      return point.is_default || hasPointData(pointId);
-    });
+// Setup intersection observer untuk header
+onMounted(() => {
+  const observer = new IntersectionObserver(([entry]) => {
+    isHeaderVisible.value = entry.isIntersecting;
+  }, { threshold: 0.1 });
+
+  if (categoryHeader.value) {
+    observer.observe(categoryHeader.value);
   }
 
-  // Damage menu logic
-  if (showHidden.value) return points;
-  
-  return points.filter(point => {
-    const pointId = point.inspection_point?.id;
-    return point.is_default || hasPointData(pointId);
+  onUnmounted(() => {
+    if (categoryHeader.value) observer.unobserve(categoryHeader.value);
   });
 });
 
-// Optimasi hasPointData dengan caching
-const pointDataCache = new Map();
-const hasPointData = (pointId) => {
-  if (!pointId) return false;
+// Toggle untuk menampilkan/sembunyikan semua point tersembunyi
+const toggleGlobalHidden = () => {
+  showGlobalHidden.value = !showGlobalHidden.value;
   
-  // Cek cache dulu
-  if (pointDataCache.has(pointId)) {
-    return pointDataCache.get(pointId);
+  if (!showGlobalHidden.value) {
+    manuallyShownPoints.value = [];
   }
-  
-  const page = usePage();
-  
-  // Cek data dari server
-  const hasServerResult = page.props.existingResults[pointId] !== undefined;
-  const hasServerImages = page.props.existingImages[pointId]?.length > 0;
-  
-  // Cek data lokal
-  const hasLocalResult = props.form.results[pointId] && 
-                        (props.form.results[pointId].status || props.form.results[pointId].note);
-  const hasLocalImages = props.form.images[pointId]?.length > 0;
-
-  const result = hasServerResult || hasServerImages || hasLocalResult || hasLocalImages;
-  
-  // Cache hasilnya
-  pointDataCache.set(pointId, result);
-  
-  return result;
 };
 
+// Computed properties
+const hasHiddenPoints = computed(() => {
+  return (props.category.points || []).some(p => p.is_default === false);
+});
+
+/**
+ * FUNGSI UTAMA: Memproses daftar poin untuk menyisipkan tombol "Tampilkan"
+ */
+const renderedItems = computed(() => {
+  const points = props.category.points || [];
+  const itemsToRender = [];
+  let hiddenGroup = []; 
+
+  // KONDISI 1: Jika toggle global aktif (Tampilkan Semua), HANYA tampilkan poin
+  if (showGlobalHidden.value) {
+    if (props.category.isDamageMenu) {
+        return points.filter(p => p.is_default || hasPointData(p.inspection_point?.id) || showGlobalHidden.value);
+    }
+    return points; 
+  }
+  
+  // KONDISI 2: Jika damage menu non-global (gunakan logika lama)
+  if (props.category.isDamageMenu) {
+    return points.filter(point => {
+        const pointId = point.inspection_point?.id;
+        return hasPointData(pointId) || point.is_default || manuallyShownPoints.value.includes(pointId);
+    });
+  }
+
+  // KONDISI 3: Logika inline untuk non-damage menu
+  points.forEach((point) => {
+    const pointId = point.inspection_point?.id;
+    const hasData = hasPointData(pointId);
+    const isShownManually = manuallyShownPoints.value.includes(pointId);
+
+    // Kriteria tampil: is_default TRUE, ATAU sudah ada data, ATAU sudah dibuka manual
+    const isVisible = point.is_default || hasData || isShownManually;
+
+    if (isVisible) {
+      if (hiddenGroup.length > 0) {
+        itemsToRender.push({
+          is_link: true,
+          count: hiddenGroup.length,
+          hiddenIds: hiddenGroup.map(p => p.inspection_point.id), 
+        });
+        
+        hiddenGroup.forEach(hiddenPoint => {
+             if (manuallyShownPoints.value.includes(hiddenPoint.inspection_point.id)) {
+                 itemsToRender.push(hiddenPoint);
+             }
+         });
+        
+        hiddenGroup = []; 
+      }
+      itemsToRender.push(point);
+    } else {
+      hiddenGroup.push(point);
+    }
+  });
+
+  // Setelah loop selesai, jika masih ada hiddenGroup yang tersisa di akhir
+  if (hiddenGroup.length > 0) {
+    itemsToRender.push({
+      is_link: true,
+      count: hiddenGroup.length,
+      hiddenIds: hiddenGroup.map(p => p.inspection_point.id),
+    });
+     hiddenGroup.forEach(hiddenPoint => {
+        if (manuallyShownPoints.value.includes(hiddenPoint.inspection_point.id)) {
+            itemsToRender.push(hiddenPoint);
+        }
+    });
+  }
+  
+  return itemsToRender.filter(item => 
+    item.is_link || 
+    item.is_default || 
+    hasPointData(item.inspection_point?.id) || 
+    manuallyShownPoints.value.includes(item.inspection_point?.id)
+  );
+});
+
+const filteredPoints = computed(() => {
+    return renderedItems.value.filter(item => !item.is_link);
+});
+
+// Fungsi untuk menampilkan point tersembunyi
+const revealHiddenPoints = (hiddenIds) => {
+    showGlobalHidden.value = false; 
+
+    hiddenIds.forEach(id => {
+        if (!manuallyShownPoints.value.includes(id)) {
+            manuallyShownPoints.value.push(id);
+        }
+    });
+};
+
+// Cek apakah point sudah memiliki data
+const hasPointData = (pointId) => {
+  if (!pointId) {
+    return false;
+  }
+  
+  const hasServerResult = page.props.existingResults[pointId] !== undefined;
+  const hasServerImages = page.props.existingImages[pointId] && page.props.existingImages[pointId].length > 0;
+  
+  const hasLocalResult = props.form.results[pointId] && 
+                       (props.form.results[pointId].status || props.form.results[pointId].note);
+  
+  const hasLocalImages = props.form.images[pointId] && props.form.images[pointId].length > 0;
+
+  return hasServerResult || hasServerImages || hasLocalResult || hasLocalImages;
+};
+
+// Default radio options
 const defaultRadioOptions = [
   { value: 'good', label: 'Good' },
   { value: 'bad', label: 'Bad' },
   { value: 'na', label: 'N/A' }
 ];
 
-// Optimasi isPointComplete
+// Cek apakah point sudah lengkap
 const isPointComplete = (menuPoint) => {
-  const pointId = menuPoint.inspection_point?.id;
-  if (!pointId) return false;
-  
-  const result = props.form.results[pointId];
-  const image = props.form.images[pointId];
+  const result = props.form.results[menuPoint.inspection_point?.id];
+  const image = props.form.images[menuPoint.inspection_point?.id];
 
   if (!result) return false;
   
-  const inputType = menuPoint.input_type;
-  
-  switch(inputType) {
+  switch(menuPoint.input_type) {
     case 'text':
     case 'number':
     case 'date':
     case 'account':
     case 'textarea':
-      return !!result.note?.trim();
+      return !!result.note;
 
     case 'select':
     case 'radio':
@@ -245,18 +445,20 @@ const isPointComplete = (menuPoint) => {
         if (selectedOption.settings.show_textarea && !result.note?.trim()) {
           return false;
         }
-        if (selectedOption.settings.show_image_upload && !image?.length) {
+        if (selectedOption.settings.show_image_upload && image?.length === 0) {
           return false;
         }
       }
       return true;
 
     case 'imageTOradio':
-      if (!image?.length || !result.status) return false;
+      if (image?.length === 0 || !result.status) return false;
       
       const selectedOptionImage = menuPoint.settings?.radios?.find(opt => opt.value === result.status);
-      if (selectedOptionImage?.settings?.show_textarea && !result.note?.trim()) {
-        return false;
+      if (selectedOptionImage?.settings) {
+        if (selectedOptionImage.settings.show_textarea && !result.note?.trim()) {
+          return false;
+        }
       }
       return true;
 
@@ -268,473 +470,84 @@ const isPointComplete = (menuPoint) => {
   }
 };
 
-// Methods
-const toggleHidden = () => {
-  showHidden.value = !showHidden.value;
-};
-
-// Handler untuk events dari ComponentWrapper
-const handleComponentUpdate = ({ pointId, value, type }) => {
-  updateResult(pointId, value, type);
-};
-
-const handleNotesUpdate = ({ pointId, value }) => {
-  updateResult(pointId, value, 'note');
-};
-
-const handleImagesUpdate = ({ pointId, value }) => {
-  if (pointId && pointDataCache.has(pointId)) {
-    pointDataCache.delete(pointId);
-  }
-  props.form.images[pointId] = value;
-};
-
-const handleSave = (pointId) => {
-  saveResult(pointId);
-};
-
-const handleHapus = (pointId) => {
-  HapusPoint(pointId);
-};
-
+// Event handlers
 const updateResult = (pointId, value, type) => {
-  // Clear cache ketika data berubah
-  if (pointId && pointDataCache.has(pointId)) {
-    pointDataCache.delete(pointId);
-  }
   emit('updateResult', { pointId, type, value });
 };
 
+const updateImages = (pointId, images) => {
+  // Update images di form
+  props.form.images[pointId] = images;
+  
+  // Emit event untuk parent component
+  emit('updateResult', { 
+    pointId, 
+    type: 'images', 
+    value: images 
+  });
+};
+
 const saveResult = (pointId) => {
-  emit('saveResult', pointId);
+  // Untuk sekarang, kita hanya update state lokal
+  // Simpan otomatis sudah ditangani oleh watcher di parent
+  console.log('Save result for point:', pointId);
+};
+
+// Handle direct image save dari InputImage component
+const handleDirectImageSave = (imageData) => {
+  console.log('Direct image save in CategorySection:', imageData);
+  
+  // Emit ke parent component untuk diproses
+  emit('imageSaved', imageData);
 };
 
 const removeImage = (pointId, imageIndex) => {
-  if (pointId && pointDataCache.has(pointId)) {
-    pointDataCache.delete(pointId);
-  }
   emit('removeImage', { pointId, imageIndex });
 };
 
 const HapusPoint = (pointId) => {
-  if (pointId && pointDataCache.has(pointId)) {
-    pointDataCache.delete(pointId);
-  }
   emit("hapusPoint", pointId);
 };
 
-// ComponentWrapper yang diperbaiki dengan semua case
-const ComponentWrapper = {
-  props: ['menuPoint'],
-  emits: ['update:modelValue', 'update:notes', 'update:images', 'save', 'hapus'],
-  setup(props, { emit }) {
-    const page = usePage();
-    
-    return () => {
-      const point = props.menuPoint;
-      const pointId = point.inspection_point?.id;
-      
-      if (!pointId) return null;
+// Watchers untuk perubahan data
+watch(() => props.form.results, (newResults) => {
+  // Handle perubahan results jika diperlukan
+}, { deep: true });
 
-      // Helper function untuk mendapatkan modelValue berdasarkan input_type
-      const getModelValue = () => {
-        if (point.input_type === 'image') {
-          return page.props.form?.images[pointId] || [];
-        } else if (['text', 'number', 'date', 'account', 'textarea'].includes(point.input_type)) {
-          return page.props.form?.results[pointId]?.note || '';
-        } else {
-          return page.props.form?.results[pointId]?.status || '';
+watch(() => props.form.images, (newImages) => {
+  // Handle perubahan images jika diperlukan
+}, { deep: true });
+
+// Watch untuk global upload queue changes untuk update status gambar
+watch(globalUploadQueue, (queue) => {
+  // Update status gambar berdasarkan queue
+  queue.forEach(task => {
+    if (task.pointId && props.form.images[task.pointId]) {
+      const imageIndex = props.form.images[task.pointId].findIndex(img => img.id === task.imageId);
+      if (imageIndex !== -1) {
+        // Update status gambar berdasarkan task status
+        props.form.images[task.pointId][imageIndex].isUploading = task.status === 'uploading';
+        props.form.images[task.pointId][imageIndex].isFailed = task.status === 'failed';
+        props.form.images[task.pointId][imageIndex].isUploaded = task.status === 'completed';
+        
+        if (task.status === 'completed' && task.uploadedData) {
+          props.form.images[task.pointId][imageIndex].id = task.uploadedData.image_id;
+          props.form.images[task.pointId][imageIndex].image_path = task.uploadedData.path;
+          props.form.images[task.pointId][imageIndex].preview = task.uploadedData.public_url;
+          props.form.images[task.pointId][imageIndex].isNew = false;
+          props.form.images[task.pointId][imageIndex].isPendingUpload = false;
         }
-      };
-
-      // Helper function untuk mendapatkan error path
-      const getErrorPath = () => {
-        if (point.input_type === 'image') {
-          return `images.${pointId}`;
-        } else if (['text', 'number', 'date', 'account', 'textarea'].includes(point.input_type)) {
-          return `results.${pointId}.note`;
-        } else {
-          return `results.${pointId}.status`;
-        }
-      };
-
-      const commonProps = {
-        modelValue: getModelValue(),
-        error: page.props.form?.errors[getErrorPath()],
-        required: point.settings?.is_required,
-        pointId: pointId,
-        inspectionId: page.props.inspectionId,
-        settings: point.settings,
-        'onUpdate:modelValue': (value) => {
-          const type = point.input_type === 'image' ? 'images' : 
-                      ['text','number','date','account','textarea'].includes(point.input_type) ? 'note' : 'status';
-          emit('update:modelValue', { pointId, value, type });
-        }
-      };
-
-      // Props khusus untuk setiap component type
-      const getComponentSpecificProps = () => {
-        const baseProps = {
-          placeholder: point.settings?.placeholder || getDefaultPlaceholder(point.input_type),
-          minLength: point.settings?.min_length,
-          maxLength: point.settings?.max_length,
-          min: point.settings?.min,
-          max: point.settings?.max,
-          step: point.settings?.step,
-          allowSpace: point.settings?.allow_space,
-          textTransform: point.settings?.text_transform,
-          minDate: point.settings?.min_date,
-          maxDate: point.settings?.max_date,
-          options: point.settings?.radios || defaultRadioOptions,
-          pointName: point.inspection_point?.name,
-          selectedPoint: point.inspection_point,
-          point: point,
-          notes: page.props.form?.results[pointId]?.note || '',
-          images: page.props.form?.images[pointId] || [],
-          'onUpdate:notes': (value) => emit('update:notes', { pointId, value }),
-          'onUpdate:images': (value) => emit('update:images', { pointId, value }),
-          onSave: () => emit('save', pointId),
-          onHapus: () => emit('hapus', pointId)
-        };
-
-        return baseProps;
-      };
-
-      // Render component berdasarkan input_type
-      switch(point.input_type) {
-        case 'text':
-          return h(InputText, {
-            ...commonProps,
-            ...getComponentSpecificProps(),
-            placeholder: point.settings?.placeholder || 'Masukan text'
-          });
-
-        case 'number':
-          return h(InputNumber, {
-            ...commonProps,
-            ...getComponentSpecificProps(),
-            placeholder: point.settings?.placeholder || 'Masukan number'
-          });
-
-        case 'date':
-          return h(InputDate, {
-            ...commonProps,
-            ...getComponentSpecificProps(),
-            placeholder: point.settings?.placeholder || 'Pilih tanggal'
-          });
-
-        case 'account':
-          return h(InputAccount, {
-            ...commonProps,
-            ...getComponentSpecificProps(),
-            placeholder: point.settings?.placeholder || 'Masukkan nilai'
-          });
-
-        case 'textarea':
-          return h(InputTextarea, {
-            ...commonProps,
-            ...getComponentSpecificProps(),
-            placeholder: point.settings?.placeholder || 'Masukkan teks di sini'
-          });
-
-        case 'select':
-          return h(InputSelect, {
-            ...commonProps,
-            ...getComponentSpecificProps()
-          });
-
-        case 'radio':
-          return h(InputRadio, {
-            ...commonProps,
-            ...getComponentSpecificProps()
-          });
-
-        case 'imageTOradio':
-          return h(InputImageToRadio, {
-            ...commonProps,
-            ...getComponentSpecificProps()
-          });
-
-        case 'image':
-          return h(InputImage, {
-            ...commonProps,
-            ...getComponentSpecificProps()
-          });
-
-        default:
-          console.warn(`Unknown input type: ${point.input_type} for point ${pointId}`);
-          return null;
       }
-    };
-  }
-};
-
-// Helper function untuk default placeholder
-const getDefaultPlaceholder = (inputType) => {
-  const placeholders = {
-    text: 'Masukan text',
-    number: 'Masukan number',
-    date: 'Pilih tanggal',
-    account: 'Masukkan nilai',
-    textarea: 'Masukkan teks di sini',
-    select: 'Pilih opsi',
-    radio: 'Pilih opsi',
-    imageTOradio: 'Pilih opsi dan upload gambar',
-    image: 'Upload gambar'
-  };
-  return placeholders[inputType] || 'Masukkan data';
-};
-
-// Intersection Observer untuk header visibility
-let observer = null;
-
-onMounted(() => {
-  requestAnimationFrame(() => {
-    if (categoryHeader.value) {
-      observer = new IntersectionObserver(
-        ([entry]) => {
-          isHeaderVisible.value = entry.isIntersecting;
-        },
-        { 
-          threshold: 0.1,
-          rootMargin: '50px 0px 0px 0px'
-        }
-      );
-      observer.observe(categoryHeader.value);
     }
   });
-});
-
-onUnmounted(() => {
-  if (observer && categoryHeader.value) {
-    observer.unobserve(categoryHeader.value);
-  }
-  pointDataCache.clear();
-});
-
-// Watcher yang lebih efisien
-watch(
-  () => [props.form.results, props.form.images],
-  () => {
-    pointDataCache.clear();
-  },
-  { deep: false }
-);
+}, { deep: true });
 </script>
 
 <style scoped>
-/* CSS styles tetap sama seperti sebelumnya */
-.category-container {
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  perspective: 1000px;
-  will-change: transform;
-}
-
-.content-wrapper {
-  position: relative;
-  background: #f9fafb;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid #f3f4f6;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.vertical-padding {
-  padding-top: 1.5rem;
-}
-
-.category-header {
-  padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-  background: #e0e7ff;
-  display: flex;
-  align-items: center;
-  justify-content: between;
-  transition: all 0.2s ease;
-}
-
-.vertical-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  backdrop-filter: blur(8px);
-  background: rgba(224, 231, 255, 0.95);
-}
-
-.vertical-header.header-hidden {
-  transform: translateY(-100%);
-  opacity: 0;
-}
-
-.horizontal-header {
-  background: #e0e7ff;
-}
-
-.points-container {
-  padding: 1rem;
-  max-height: calc(100vh - 200px);
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-}
-
-.points-container::-webkit-scrollbar {
-  width: 4px;
-}
-
-.points-container::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 2px;
-}
-
-.points-container::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 2px;
-}
-
-.points-container::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-.point-item {
-  padding: 1rem 0;
-  border-bottom: 1px solid #f1f5f9;
-  transform: translateZ(0);
-  will-change: transform;
-}
-
-.point-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.point-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-}
-
-.point-label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-  line-height: 1.4;
-}
-
-.required-star {
-  color: #ef4444;
-  margin-left: 2px;
-}
-
-.completion-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-  background: #dcfce7;
-  color: #166534;
-}
-
-.toggle-button {
-  font-size: 0.875rem;
-  color: #3730a3;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.375rem;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.toggle-button:hover {
-  background: rgba(99, 102, 241, 0.1);
-  color: #3730a3;
-}
-
-.floating-eye-button {
-  position: fixed;
-  top: 1rem;
-  right: 1rem;
-  z-index: 50;
-  background: #4f46e5;
-  color: white;
-  padding: 0.75rem;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease;
-  transform: translateZ(0);
-}
-
-.floating-eye-button:hover {
-  background: #4338ca;
-  transform: scale(1.05);
-}
-
-.empty-state {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: #6b7280;
-}
-
-.empty-icon {
-  height: 3rem;
-  width: 3rem;
-  margin: 0 auto 1rem;
-  opacity: 0.5;
-}
-
-.empty-text {
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-}
-
-.empty-subtext {
-  font-size: 0.75rem;
-  opacity: 0.7;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .category-header,
-  .floating-eye-button,
-  .toggle-button {
-    transition: none;
-  }
-}
-
-@media (max-width: 640px) {
-  .content-wrapper {
-    margin: 0.5rem;
-    border-radius: 8px;
-  }
-  
-  .points-container {
-    padding: 0.75rem;
-    max-height: calc(100vh - 150px);
-  }
-  
-  .point-item {
-    padding: 0.75rem 0;
-  }
-  
-  .floating-eye-button {
-    top: 0.5rem;
-    right: 0.5rem;
-    padding: 0.5rem;
-  }
-}
-
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-  .points-container {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+/* Mobile-first styles */
+@media (min-width: 640px) {
+  .point-card {
+    padding: 1.25rem;
   }
 }
 </style>
