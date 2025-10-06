@@ -491,7 +491,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, provide, nextTick  } from 'vue';
+import { ref, computed, watch, onMounted, provide, nextTick, inject  } from 'vue';
 import { useForm, usePage, Link, router } from '@inertiajs/vue3';
 import { debounce } from 'lodash';
 import VehicleDetails from '@/Components/InspectionFormLocal/VehicleDetails.vue';
@@ -848,6 +848,78 @@ watch(conclusionState, (newConclusion) => {
 // VALIDASI & COMPUTED PROPERTIES
 // =========================================================================
 
+// Inject dari parent untuk local storage features
+const vehicleFeatures = inject('vehicleFeatures', ref(null));
+
+// Setelah data di-load dari localStorage
+vehicleFeatures.value = JSON.parse(localStorage.getItem('vehicle_features') || '{}');
+
+provide('vehicleFeatures', vehicleFeatures);
+
+// Fungsi utama untuk kompatibilitas kendaraan
+const isPointCompatible = (point) => {
+  const vehicleConfig = point.settings;
+  
+  // Jika tidak ada config kompatibilitas, langsung return true
+  if (!hasCompatibilitySettings(point)) {
+    return true;
+  }
+
+  const carTransmission = props.car?.transmission;
+  const carFuelType = props.car?.fuel_type;
+  
+  // Check transmission - HANYA jika ada pengaturan transmission
+  if (vehicleConfig.transmission && Array.isArray(vehicleConfig.transmission) && vehicleConfig.transmission.length > 0) {
+    if (carTransmission && !vehicleConfig.transmission.includes(carTransmission)) {
+      return false;
+    }
+  }
+
+  // Check fuel type - HANYA jika ada pengaturan fuel_type
+  if (vehicleConfig.fuel_type && vehicleConfig.fuel_type.trim() !== '') {
+    if (carFuelType && vehicleConfig.fuel_type !== carFuelType) {
+      return false;
+    }
+  }
+
+    // Check vehicle features dari local storage - HANYA jika ada pengaturannya
+    if (vehicleConfig.rear_door) {
+      if (!vehicleFeatures.value || !vehicleFeatures.value.rear_door) {
+        return false;
+      }
+    }
+
+    if (vehicleConfig.pick_up) {
+      if (!vehicleFeatures.value || !vehicleFeatures.value.pick_up) {
+        return false;
+      }
+    }
+
+    if (vehicleConfig.box) {
+      if (!vehicleFeatures.value || !vehicleFeatures.value.box) {
+        return false;
+      }
+    }
+
+  return true;
+};
+
+// Cek apakah point memiliki pengaturan kompatibilitas
+const hasCompatibilitySettings = (point) => {
+  const settings = point.settings;
+  return !!(
+    (settings?.transmission && Array.isArray(settings.transmission) && settings.transmission.length > 0) ||
+    (settings?.fuel_type && settings.fuel_type.trim() !== '') ||
+    settings?.rear_door ||
+    settings?.pick_up ||
+    settings?.box
+  );
+};
+
+// =========================================================================
+// VALIDASI & COMPUTED PROPERTIES
+// =========================================================================
+
 const hasUnsavedChanges = ref(false);
 const handleUnsavedChanges = (hasChanges) => {
   hasUnsavedChanges.value = hasChanges;
@@ -951,10 +1023,15 @@ const isMenuComplete = (menu) => {
     return isVehicleFormComplete.value;
   }
 
-  const requiredPoints = (getVisiblePoints(menu.menu_point, false) || [])
-    .filter(point => point.is_default);
+ const visiblePoints = (getVisiblePoints(menu.menu_point, false) || []);
+  
+  // Filter hanya point-point yang aktif/visible, is_default, DAN compatible
+  const activeRequiredPoints = visiblePoints.filter(point => {
+    // Cek kompatibilitas seperti di komponen contoh
+    return point.is_default && isPointCompatible(point);
+  });
 
-  return requiredPoints.every(point => {
+  return activeRequiredPoints.every(point => {
     const result = form.results[point.inspection_point_id];
     const image = form.images[point.inspection_point_id];
     if (!result) return false;
