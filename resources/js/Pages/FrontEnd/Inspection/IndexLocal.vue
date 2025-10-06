@@ -1011,9 +1011,12 @@ const allMenusComplete = computed(() => {
 // Check if menu is complete
 const isMenuComplete = (menu) => {
 
-    if (menu.input_type === 'damage') {
-    const pointsWithData = getVisiblePoints(menu.menu_point, true);
-    return pointsWithData.length > 0;
+  if (menu.input_type === 'damage') {
+    // const pointsWithData = getVisiblePoints(menu.menu_point, true);
+    // return pointsWithData.length > 0;
+
+     // Selalu dianggap complete, regardless of data
+    return true;
   }
   
   if (menu.id === 'conclusion') {

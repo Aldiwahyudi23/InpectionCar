@@ -292,44 +292,41 @@ const conclusionData = reactive({
   notes: ''
 })
 
-// Template kesimpulan yang tersedia
 const conclusionTemplates = ref([
   {
     id: 1,
     name: 'Kendaraan Normal',
     description: 'Template untuk kendaraan dalam kondisi normal tanpa masalah signifikan (Ringkas)',
     content: `<p><strong>A. HASIL INSPEKSI:</strong></p>
-- Kondisi kendaraan secara umum: <strong>BAIK</strong><br>
+- Kondisi kendaraan secara umum: <b>BAIK</b><br>
 - Tidak ditemukan indikasi kerusakan signifikan<br>
 - Semua sistem berfungsi dengan normal<br>
-- Rekomendasi: Perawatan rutin sesuai jadwal
 
 <p><strong>B. HAL PENTING SEBELUM PEMBAYARAN:</strong></p>
-- Untuk menghindari kemungkinan yang terjadi di luar inspeksi (misalnya bunyi tidak wajar, fungsi elektrikal, lampu indikator, dan fitur penunjang ADAS/Cruise Control/dll.), **DIWAJIBKAN** untuk melakukan **Test Drive Terlebih Dahulu** sebelum pembayaran/transaksi.<br>
-- Pastikan knalpot **Tidak Berasap** (khusus untuk mobil bensin).`
+- Untuk menghindari kemungkinan yang terjadi di luar inspeksi (misalnya bunyi tidak wajar, fungsi elektrikal, lampu indikator, dan fitur penunjang ADAS/Cruise Control/dll.), <b>DIWAJIBKAN</b> untuk melakukan <b>Test Drive Terlebih Dahulu</b> sebelum pembayaran/transaksi.<br>
+- Pastikan knalpot <b>Tidak Berasap</b> (khusus untuk mobil bensin).`
   },
   {
     id: 2,
     name: 'Kendaraan Bekas Tabrakan Ringan',
     description: 'Template untuk kendaraan dengan riwayat tabrakan ringan (Lengkap A, C, B)',
     content: `<p><strong>A. HASIL INSPEKSI:</strong></p>
-- Kendaraan memiliki riwayat tabrakan dengan tingkat kerusakan: <strong>RINGAN</strong><br>
-- Area yang terdampak: {DAMAGED_AREA}<br>
-- Perbaikan yang dilakukan: {REPAIR_DETAILS}<br>
-- Rekomendasi: Perbaikan tambahan pada area yang terdampak
+- Kendaraan memiliki riwayat tabrakan dengan tingkat kerusakan: <b>RINGAN</b><br>
+- Area yang terdampak: PERLU DIISI<br>
+- Perbaikan yang dilakukan: PERLU DIISI<br>
 
 <p><strong>C. ESTIMASI PERBAIKAN DAN PERAWATAN:</strong></p>
 <p>* PERBAIKAN & PENGGANTIAN PART DALAM WAKTU DEKAT/ SEGERA:</p>
-- {REPAIR_SHORT_TERM}<br>
-- Estimasi Biaya: {REPAIR_COST_SHORT_TERM}
+- PERLU DIISI<br>
+- Estimasi Biaya: PERLU DIISI
 <p>* PERBAIKAN & PENGGANTIAN PART TENGGANG WAKTU MINIMAL 6 BULAN S/D 1 TAHUN KE DEPAN:</p>
-- {REPAIR_LONG_TERM}<br>
-- Estimasi Biaya: {REPAIR_COST_LONG_TERM}
-<p><em>Not: Estimasi perbaikan bisa lebih murah/lebih mahal. Opsional tergantung lokasi/daerah dan ketersediaan spare part.</em></p>
+- PERLU DIISI<br>
+- Estimasi Biaya: PERLU DIISI
+<p><em>Note: Estimasi perbaikan bisa lebih murah/lebih mahal. Opsional tergantung lokasi/daerah dan ketersediaan spare part.</em></p>
 
 <p><strong>B. HAL PENTING SEBELUM PEMBAYARAN:</strong></p>
-- Untuk menghindari kemungkinan yang terjadi di luar inspeksi (misalnya bunyi tidak wajar, fungsi elektrikal, lampu indikator, dan fitur penunjang ADAS/Cruise Control/dll.), **DIWAJIBKAN** untuk melakukan **Test Drive Terlebih Dahulu** sebelum pembayaran/transaksi.<br>
-- Pastikan knalpot **Tidak Berasap** (khusus untuk mobil bensin).`
+- Untuk menghindari kemungkinan yang terjadi di luar inspeksi (misalnya bunyi tidak wajar, fungsi elektrikal, lampu indikator, dan fitur penunjang ADAS/Cruise Control/dll.), <b>DIWAJIBKAN</b> untuk melakukan <b>Test Drive Terlebih Dahulu</b> sebelum pembayaran/transaksi.<br>
+- Pastikan knalpot <b>Tidak Berasap</b> (khusus untuk mobil bensin).`
   },
   {
     id: 3,
@@ -337,88 +334,87 @@ const conclusionTemplates = ref([
     description: 'Template untuk kendaraan dengan riwayat terkena banjir (Lengkap A, C, B)',
     content: `<p><strong>A. HASIL INSPEKSI:</strong></p>
 - Kendaraan memiliki riwayat terkena banjir<br>
-- Tingkat paparan air: {WATER_LEVEL}<br>
-- Komponen yang terdampak: {AFFECTED_COMPONENTS}<br>
-- Rekomendasi: Pengecekan sistem elektrik dan interior secara berkala
+- Tingkat paparan air: PERLU DIISI<br>
+- Komponen yang terdampak: PERLU DIISI<br>
 
 <p><strong>C. ESTIMASI PERBAIKAN DAN PERAWATAN:</strong></p>
 <p>* PERBAIKAN & PENGGANTIAN PART DALAM WAKTU DEKAT/ SEGERA:</p>
-- {REPAIR_SHORT_TERM}<br>
-- Estimasi Biaya: {REPAIR_COST_SHORT_TERM}
+- PERLU DIISI<br>
+- Estimasi Biaya: PERLU DIISI
 <p>* PERBAIKAN & PENGGANTIAN PART TENGGANG WAKTU MINIMAL 6 BULAN S/D 1 TAHUN KE DEPAN:</p>
-- {REPAIR_LONG_TERM}<br>
-- Estimasi Biaya: {REPAIR_COST_LONG_TERM}
-<p><em>Not: Estimasi perbaikan bisa lebih murah/lebih mahal. Opsional tergantung lokasi/daerah dan ketersediaan spare part.</em></p>
+- PERLU DIISI<br>
+- Estimasi Biaya: PERLU DIISI
+<p><em>Note: Estimasi perbaikan bisa lebih murah/lebih mahal. Opsional tergantung lokasi/daerah dan ketersediaan spare part.</em></p>
 
 <p><strong>B. HAL PENTING SEBELUM PEMBAYARAN:</strong></p>
-- Untuk menghindari kemungkinan yang terjadi di luar inspeksi (misalnya bunyi tidak wajar, fungsi elektrikal, lampu indikator, dan fitur penunjang ADAS/Cruise Control/dll.), **DIWAJIBKAN** untuk melakukan **Test Drive Terlebih Dahulu** sebelum pembayaran/transaksi.<br>
-- Pastikan knalpot **Tidak Berasap** (khusus untuk mobil bensin).`
+- Untuk menghindari kemungkinan yang terjadi di luar inspeksi (misalnya bunyi tidak wajar, fungsi elektrikal, lampu indikator, dan fitur penunjang ADAS/Cruise Control/dll.), <b>DIWAJIBKAN</b> untuk melakukan <b>Test Drive Terlebih Dahulu</b> sebelum pembayaran/transaksi.<br>
+- Pastikan knalpot <b>Tidak Berasap</b> (khusus untuk mobil bensin).`
   },
   {
     id: 4,
     name: 'Kendaraan dengan Multiple Issues',
     description: 'Template untuk kendaraan dengan beberapa masalah umum (Lengkap A, C, B)',
     content: `<p><strong>A. HASIL INSPEKSI:</strong></p>
-- Kondisi umum kendaraan: {OVERALL_CONDITION}<br>
-- Masalah utama yang ditemukan: {MAIN_ISSUES}<br>
-- Komponen yang perlu perhatian: {ATTENTION_NEEDED}<br>
-- Status Tabrak/Banjir: {ACCIDENT_FLOOD_STATUS}<br>
-- Rekomendasi: {RECOMMENDATION}
+- Kondisi umum kendaraan: PERLU DIISI<br>
+- Masalah utama yang ditemukan: PERLU DIISI<br>
+- Komponen yang perlu perhatian: PERLU DIISI<br>
+- Status Tabrak/Banjir: PERLU DIISI<br>
 
 <p><strong>C. ESTIMASI PERBAIKAN DAN PERAWATAN:</strong></p>
 <p>* PERBAIKAN & PENGGANTIAN PART DALAM WAKTU DEKAT/ SEGERA:</p>
-- {REPAIR_SHORT_TERM}<br>
-- Estimasi Biaya: {REPAIR_COST_SHORT_TERM}
+- PERLU DIISI<br>
+- Estimasi Biaya: PERLU DIISI
 <p>* PERBAIKAN & PENGGANTIAN PART TENGGANG WAKTU MINIMAL 6 BULAN S/D 1 TAHUN KE DEPAN:</p>
-- {REPAIR_LONG_TERM}<br>
-- Estimasi Biaya: {REPAIR_COST_LONG_TERM}
-<p><em>Not: Estimasi perbaikan bisa lebih murah/lebih mahal. Opsional tergantung lokasi/daerah dan ketersediaan spare part.</em></p>
+- PERLU DIISI<br>
+- Estimasi Biaya: PERLU DIISI
+<p><em>Note: Estimasi perbaikan bisa lebih murah/lebih mahal. Opsional tergantung lokasi/daerah dan ketersediaan spare part.</em></p>
 
 <p><strong>B. HAL PENTING SEBELUM PEMBAYARAN:</strong></p>
-- Untuk menghindari kemungkinan yang terjadi di luar inspeksi (misalnya bunyi tidak wajar, fungsi elektrikal, lampu indikator, dan fitur penunjang ADAS/Cruise Control/dll.), **DIWAJIBKAN** untuk melakukan **Test Drive Terlebih Dahulu** sebelum pembayaran/transaksi.<br>
-- Pastikan knalpot **Tidak Berasap** (khusus untuk mobil bensin).`
+- Untuk menghindari kemungkinan yang terjadi di luar inspeksi (misalnya bunyi tidak wajar, fungsi elektrikal, lampu indikator, dan fitur penunjang ADAS/Cruise Control/dll.), <b>DIWAJIBKAN</b> untuk melakukan <b>Test Drive Terlebih Dahulu</b> sebelum pembayaran/transaksi.<br>
+- Pastikan knalpot <b>Tidak Berasap</b> (khusus untuk mobil bensin).`
   },
   {
     id: 5,
     name: 'Template Singkat',
     description: 'Template ringkas untuk kesimpulan cepat (Ringkas)',
     content: `<p><strong>A. HASIL INSPEKSI:</strong></p>
-- Status Keseluruhan Kendaraan: {OVERALL_STATUS}<br>
-- Catatan Utama: {ADDITIONAL_NOTES}<br>
-- Status Tabrak/Banjir: {ACCIDENT_FLOOD_STATUS}
+- Status Keseluruhan Kendaraan: PERLU DIISI<br>
+- Catatan Utama: PERLU DIISI<br>
+- Status Tabrak/Banjir: PERLU DIISI
 
 <p><strong>B. HAL PENTING SEBELUM PEMBAYARAN:</strong></p>
-- Untuk menghindari kemungkinan yang terjadi di luar inspeksi (misalnya bunyi tidak wajar, fungsi elektrikal, lampu indikator, dan fitur penunjang ADAS/Cruise Control/dll.), **DIWAJIBKAN** untuk melakukan **Test Drive Terlebih Dahulu** sebelum pembayaran/transaksi.<br>
-- Pastikan knalpot **Tidak Berasap** (khusus untuk mobil bensin).`
+- Untuk menghindari kemungkinan yang terjadi di luar inspeksi (misalnya bunyi tidak wajar, fungsi elektrikal, lampu indikator, dan fitur penunjang ADAS/Cruise Control/dll.), <b>DIWAJIBKAN</b> untuk melakukan <b>Test Drive Terlebih Dahulu</b> sebelum pembayaran/transaksi.<br>
+- Pastikan knalpot <b>Tidak Berasap</b> (khusus untuk mobil bensin).`
   },
   {
     id: 6,
     name: 'Template Teknis Detail',
     description: 'Template detail untuk laporan teknis lengkap (Lengkap A, C, B)',
     content: `<p><strong>A. LAPORAN HASIL INSPEKSI TEKNIS:</strong></p>
-- Tanggal Inspeksi: {INSPECTION_DATE}<br>
-- Kondisi Mesin: {ENGINE_CONDITION}<br>
-- Kondisi Transmisi: {TRANSMISSION_CONDITION}<br>
-- Kondisi Suspensi: {SUSPENSION_CONDITION}<br>
-- Kondisi Rem: {BRAKE_CONDITION}<br>
-- Kondisi Body: {BODY_CONDITION}<br>
-- Kondisi Interior: {INTERIOR_CONDITION}<br>
-- Kesimpulan Akhir: {FINAL_CONCLUSION}
+- Tanggal Inspeksi: PERLU DIISI<br>
+- Kondisi Mesin: PERLU DIISI<br>
+- Kondisi Transmisi: PERLU DIISI<br>
+- Kondisi Suspensi: PERLU DIISI<br>
+- Kondisi Rem: PERLU DIISI<br>
+- Kondisi Body: PERLU DIISI<br>
+- Kondisi Interior: PERLU DIISI<br>
+- Kesimpulan Akhir: PERLU DIISI
 
 <p><strong>C. ESTIMASI PERBAIKAN DAN PERAWATAN:</strong></p>
 <p>* PERBAIKAN & PENGGANTIAN PART DALAM WAKTU DEKAT/ SEGERA:</p>
-- {REPAIR_SHORT_TERM}<br>
-- Estimasi Biaya: {REPAIR_COST_SHORT_TERM}
+- PERLU DIISI<br>
+- Estimasi Biaya: PERLU DIISI
 <p>* PERBAIKAN & PENGGANTIAN PART TENGGANG WAKTU MINIMAL 6 BULAN S/D 1 TAHUN KE DEPAN:</p>
-- {REPAIR_LONG_TERM}<br>
-- Estimasi Biaya: {REPAIR_COST_LONG_TERM}
-<p><em>Not: Estimasi perbaikan bisa lebih murah/lebih mahal. Opsional tergantung lokasi/daerah dan ketersediaan spare part.</em></p>
+- PERLU DIISI<br>
+- Estimasi Biaya: PERLU DIISI
+<p><em>Note: Estimasi perbaikan bisa lebih murah/lebih mahal. Opsional tergantung lokasi/daerah dan ketersediaan spare part.</em></p>
 
 <p><strong>B. HAL PENTING SEBELUM PEMBAYARAN:</strong></p>
-- Untuk menghindari kemungkinan yang terjadi di luar inspeksi (misalnya bunyi tidak wajar, fungsi elektrikal, lampu indikator, dan fitur penunjang ADAS/Cruise Control/dll.), **DIWAJIBKAN** untuk melakukan **Test Drive Terlebih Dahulu** sebelum pembayaran/transaksi.<br>
-- Pastikan knalpot **Tidak Berasap** (khusus untuk mobil bensin).`
+- Untuk menghindari kemungkinan yang terjadi di luar inspeksi (misalnya bunyi tidak wajar, fungsi elektrikal, lampu indikator, dan fitur penunjang ADAS/Cruise Control/dll.), <b>DIWAJIBKAN</b> untuk melakukan <b>Test Drive Terlebih Dahulu</b> sebelum pembayaran/transaksi.<br>
+- Pastikan knalpot <b>Tidak Berasap</b> (khusus untuk mobil bensin).`
   }
 ])
+
 
 // Variabel yang tersedia untuk template
 const availableVariables = ref([

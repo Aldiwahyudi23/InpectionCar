@@ -614,6 +614,7 @@ public function finalSubmitAll(Request $request, $id)
 
         // 3. Simpan semua results (TANPA handle images)
         if ($request->has('results') && !empty($request->results)) {
+            $inspectionUpdates = [];
             foreach ($request->results as $pointId => $resultData) {
                 // Hanya simpan jika ada data (status atau note)
                 if (!empty($resultData['status']) || !empty(trim($resultData['note'] ?? ''))) {
@@ -628,6 +629,10 @@ public function finalSubmitAll(Request $request, $id)
                             'updated_at' => now(),
                         ]
                     );
+
+                    // Kumpulkan data untuk update inspection
+                 $this->collectInspectionUpdates($inspectionUpdates, $pointId, $resultData);
+
                 } else {
                     // Hapus record jika tidak ada data
                     InspectionResult::where([
@@ -635,6 +640,10 @@ public function finalSubmitAll(Request $request, $id)
                         'point_id' => $pointId
                     ])->delete();
                 }
+            }
+             // ✅ Lakukan bulk update inspection sekali saja
+            if (!empty($inspectionUpdates)) {
+                $this->applyInspectionUpdates($inspection, $inspectionUpdates);
             }
         }
 
@@ -691,6 +700,37 @@ public function finalSubmitAll(Request $request, $id)
             'message' => 'Terjadi kesalahan saat menyimpan data inspeksi: ' . $e->getMessage()
         ], 500);
     }
+}
+
+private function collectInspectionUpdates(&$updates, $pointId, $resultData)
+{
+    $point = InspectionPoint::find($pointId);
+    
+    if (!$point) {
+        return;
+    }
+
+    $note = trim($resultData['note'] ?? '');
+    
+    $fieldMapping = [
+        "Warna" => 'color',
+        "No Rangka" => 'noka',
+        "No Mesin" => 'nosin', 
+        "Jarak Tempuh (KM)" => 'km',
+    ];
+    
+    if (isset($fieldMapping[$point->name])) {
+        $updates[$fieldMapping[$point->name]] = $note;
+    }
+}
+
+// Method untuk apply semua updates
+private function applyInspectionUpdates(Inspection $inspection, $updates)
+{
+    foreach ($updates as $field => $value) {
+        $inspection->$field = $value;
+    }
+    $inspection->save();
 }
 
     public function review($id)
