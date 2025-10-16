@@ -12,9 +12,7 @@
 
       <div 
         class="webcam-video-container" 
-        :style="videoContainerStyle" 
-        @click="handleTapToFocus"
-        @touchstart="handleTapToFocus"
+        :style="videoContainerStyle"
       >
         <video 
           ref="webcamVideo" 
@@ -23,49 +21,21 @@
           class="webcam-video"
         ></video>
         <canvas ref="webcamCanvas" class="hidden"></canvas>
-        
-        <!-- Manual Controls Overlay (muncul saat tap) -->
-        <div v-if="showManualControls" class="manual-controls-overlay">
-          <div class="manual-controls-panel">
-            <div class="control-group">
-              <label class="control-label">Exposure</label>
-              <div class="slider-container">
-                <span class="slider-value">{{ exposureCompensation > 0 ? '+' : '' }}{{ exposureCompensation.toFixed(1) }}</span>
-                <input
-                  type="range"
-                  :min="minExposureCompensation"
-                  :max="maxExposureCompensation"
-                  step="0.1"
-                  v-model="exposureCompensation"
-                  @input="setExposureCompensation(parseFloat($event.target.value))"
-                  class="control-slider"
-                >
-              </div>
-            </div>
-            <div class="control-buttons">
-              <button @click="resetToAuto" class="control-btn reset-btn">
-                Reset Auto
-              </button>
-              <button @click="hideManualControls" class="control-btn close-btn">
-                Tutup
-              </button>
-            </div>
-          </div>
-        </div>
 
+        <!-- Focus Indicator -->
         <div v-if="showFocusIndicator" class="focus-indicator" :style="focusIndicatorStyle">
           <div class="focus-ring"></div>
         </div>
 
-        <!-- Orientation Indicator -->
-        <div class="orientation-indicator" :class="orientationClass">
-          <div class="orientation-icon">{{ orientationIcon }}</div>
+        <!-- Auto Focus Indicator -->
+        <div v-if="showAutoFocus" class="auto-focus-indicator">
+          <div class="auto-focus-ring"></div>
         </div>
 
         <!-- Loading State -->
         <div v-if="isLoading" class="loading-overlay">
           <div class="loading-spinner"></div>
-          <p class="loading-text">Menginisialisasi kamera...</p>
+          <p class="loading-text">Menyiapkan kamera...</p>
         </div>
 
         <!-- Error State -->
@@ -145,89 +115,28 @@ const isTakingPhoto = ref(false);
 const isLoading = ref(false);
 const error = ref(null);
 
-// Manual Controls
-const showManualControls = ref(false);
+// Auto Focus
 const showFocusIndicator = ref(false);
+const showAutoFocus = ref(true);
 const focusIndicatorStyle = ref({});
-const focusMode = ref('continuous');
-
-// Exposure Controls
-const exposureCompensation = ref(0);
-const minExposureCompensation = ref(-3);
-const maxExposureCompensation = ref(3);
-const isExposureSupported = ref(false);
-
-// Orientation Detection
-const deviceOrientation = ref('portrait');
-const screenOrientation = ref('portrait');
 
 // Computed Properties
 const maxSizeKB = computed(() => {
   return props.settings?.max_size || 2048;
 });
 
-const isPortrait = computed(() => {
-  return deviceOrientation.value === 'portrait' || screenOrientation.value === 'portrait';
-});
-
 const videoContainerStyle = computed(() => {
   if (!props.aspectRatio) return {};
   
-  const aspectRatio = isPortrait.value ? props.aspectRatio : (1 / props.aspectRatio);
-  
   return {
-    aspectRatio: `${aspectRatio} / 1`,
+    aspectRatio: `${props.aspectRatio} / 1`,
     maxWidth: '100%',
     maxHeight: '70vh',
     margin: '0 auto'
   };
 });
 
-const orientationClass = computed(() => ({
-  'orientation-portrait': isPortrait.value,
-  'orientation-landscape': !isPortrait.value
-}));
-
-const orientationIcon = computed(() => {
-  return isPortrait.value ? '📱' : '🔄';
-});
-
-// Orientation Detection
-const setupOrientationDetection = () => {
-  const updateScreenOrientation = () => {
-    screenOrientation.value = window.screen.orientation.type.includes('portrait') ? 'portrait' : 'landscape';
-  };
-
-  const handleDeviceOrientation = (event) => {
-    if (event.gamma !== null && event.beta !== null) {
-      const absGamma = Math.abs(event.gamma);
-      const absBeta = Math.abs(event.beta);
-      
-      if (absBeta > 45 || absGamma < 45) {
-        deviceOrientation.value = 'portrait';
-      } else {
-        deviceOrientation.value = 'landscape';
-      }
-    }
-  };
-
-  window.addEventListener('orientationchange', updateScreenOrientation);
-  window.addEventListener('resize', updateScreenOrientation);
-  
-  if (window.DeviceOrientationEvent) {
-    window.addEventListener('deviceorientation', handleDeviceOrientation);
-  }
-
-  updateScreenOrientation();
-
-  return () => {
-    window.removeEventListener('orientationchange', updateScreenOrientation);
-    window.removeEventListener('resize', updateScreenOrientation);
-    window.removeEventListener('deviceorientation', handleDeviceOrientation);
-  };
-};
-
-// Enhanced RTC Camera Initialization
+// Optimized Camera Initialization - Full Auto
 const initializeWebcam = async () => {
   if (mediaStream) {
     mediaStream.getTracks().forEach(track => track.stop());
@@ -239,14 +148,17 @@ const initializeWebcam = async () => {
   try {
     await getCameraDevices();
     
-    // Optimized constraints for fast performance
+    // Simple auto constraints - biarkan browser yang menentukan setting terbaik
     const videoConstraints = {
       deviceId: currentDeviceId.value ? { exact: currentDeviceId.value } : undefined,
       facingMode: currentDeviceId.value ? undefined : { ideal: currentFacingMode.value },
+      // Biarkan browser memilih resolusi terbaik secara otomatis
       width: { ideal: 1920 },
       height: { ideal: 1080 },
-      aspectRatio: { ideal: props.aspectRatio || 4/3 },
-      frameRate: { ideal: 60 } // Higher frame rate for responsiveness
+      // Auto settings untuk exposure dan focus
+      exposureMode: 'continuous',
+      focusMode: 'continuous',
+      whiteBalanceMode: 'continuous'
     };
     
     mediaStream = await navigator.mediaDevices.getUserMedia({ 
@@ -257,18 +169,21 @@ const initializeWebcam = async () => {
     videoTrack = mediaStream.getVideoTracks()[0];
     webcamVideo.value.srcObject = mediaStream;
     
-    // Fast initialization without long timeout
+    // Fast initialization
     await new Promise((resolve) => {
       if (webcamVideo.value.readyState >= 2) {
         resolve();
       } else {
         webcamVideo.value.onloadeddata = resolve;
-        setTimeout(resolve, 500);
+        setTimeout(resolve, 300);
       }
     });
     
     await webcamVideo.value.play();
     await checkCameraCapabilities();
+    
+    // Start auto focus indicator
+    startAutoFocusIndicator();
     
   } catch (err) {
     console.error("Error accessing camera: ", err);
@@ -276,6 +191,22 @@ const initializeWebcam = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+// Auto focus indicator animation
+const startAutoFocusIndicator = () => {
+  let focusState = true;
+  
+  const animateFocus = () => {
+    if (!mediaStream) return;
+    
+    showAutoFocus.value = focusState;
+    focusState = !focusState;
+    
+    setTimeout(animateFocus, focusState ? 2000 : 500);
+  };
+  
+  animateFocus();
 };
 
 const getCameraDevices = async () => {
@@ -320,108 +251,10 @@ const checkCameraCapabilities = async () => {
   
   try {
     const capabilities = videoTrack.getCapabilities();
-    
     isFlashSupported.value = !!capabilities.torch;
-    isExposureSupported.value = !!capabilities.exposureCompensation;
-    
-    if (capabilities.exposureCompensation) {
-      minExposureCompensation.value = capabilities.exposureCompensation.min || -3;
-      maxExposureCompensation.value = capabilities.exposureCompensation.max || 3;
-    }
-    
   } catch (error) {
     console.error("Error checking camera capabilities:", error);
   }
-};
-
-// Enhanced Tap to Focus dengan Point of Interest
-const handleTapToFocus = async (event) => {
-  if (!videoTrack) return;
-  
-  const rect = webcamVideo.value.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-  
-  // Show focus indicator at tapped position
-  showFocusIndicator.value = true;
-  focusIndicatorStyle.value = {
-    left: `${x}px`,
-    top: `${y}px`,
-    transform: 'translate(-50%, -50%)'
-  };
-
-  try {
-    const capabilities = videoTrack.getCapabilities();
-    
-    // Try to set focus using pointsOfInterest (standard method)
-    if (capabilities.pointsOfInterest) {
-      const focusX = Math.max(0, Math.min(1, x / rect.width));
-      const focusY = Math.max(0, Math.min(1, y / rect.height));
-      
-      await videoTrack.applyConstraints({
-        advanced: [{
-          focusMode: 'manual',
-          pointsOfInterest: [{ x: focusX, y: focusY }]
-        }]
-      });
-      
-      console.log(`Focus set to: ${focusX.toFixed(2)}, ${focusY.toFixed(2)}`);
-    }
-    
-    // Show manual controls for exposure
-    showManualControls.value = true;
-    focusMode.value = 'manual';
-    
-  } catch (error) {
-    console.warn("Manual focus failed, using continuous:", error);
-    // Fallback to continuous focus
-    focusMode.value = 'continuous';
-  }
-  
-  // Hide focus indicator after 2 seconds
-  setTimeout(() => {
-    showFocusIndicator.value = false;
-  }, 2000);
-};
-
-const setExposureCompensation = async (value) => {
-  if (!videoTrack || !isExposureSupported.value) return;
-  
-  exposureCompensation.value = Math.max(minExposureCompensation.value, 
-    Math.min(maxExposureCompensation.value, value));
-  
-  try {
-    await videoTrack.applyConstraints({
-      advanced: [{ exposureCompensation: exposureCompensation.value }]
-    });
-  } catch (error) {
-    console.error("Failed to set exposure compensation:", error);
-  }
-};
-
-const resetToAuto = async () => {
-  if (!videoTrack) return;
-  
-  try {
-    // Reset to auto focus and exposure
-    await videoTrack.applyConstraints({
-      advanced: [
-        { focusMode: 'continuous' },
-        { exposureMode: 'continuous' }
-      ]
-    });
-    
-    exposureCompensation.value = 0;
-    focusMode.value = 'continuous';
-    showManualControls.value = false;
-    
-  } catch (error) {
-    console.warn("Failed to reset to auto mode:", error);
-  }
-};
-
-const hideManualControls = () => {
-  showManualControls.value = false;
 };
 
 const toggleFlash = async () => {
@@ -460,7 +293,7 @@ const switchCamera = async () => {
   await initializeWebcam();
 };
 
-// Ultra Fast Photo Capture - No Delay
+// Ultra Fast Photo Capture - Full Auto
 const capturePhoto = async () => {
   if (isTakingPhoto.value || !webcamVideo.value || !webcamCanvas.value) return;
   
@@ -473,34 +306,21 @@ const capturePhoto = async () => {
     const vw = video.videoWidth;
     const vh = video.videoHeight;
     
-    // Fast crop calculation
+    // Fast crop calculation based on aspect ratio
     let sw, sh, sx, sy;
     
-    if (isPortrait.value) {
-      if (vw / vh > props.aspectRatio) {
-        sh = vh;
-        sw = vh * props.aspectRatio;
-        sx = (vw - sw) / 2;
-        sy = 0;
-      } else {
-        sw = vw;
-        sh = vw / props.aspectRatio;
-        sx = 0;
-        sy = (vh - sh) / 2;
-      }
+    if (vw / vh > props.aspectRatio) {
+      // Video lebih lebar dari aspect ratio yang diinginkan
+      sh = vh;
+      sw = vh * props.aspectRatio;
+      sx = (vw - sw) / 2;
+      sy = 0;
     } else {
-      const landscapeAspectRatio = 1 / props.aspectRatio;
-      if (vw / vh > landscapeAspectRatio) {
-        sh = vh;
-        sw = vh * landscapeAspectRatio;
-        sx = (vw - sw) / 2;
-        sy = 0;
-      } else {
-        sw = vw;
-        sh = vw / landscapeAspectRatio;
-        sx = 0;
-        sy = (vh - sh) / 2;
-      }
+      // Video lebih tinggi dari aspect ratio yang diinginkan
+      sw = vw;
+      sh = vw / props.aspectRatio;
+      sx = 0;
+      sy = (vh - sh) / 2;
     }
     
     canvas.width = sw;
@@ -508,15 +328,15 @@ const capturePhoto = async () => {
     
     const ctx = canvas.getContext('2d');
     
-    // Ultra fast capture - no quality settings for speed
+    // Ultra fast capture - langsung ambil frame
     ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
     
-    // Fast compression with single pass
+    // Fast compression dengan quality optimal
     const blob = await new Promise(resolve => {
-      canvas.toBlob(resolve, 'image/jpeg', 0.85); // Fixed quality for speed
+      canvas.toBlob(resolve, 'image/jpeg', 0.92);
     });
     
-    if (blob && blob.size <= maxSizeKB.value * 1024) {
+    if (blob) {
       const fileName = `inspeksi_${props.point?.name || 'foto'}_${Date.now()}.jpg`;
       const file = new File([blob], fileName, { 
         type: 'image/jpeg',
@@ -524,18 +344,6 @@ const capturePhoto = async () => {
       });
       
       emit('photoCaptured', file);
-    } else if (blob) {
-      // Fast single-pass compression if too large
-      const compressedBlob = await fastCompressImage(blob);
-      if (compressedBlob) {
-        const fileName = `inspeksi_${props.point?.name || 'foto'}_${Date.now()}.jpg`;
-        const file = new File([compressedBlob], fileName, { 
-          type: 'image/jpeg',
-          lastModified: Date.now()
-        });
-        
-        emit('photoCaptured', file);
-      }
     }
     
   } catch (error) {
@@ -543,38 +351,6 @@ const capturePhoto = async () => {
   } finally {
     isTakingPhoto.value = false;
   }
-};
-
-// Fast single-pass image compression
-const fastCompressImage = async (blob) => {
-  return new Promise((resolve) => {
-    const MAX_SIZE = maxSizeKB.value * 1024;
-    
-    const img = new Image();
-    const reader = new FileReader();
-    
-    reader.onload = (e) => {
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Calculate scale factor for single pass
-        const scaleFactor = Math.sqrt(MAX_SIZE / blob.size);
-        const targetWidth = Math.floor(img.width * scaleFactor);
-        const targetHeight = Math.floor(img.height * scaleFactor);
-        
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        
-        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
-        
-        // Single quality pass
-        canvas.toBlob(resolve, 'image/jpeg', 0.8);
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(blob);
-  });
 };
 
 const closeModal = () => {
@@ -590,17 +366,11 @@ const retryCamera = async () => {
 };
 
 // Watchers and lifecycle
-let orientationCleanup = null;
-
 watch(() => props.show, async (v) => { 
   if (v) {
     await nextTick();
-    orientationCleanup = setupOrientationDetection();
     await initializeWebcam();
   } else {
-    if (orientationCleanup) {
-      orientationCleanup();
-    }
     closeModal();
   }
 });
@@ -608,9 +378,6 @@ watch(() => props.show, async (v) => {
 onUnmounted(() => { 
   if (mediaStream) {
     mediaStream.getTracks().forEach(t => t.stop());
-  }
-  if (orientationCleanup) {
-    orientationCleanup();
   }
 });
 </script>
@@ -667,125 +434,37 @@ onUnmounted(() => {
   object-fit: cover;
 }
 
-/* Manual Controls Overlay */
-.manual-controls-overlay {
+/* Auto Focus Indicator */
+.auto-focus-indicator {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 120px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.auto-focus-ring {
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 25;
-}
-
-.manual-controls-panel {
-  background: rgba(255, 255, 255, 0.95);
-  padding: 1.5rem;
-  border-radius: 15px;
-  min-width: 280px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-.control-group {
-  margin-bottom: 1.5rem;
-}
-
-.control-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-  color: #333;
-  text-align: center;
-}
-
-.slider-container {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.slider-value {
-  font-weight: 600;
-  color: #007bff;
-  min-width: 40px;
-  text-align: center;
-}
-
-.control-slider {
-  flex: 1;
-  height: 6px;
-  border-radius: 3px;
-  background: #ddd;
-  outline: none;
-  -webkit-appearance: none;
-}
-
-.control-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  background: #007bff;
-  cursor: pointer;
-  border: 2px solid white;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  animation: autoFocusPulse 2s ease-in-out infinite;
 }
 
-.control-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.control-btn {
-  flex: 1;
-  padding: 0.75rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s ease;
-}
-
-.reset-btn {
-  background: #6c757d;
-  color: white;
-}
-
-.reset-btn:hover {
-  background: #5a6268;
-}
-
-.close-btn {
-  background: #007bff;
-  color: white;
-}
-
-.close-btn:hover {
-  background: #0056b3;
-}
-
-/* Orientation Indicator */
-.orientation-indicator {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  color: rgba(255, 255, 255, 0.7);
-  padding: 0.5rem;
-  border-radius: 50%;
-  font-size: 0.8rem;
-  z-index: 15;
-}
-
-.orientation-portrait {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.orientation-landscape {
-  background: rgba(255, 255, 255, 0.1);
+@keyframes autoFocusPulse {
+  0%, 100% { 
+    transform: scale(0.8);
+    opacity: 0.3;
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+  50% { 
+    transform: scale(1.1);
+    opacity: 0.6;
+    border-color: rgba(0, 255, 0, 0.5);
+  }
 }
 
 /* Focus Indicator */
@@ -793,7 +472,7 @@ onUnmounted(() => {
   position: absolute;
   width: 80px;
   height: 80px;
-  z-index: 20;
+  z-index: 15;
   pointer-events: none;
 }
 
@@ -803,7 +482,7 @@ onUnmounted(() => {
   border: 3px solid #00ff00;
   border-radius: 50%;
   background: rgba(0, 255, 0, 0.1);
-  animation: focusPulse 0.5s ease-out;
+  animation: focusPulse 0.8s ease-out;
 }
 
 @keyframes focusPulse {
@@ -846,6 +525,12 @@ onUnmounted(() => {
 
 .control-button.active {
   background: #FFC107;
+  animation: flashActive 1s ease-in-out infinite;
+}
+
+@keyframes flashActive {
+  0%, 100% { background: #FFC107; }
+  50% { background: #FFA000; }
 }
 
 .control-button:hover:not(:disabled) {
