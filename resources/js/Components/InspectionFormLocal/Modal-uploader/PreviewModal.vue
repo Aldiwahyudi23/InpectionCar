@@ -48,19 +48,6 @@
       </div>
 
       <!-- Upload Progress Indicator -->
-      <div v-if="isUploading" class="bg-blue-900 bg-opacity-50 text-white p-3">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-sm font-medium">Mengupload gambar...</span>
-          <span class="text-xs">{{ uploadProgress }}%</span>
-        </div>
-        <div class="w-full bg-blue-700 bg-opacity-50 rounded-full h-2">
-          <div 
-            class="bg-blue-400 h-2 rounded-full transition-all duration-300" 
-            :style="{ width: uploadProgress + '%' }"
-          ></div>
-        </div>
-        <p class="text-xs mt-1 text-blue-300">{{ currentUpload }}/{{ totalUpload }} gambar terupload</p>
-      </div>
 
       <div class="flex-1 flex items-center justify-center overflow-hidden relative">
         <div

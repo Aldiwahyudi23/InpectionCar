@@ -42,16 +42,7 @@
       aria-label="Image gallery"
     >
       <!-- Upload Progress Indicator -->
-      <div v-if="isUploading" class="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-sm font-medium text-blue-700">Mengupload gambar...</span>
-          <span class="text-xs text-blue-600">{{ uploadProgress }}%</span>
-        </div>
-        <div class="w-full bg-blue-200 rounded-full h-2">
-          <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" :style="{ width: uploadProgress + '%' }"></div>
-        </div>
-        <p class="text-xs text-blue-600 mt-1">{{ currentUploading }}/{{ totalToUpload }} gambar terupload</p>
-      </div>
+      
 
       <div v-if="settings.max_files === 1" class="flex items-center gap-4">
         <div 
