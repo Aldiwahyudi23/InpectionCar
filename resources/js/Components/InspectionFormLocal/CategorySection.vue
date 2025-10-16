@@ -22,7 +22,7 @@
     <button
       v-if="!isHeaderVisible && hasHiddenPoints"
       @click="toggleGlobalHidden"
-      class="fixed top-3 right-2 z-50 bg-indigo-600 text-white p-2 rounded-full shadow-lg"
+      class="fixed top-3 right-2 z-10 bg-indigo-600 text-white p-2 rounded-full shadow-lg"
     >
       <svg v-if="showGlobalHidden" xmlns="http://www.w3.org/2000/svg"
         class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

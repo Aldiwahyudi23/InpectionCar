@@ -2,7 +2,11 @@
   <div v-if="show" class="fixed inset-0 z-40 p-0 webcam-modal-container">
     <div class="webcam-content-box">
       <div class="webcam-header">
-        <p class="rounded-full text-white hover:bg-gray-700 transition-colors">{{ settings.camera_aspect_ratio }}</p>
+        <div class="camera-settings-info">
+          <span class="settings-badge" :class="getExposureBadgeClass">{{ exposureModeLabel }}</span>
+          <span class="settings-badge" :class="getFlashBadgeClass">{{ flashModeLabel }}</span>
+          <span class="settings-badge aspect-ratio">{{ settings.camera_aspect_ratio }}</span>
+        </div>
         <div class="inspection-point-name">{{ point?.name || 'Camera' }}</div>
         <button @click="closeModal" class="p-2 rounded-full text-white hover:bg-gray-700 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -17,10 +21,18 @@
         @click="handleTapToFocus"
         @touchstart="handleTapToFocus"
       >
-        <video ref="webcamVideo" autoplay playsinline class="webcam-video"></video>
+        <video ref="webcamVideo" autoplay playsinline class="webcam-video" :class="{'hdr-mode': isHDRActive}"></video>
         <canvas ref="webcamCanvas" class="hidden"></canvas>
-        <div v-if="showScreenFlash" class="screen-flash-overlay"></div>
         
+        <!-- Flash Overlay dengan kontrol intensity -->
+        <div v-if="showScreenFlash" class="screen-flash-overlay" :style="flashOverlayStyle"></div>
+        
+        <!-- Backlight Warning -->
+        <div v-if="showBacklightWarning" class="backlight-warning">
+          <div class="warning-icon">⚠️</div>
+          <p>Backlight terdeteksi! Gunakan fill flash</p>
+        </div>
+
         <div class="aspect-ratio-guide" :style="aspectRatioGuideStyle"></div>
 
         <div v-if="showFocusIndicator" class="focus-indicator" :style="focusIndicatorStyle">
@@ -28,10 +40,14 @@
         </div>
         
         <div class="hd-badge">
-          <span class="hd-text">HD</span>
+          <span class="hd-text" :class="{'hdr-active': isHDRActive}">
+            {{ isHDRActive ? 'HDR' : 'HD' }}
+          </span>
         </div>
 
+        <!-- Enhanced Zoom Controls -->
         <div v-if="isZoomSupported" class="zoom-controls">
+          <span class="zoom-label">{{ zoomLevel.toFixed(1) }}x</span>
           <input
             type="range"
             min="1"
@@ -46,7 +62,7 @@
         <!-- Loading State -->
         <div v-if="isLoading" class="loading-overlay">
           <div class="loading-spinner"></div>
-          <p class="loading-text">Menginisialisasi kamera...</p>
+          <p class="loading-text">Mengoptimalkan kamera...</p>
         </div>
 
         <!-- Error State -->
@@ -63,11 +79,53 @@
       </div>
 
       <div class="webcam-footer">
+        <!-- Advanced Camera Controls -->
+        <div class="advanced-controls">
+          <!-- Exposure Compensation -->
+          <div v-if="isExposureSupported" class="control-group">
+            <label class="control-label">Exposure</label>
+            <input
+              type="range"
+              :min="minExposureCompensation"
+              :max="maxExposureCompensation"
+              step="0.1"
+              v-model="exposureCompensation"
+              @input="setExposureCompensation(parseFloat($event.target.value))"
+              class="exposure-slider"
+            >
+            <span class="control-value">{{ exposureCompensation > 0 ? '+' : '' }}{{ exposureCompensation.toFixed(1) }}</span>
+          </div>
+
+          <!-- Flash Mode Selector -->
+          <div v-if="isFlashSupported" class="control-group">
+            <label class="control-label">Flash</label>
+            <select v-model="flashMode" @change="setFlashMode" class="flash-selector">
+              <option value="off">Off</option>
+              <option value="on">On</option>
+              <option value="auto">Auto</option>
+              <option value="fill">Fill</option>
+            </select>
+          </div>
+
+          <!-- HDR Toggle -->
+          <div v-if="isHDRSupported" class="control-group">
+            <label class="control-label">HDR</label>
+            <button 
+              @click="toggleHDR" 
+              class="hdr-toggle"
+              :class="{'active': isHDRActive}"
+            >
+              {{ isHDRActive ? 'ON' : 'OFF' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Main Camera Controls -->
         <div class="camera-controls">
           <button v-if="settings.enable_flash && isFlashSupported" 
             @click="toggleFlash" 
             class="control-button"
-            :class="{'active': isFlashOn, 'disabled': !isFlashSupported}">
+            :class="{'active': isFlashOn, 'fill-mode': flashMode === 'fill'}">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
@@ -94,28 +152,29 @@
           </button>
         </div>
 
-        <!-- Manual Focus Controls -->
-        <div v-if="isManualFocusSupported" class="focus-controls">
+        <!-- Manual Focus & Exposure Controls -->
+        <div v-if="isManualFocusSupported || isExposureSupported" class="manual-controls">
           <button @click="setFocusMode('continuous')" 
-            class="focus-btn"
+            class="control-btn"
             :class="{'active': focusMode === 'continuous'}">
-            Auto
+            Auto Focus
           </button>
           <button @click="setFocusMode('manual')" 
-            class="focus-btn"
+            class="control-btn"
             :class="{'active': focusMode === 'manual'}">
-            Manual
+            Manual Focus
           </button>
-          <input
-            v-if="focusMode === 'manual'"
-            type="range"
-            :min="minFocusDistance"
-            :max="maxFocusDistance"
-            step="0.1"
-            v-model="focusDistance"
-            @input="setManualFocus(parseFloat($event.target.value))"
-            class="focus-slider"
-          >
+          
+          <button v-if="isExposureSupported" @click="setExposureMode('continuous')" 
+            class="control-btn"
+            :class="{'active': exposureMode === 'continuous'}">
+            Auto Expo
+          </button>
+          <button v-if="isExposureSupported" @click="setExposureMode('manual')" 
+            class="control-btn"
+            :class="{'active': exposureMode === 'manual'}">
+            Manual Expo
+          </button>
         </div>
       </div>
     </div>
@@ -149,29 +208,44 @@ const isFlashSupported = ref(false);
 const isFlashOn = ref(false);
 const showScreenFlash = ref(false);
 const showFocusIndicator = ref(false);
+const showBacklightWarning = ref(false);
 const focusIndicatorStyle = ref({});
 const isTakingPhoto = ref(false);
 const isLoading = ref(false);
 const error = ref(null);
 
-// Zoom & Focus Controls
+// Enhanced Camera Controls
 const zoomLevel = ref(1);
 const maxZoom = ref(1);
 const isZoomSupported = ref(false);
+
+// Focus Controls
 const focusMode = ref('continuous');
 const focusDistance = ref(0);
 const minFocusDistance = ref(0);
 const maxFocusDistance = ref(10);
 const isManualFocusSupported = ref(false);
 
+// Exposure Controls
+const exposureMode = ref('continuous');
+const exposureCompensation = ref(0);
+const minExposureCompensation = ref(-3);
+const maxExposureCompensation = ref(3);
+const isExposureSupported = ref(false);
+const isHDRSupported = ref(false);
+const isHDRActive = ref(false);
+
+// Flash Controls
+const flashMode = ref('off');
+const flashIntensity = ref(0.8);
+
+// Computed Properties
 const maxSizeKB = computed(() => {
   return props.settings?.max_size || 2048;
 });
 
-// Computed property untuk style video container berdasarkan aspect ratio
 const videoContainerStyle = computed(() => {
   if (!props.aspectRatio) return {};
-  
   return {
     aspectRatio: `${props.aspectRatio} / 1`,
     maxWidth: '100%',
@@ -180,21 +254,48 @@ const videoContainerStyle = computed(() => {
   };
 });
 
-// Computed property untuk aspect ratio guide
 const aspectRatioGuideStyle = computed(() => {
   if (!props.aspectRatio) return {};
-  
   const ratio = props.aspectRatio;
   const width = ratio > 1 ? 80 : 60;
   const height = ratio > 1 ? 80 / ratio : 60 * ratio;
-  
   return {
     width: `${width}%`,
     height: `${height}%`
   };
 });
 
-// Enhanced RTC Camera Initialization
+const flashOverlayStyle = computed(() => ({
+  opacity: flashIntensity.value
+}));
+
+const exposureModeLabel = computed(() => {
+  return exposureMode.value === 'manual' ? 'M-Expo' : 'A-Expo';
+});
+
+const flashModeLabel = computed(() => {
+  const modes = {
+    'off': 'No Flash',
+    'on': 'Flash On',
+    'auto': 'Auto Flash',
+    'fill': 'Fill Flash'
+  };
+  return modes[flashMode.value];
+});
+
+const getExposureBadgeClass = computed(() => ({
+  'badge-auto': exposureMode.value === 'continuous',
+  'badge-manual': exposureMode.value === 'manual'
+}));
+
+const getFlashBadgeClass = computed(() => ({
+  'badge-flash-off': flashMode.value === 'off',
+  'badge-flash-on': flashMode.value === 'on',
+  'badge-flash-auto': flashMode.value === 'auto',
+  'badge-flash-fill': flashMode.value === 'fill'
+}));
+
+// Enhanced RTC Camera Initialization dengan Backlight Detection
 const initializeWebcam = async () => {
   if (mediaStream) {
     mediaStream.getTracks().forEach(track => track.stop());
@@ -204,30 +305,32 @@ const initializeWebcam = async () => {
   error.value = null;
   
   try {
-    // Get available cameras first
     await getCameraDevices();
     
-    // Enhanced video constraints for better RTC performance
+    // Advanced constraints untuk handling backlight dan exposure
     const videoConstraints = {
       deviceId: currentDeviceId.value ? { exact: currentDeviceId.value } : undefined,
       facingMode: currentDeviceId.value ? undefined : { ideal: currentFacingMode.value },
-      width: { ideal: 3840, min: 1920 }, // 4K preferred, min 1080p
+      width: { ideal: 3840, min: 1920 },
       height: { ideal: 2160, min: 1080 },
       aspectRatio: { ideal: props.aspectRatio || 4/3 },
-      frameRate: { ideal: 60, min: 30 }, // Higher frame rate for smoother video
+      frameRate: { ideal: 60, min: 30 },
       resizeMode: 'crop-and-scale',
+      // Advanced settings untuk exposure control
       advanced: [
         { focusMode: 'continuous' },
         { exposureMode: 'continuous' },
+        { exposureCompensation: { ideal: 0 } },
         { whiteBalanceMode: 'continuous' },
         { brightness: { ideal: 0 } },
         { contrast: { ideal: 0 } },
         { saturation: { ideal: 0 } },
-        { sharpness: { ideal: 0 } }
+        { sharpness: { ideal: 0 } },
+        // HDR simulation
+        { exposureTime: { ideal: 1/60 } },
+        { iso: { ideal: 100 } }
       ]
     };
-    
-    console.log('Initializing RTC camera with constraints:', videoConstraints);
     
     mediaStream = await navigator.mediaDevices.getUserMedia({ 
       video: videoConstraints,
@@ -237,66 +340,343 @@ const initializeWebcam = async () => {
     videoTrack = mediaStream.getVideoTracks()[0];
     webcamVideo.value.srcObject = mediaStream;
     
-    // Wait for video to be ready
     await new Promise((resolve, reject) => {
       webcamVideo.value.onloadedmetadata = () => resolve();
       webcamVideo.value.onerror = reject;
-      setTimeout(resolve, 1000); // Fallback timeout
+      setTimeout(resolve, 1000);
     });
     
     await webcamVideo.value.play();
     await checkCameraCapabilities();
     
-    console.log('RTC Camera initialized successfully');
+    // Start backlight detection
+    startBacklightDetection();
+    
+    console.log('Enhanced RTC Camera initialized successfully');
     
   } catch (err) {
     console.error("RTC Error accessing camera: ", err);
     error.value = getErrorMessage(err);
-    
-    // Fallback to simpler constraints
-    if (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError') {
-      await initializeWithFallback();
-    }
+    await initializeWithFallback();
   } finally {
     isLoading.value = false;
   }
 };
 
-// Fallback initialization
-const initializeWithFallback = async () => {
+// Backlight Detection System
+const startBacklightDetection = () => {
+  if (!webcamVideo.value) return;
+  
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  
+  const detectBacklight = () => {
+    if (!webcamVideo.value || webcamVideo.value.readyState !== webcamVideo.value.HAVE_ENOUGH_DATA) {
+      return;
+    }
+    
+    try {
+      const video = webcamVideo.value;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      // Analyze brightness distribution
+      let brightPixels = 0;
+      let darkPixels = 0;
+      let totalBrightness = 0;
+      
+      for (let i = 0; i < data.length; i += 4) {
+        const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+        totalBrightness += brightness;
+        
+        if (brightness > 200) brightPixels++;
+        if (brightness < 50) darkPixels++;
+      }
+      
+      const avgBrightness = totalBrightness / (data.length / 4);
+      const brightRatio = brightPixels / (data.length / 4);
+      const darkRatio = darkPixels / (data.length / 4);
+      
+      // Backlight detection logic
+      const isBacklight = avgBrightness > 180 && brightRatio > 0.3 && darkRatio > 0.4;
+      showBacklightWarning.value = isBacklight;
+      
+      // Auto-adjust exposure for backlight
+      if (isBacklight && exposureMode.value === 'continuous') {
+        setExposureCompensation(1.0); // Increase exposure for backlight
+      }
+      
+    } catch (error) {
+      console.warn('Backlight detection error:', error);
+    }
+  };
+  
+  // Run detection every 2 seconds
+  setInterval(detectBacklight, 2000);
+};
+
+// Enhanced Flash Management
+const setFlashMode = async () => {
+  if (!videoTrack) return;
+  
   try {
-    console.log('Trying fallback camera constraints...');
-    
-    const fallbackConstraints = {
-      video: {
-        deviceId: currentDeviceId.value ? { exact: currentDeviceId.value } : undefined,
-        facingMode: currentDeviceId.value ? undefined : { ideal: currentFacingMode.value },
-        width: { ideal: 1920 },
-        height: { ideal: 1080 },
-        frameRate: { ideal: 30 }
-      },
-      audio: false
-    };
-    
-    mediaStream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
-    videoTrack = mediaStream.getVideoTracks()[0];
-    webcamVideo.value.srcObject = mediaStream;
-    
-    await webcamVideo.value.play();
-    await checkCameraCapabilities();
-    
-    console.log('Fallback camera initialized successfully');
-    error.value = null;
-  } catch (fallbackErr) {
-    console.error("Fallback camera also failed: ", fallbackErr);
-    error.value = getErrorMessage(fallbackErr);
+    switch (flashMode.value) {
+      case 'off':
+        isFlashOn.value = false;
+        if (currentFacingMode.value !== 'user') {
+          await videoTrack.applyConstraints({ 
+            advanced: [{ torch: false }] 
+          });
+        }
+        break;
+        
+      case 'on':
+        isFlashOn.value = true;
+        if (currentFacingMode.value !== 'user') {
+          await videoTrack.applyConstraints({ 
+            advanced: [{ torch: true }] 
+          });
+        }
+        break;
+        
+      case 'auto':
+        // Auto flash logic based on brightness detection
+        const shouldFlash = showBacklightWarning.value;
+        isFlashOn.value = shouldFlash;
+        if (currentFacingMode.value !== 'user' && shouldFlash) {
+          await videoTrack.applyConstraints({ 
+            advanced: [{ torch: true }] 
+          });
+        }
+        break;
+        
+      case 'fill':
+        // Fill flash for backlight situations
+        isFlashOn.value = true;
+        flashIntensity.value = 0.4; // Lower intensity for fill
+        if (currentFacingMode.value !== 'user') {
+          await videoTrack.applyConstraints({ 
+            advanced: [{ torch: true }] 
+          });
+        }
+        break;
+    }
+  } catch (err) {
+    console.error("Flash mode change failed:", err);
   }
 };
 
-// Get available camera devices
+// Enhanced Exposure Control
+const setExposureCompensation = async (value) => {
+  if (!videoTrack || !isExposureSupported.value) return;
+  
+  exposureCompensation.value = Math.max(minExposureCompensation.value, 
+    Math.min(maxExposureCompensation.value, value));
+  
+  try {
+    await videoTrack.applyConstraints({
+      advanced: [{ exposureCompensation: exposureCompensation.value }]
+    });
+    console.log(`Exposure compensation set to: ${exposureCompensation.value}`);
+  } catch (error) {
+    console.error("Failed to set exposure compensation:", error);
+  }
+};
+
+const setExposureMode = async (mode) => {
+  if (!videoTrack || !isExposureSupported.value) return;
+  
+  exposureMode.value = mode;
+  
+  try {
+    if (mode === 'continuous') {
+      await videoTrack.applyConstraints({
+        advanced: [{ exposureMode: 'continuous' }]
+      });
+    } else {
+      await videoTrack.applyConstraints({
+        advanced: [{ exposureMode: 'manual' }]
+      });
+    }
+  } catch (error) {
+    console.error("Failed to set exposure mode:", error);
+    exposureMode.value = 'continuous';
+  }
+};
+
+// HDR Simulation
+const toggleHDR = async () => {
+  if (!isHDRSupported.value) return;
+  
+  isHDRActive.value = !isHDRActive.value;
+  
+  try {
+    if (isHDRActive.value) {
+      // HDR mode - lower contrast, balanced exposure
+      await videoTrack.applyConstraints({
+        advanced: [
+          { contrast: 0 },
+          { brightness: 0 },
+          { saturation: 0.1 }
+        ]
+      });
+    } else {
+      // Standard mode
+      await videoTrack.applyConstraints({
+        advanced: [
+          { contrast: 0 },
+          { brightness: 0 },
+          { saturation: 0 }
+        ]
+      });
+    }
+  } catch (error) {
+    console.error("HDR toggle failed:", error);
+  }
+};
+
+// Enhanced Camera Capabilities Check
+const checkCameraCapabilities = async () => {
+  if (!videoTrack) return;
+  
+  try {
+    const capabilities = videoTrack.getCapabilities();
+    const settings = videoTrack.getSettings();
+    
+    console.log('Enhanced Camera Capabilities:', capabilities);
+    
+    // Zoom
+    if (capabilities.zoom) {
+      isZoomSupported.value = true;
+      maxZoom.value = capabilities.zoom.max;
+      zoomLevel.value = settings.zoom || 1;
+    }
+    
+    // Flash
+    isFlashSupported.value = !!capabilities.torch;
+    
+    // Focus
+    if (capabilities.focusMode && capabilities.focusMode.includes('manual')) {
+      isManualFocusSupported.value = true;
+      if (capabilities.focusDistance) {
+        minFocusDistance.value = capabilities.focusDistance.min;
+        maxFocusDistance.value = capabilities.focusDistance.max;
+        focusDistance.value = settings.focusDistance || minFocusDistance.value;
+      }
+    }
+    
+    // Exposure
+    if (capabilities.exposureCompensation) {
+      isExposureSupported.value = true;
+      minExposureCompensation.value = capabilities.exposureCompensation.min;
+      maxExposureCompensation.value = capabilities.exposureCompensation.max;
+      exposureCompensation.value = settings.exposureCompensation || 0;
+    }
+    
+    // HDR detection (simulated)
+    isHDRSupported.value = capabilities.whiteBalanceMode && 
+                          capabilities.exposureMode && 
+                          capabilities.focusMode;
+    
+  } catch (error) {
+    console.error("Error checking camera capabilities:", error);
+  }
+};
+
+// Enhanced Photo Capture dengan Exposure Compensation
+const capturePhoto = async () => {
+  if (isTakingPhoto.value || !webcamVideo.value || !webcamCanvas.value || isLoading.value) return;
+  
+  isTakingPhoto.value = true;
+  
+  try {
+    // Pre-capture adjustments
+    if (flashMode.value === 'on' || flashMode.value === 'fill') {
+      showScreenFlash.value = true;
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    
+    const video = webcamVideo.value;
+    const canvas = webcamCanvas.value;
+    
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    
+    let sw, sh, sx, sy;
+    
+    if (vw / vh > props.aspectRatio) {
+      sh = vh;
+      sw = vh * props.aspectRatio;
+      sx = (vw - sw) / 2;
+      sy = 0;
+    } else {
+      sw = vw;
+      sh = vw / props.aspectRatio;
+      sx = 0;
+      sy = (vh - sh) / 2;
+    }
+    
+    canvas.width = sw;
+    canvas.height = sh;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Apply exposure compensation in post-processing
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+    
+    // Apply brightness/contrast adjustment based on exposure compensation
+    if (exposureCompensation.value !== 0) {
+      const imageData = ctx.getImageData(0, 0, sw, sh);
+      const data = imageData.data;
+      const adjustment = 1 + (exposureCompensation.value * 0.1);
+      
+      for (let i = 0; i < data.length; i += 4) {
+        data[i] = Math.min(255, data[i] * adjustment);     // Red
+        data[i + 1] = Math.min(255, data[i + 1] * adjustment); // Green
+        data[i + 2] = Math.min(255, data[i + 2] * adjustment); // Blue
+      }
+      
+      ctx.putImageData(imageData, 0, 0);
+    }
+    
+    const originalBlob = await new Promise(resolve => {
+      canvas.toBlob(resolve, 'image/jpeg', 0.95); // Higher quality
+    });
+    
+    const compressedBlob = await compressImage(originalBlob);
+    
+    if (compressedBlob) {
+      const file = new File([compressedBlob], `capture_${Date.now()}.jpeg`, { 
+        type: 'image/jpeg',
+        lastModified: Date.now()
+      });
+      
+      emit('photoCaptured', file);
+    }
+    
+    // Reset flash
+    setTimeout(() => {
+      showScreenFlash.value = false;
+    }, 100);
+    
+  } catch (error) {
+    console.error("Error capturing photo:", error);
+  } finally {
+    isTakingPhoto.value = false;
+  }
+};
+
+// Existing functions (getCameraDevices, getErrorMessage, initializeWithFallback, etc.)
+// ... (tetap sama seperti sebelumnya, tapi dengan enhancements)
+
 const getCameraDevices = async () => {
   try {
-    // First get permission by accessing any camera
     const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
     tempStream.getTracks().forEach(track => track.stop());
     
@@ -304,9 +684,7 @@ const getCameraDevices = async () => {
     cameraDevices.value = devices.filter(d => d.kind === 'videoinput');
     hasMultipleCameras.value = cameraDevices.value.length > 1;
     
-    // Set current device if not set
     if (!currentDeviceId.value && cameraDevices.value.length > 0) {
-      // Prefer rear camera
       const rearCamera = cameraDevices.value.find(device => 
         device.label.toLowerCase().includes('back') || 
         device.label.toLowerCase().includes('rear') ||
@@ -314,14 +692,11 @@ const getCameraDevices = async () => {
       );
       currentDeviceId.value = rearCamera ? rearCamera.deviceId : cameraDevices.value[0].deviceId;
     }
-    
-    console.log(`Found ${cameraDevices.value.length} cameras:`, cameraDevices.value);
   } catch (err) {
     console.error('Error getting camera devices:', err);
   }
 };
 
-// Enhanced error messaging
 const getErrorMessage = (error) => {
   switch(error.name) {
     case 'NotAllowedError':
@@ -340,194 +715,56 @@ const getErrorMessage = (error) => {
   }
 };
 
-const closeModal = () => {
-  if (mediaStream) {
-    mediaStream.getTracks().forEach(track => track.stop());
-  }
-  emit('close');
-};
-
-// Enhanced camera capabilities check
-const checkCameraCapabilities = async () => {
-  if (!videoTrack) return;
-  
+const initializeWithFallback = async () => {
   try {
-    const capabilities = videoTrack.getCapabilities();
-    const settings = videoTrack.getSettings();
+    const fallbackConstraints = {
+      video: {
+        deviceId: currentDeviceId.value ? { exact: currentDeviceId.value } : undefined,
+        facingMode: currentDeviceId.value ? undefined : { ideal: currentFacingMode.value },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        frameRate: { ideal: 30 }
+      },
+      audio: false
+    };
     
-    console.log('Camera Capabilities:', capabilities);
-    console.log('Camera Settings:', settings);
-    
-    // Enhanced zoom detection
-    if (capabilities.zoom) {
-      isZoomSupported.value = true;
-      maxZoom.value = capabilities.zoom.max;
-      zoomLevel.value = settings.zoom || 1;
-      console.log(`Zoom supported. Range: ${capabilities.zoom.min} - ${capabilities.zoom.max}`);
-    }
-    
-    // Enhanced flash detection
-    isFlashSupported.value = !!capabilities.torch;
-    
-    // Enhanced focus capabilities
-    if (capabilities.focusMode && capabilities.focusMode.includes('manual')) {
-      isManualFocusSupported.value = true;
-      if (capabilities.focusDistance) {
-        minFocusDistance.value = capabilities.focusDistance.min;
-        maxFocusDistance.value = capabilities.focusDistance.max;
-        focusDistance.value = settings.focusDistance || minFocusDistance.value;
-      }
-    }
-    
-    // Check for advanced features
-    if (capabilities.exposureMode) {
-      console.log('Exposure modes:', capabilities.exposureMode);
-    }
-    
-    if (capabilities.whiteBalanceMode) {
-      console.log('White balance modes:', capabilities.whiteBalanceMode);
-    }
-    
-  } catch (error) {
-    console.error("Error checking camera capabilities:", error);
+    mediaStream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+    videoTrack = mediaStream.getVideoTracks()[0];
+    webcamVideo.value.srcObject = mediaStream;
+    await webcamVideo.value.play();
+    await checkCameraCapabilities();
+    error.value = null;
+  } catch (fallbackErr) {
+    console.error("Fallback camera also failed: ", fallbackErr);
+    error.value = getErrorMessage(fallbackErr);
   }
 };
 
-// Enhanced tap to focus with RTC optimizations
-const handleTapToFocus = async (event) => {
-  if (!videoTrack || !isManualFocusSupported.value) return;
-  
-  const rect = webcamVideo.value.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-  
-  // Show focus indicator
-  showFocusIndicator.value = true;
-  focusIndicatorStyle.value = {
-    left: `${x}px`,
-    top: `${y}px`,
-    transform: 'translate(-50%, -50%)'
-  };
+// Existing functions (toggleFlash, switchCamera, compressImage, etc.)
+// ... (tetap sama seperti sebelumnya)
 
-  try {
-    const capabilities = videoTrack.getCapabilities();
-    
-    if (capabilities.pointsOfInterest) {
-      const focusX = x / rect.width;
-      const focusY = y / rect.height;
-      
-      await videoTrack.applyConstraints({
-        advanced: [{
-          focusMode: 'manual',
-          pointsOfInterest: [{ x: focusX, y: focusY }]
-        }]
-      });
-      
-      console.log(`Manual focus set at: ${focusX.toFixed(2)}, ${focusY.toFixed(2)}`);
-    }
-  } catch (error) {
-    console.warn("Manual focus failed:", error);
-  }
-  
-  setTimeout(() => {
-    showFocusIndicator.value = false;
-  }, 2000);
-};
-
-// Enhanced zoom with RTC constraints
-const setZoom = async (level) => {
-  if (!videoTrack || !isZoomSupported.value) return;
-
-  const newZoom = Math.min(Math.max(level, 1), maxZoom.value);
-  zoomLevel.value = newZoom;
-  
-  try {
-    await videoTrack.applyConstraints({
-      advanced: [{ zoom: newZoom }]
-    });
-    console.log(`Zoom set to: ${newZoom}`);
-  } catch (error) {
-    console.error("Failed to set zoom:", error);
-  }
-};
-
-// Enhanced focus mode control
-const setFocusMode = async (mode) => {
-  if (!videoTrack || !isManualFocusSupported.value) return;
-  
-  focusMode.value = mode;
-  
-  try {
-    if (mode === 'continuous') {
-      await videoTrack.applyConstraints({
-        advanced: [{ focusMode: 'continuous' }]
-      });
-    } else {
-      await videoTrack.applyConstraints({
-        advanced: [{ focusMode: 'manual' }]
-      });
-    }
-    console.log(`Focus mode set to: ${mode}`);
-  } catch (error) {
-    console.error("Failed to set focus mode:", error);
-    focusMode.value = 'continuous'; // Revert on error
-  }
-};
-
-// Enhanced manual focus control
-const setManualFocus = async (distance) => {
-  if (!videoTrack || focusMode.value !== 'manual') return;
-  
-  focusDistance.value = distance;
-  
-  try {
-    await videoTrack.applyConstraints({
-      advanced: [{ focusDistance: distance }]
-    });
-  } catch (error) {
-    console.warn("Manual focus distance adjustment failed:", error);
-  }
-};
-
-// Enhanced flash control
 const toggleFlash = async () => {
-  if (!videoTrack || !isFlashSupported.value) return;
-  
-  try {
-    if (currentFacingMode.value === 'user') {
-      // Front camera - use screen flash
-      isFlashOn.value = !isFlashOn.value;
-      showScreenFlash.value = isFlashOn.value;
-    } else {
-      // Rear camera - toggle torch
-      await videoTrack.applyConstraints({ 
-        advanced: [{ torch: !isFlashOn.value }] 
-      });
-      isFlashOn.value = !isFlashOn.value;
-    }
-    console.log(`Flash ${isFlashOn.value ? 'ON' : 'OFF'}`);
-  } catch (err) {
-    console.error("Flash toggle failed:", err);
-  }
+  // Cycle through flash modes
+  const modes = ['off', 'on', 'auto', 'fill'];
+  const currentIndex = modes.indexOf(flashMode.value);
+  const nextIndex = (currentIndex + 1) % modes.length;
+  flashMode.value = modes[nextIndex];
+  await setFlashMode();
 };
 
-// Enhanced camera switching
 const switchCamera = async () => {
   if (!hasMultipleCameras.value || isLoading.value) return;
   
   isLoading.value = true;
   
-  // Stop existing stream
   if (mediaStream) {
     mediaStream.getTracks().forEach(track => track.stop());
   }
   
-  // Find next camera
   const currentIndex = cameraDevices.value.findIndex(d => d.deviceId === currentDeviceId.value);
   const nextIndex = (currentIndex + 1) % cameraDevices.value.length;
   currentDeviceId.value = cameraDevices.value[nextIndex].deviceId;
   
-  // Update facing mode based on camera label (heuristic)
   const nextCamera = cameraDevices.value[nextIndex];
   if (nextCamera.label.toLowerCase().includes('front') || nextCamera.label.toLowerCase().includes('user')) {
     currentFacingMode.value = 'user';
@@ -535,19 +772,9 @@ const switchCamera = async () => {
     currentFacingMode.value = 'environment';
   }
   
-  console.log(`Switching to camera: ${nextCamera.label}`);
-  
-  // Restart webcam with new device
   await initializeWebcam();
 };
 
-// Retry camera initialization
-const retryCamera = async () => {
-  error.value = null;
-  await initializeWebcam();
-};
-
-// Enhanced image compression with RTC optimizations
 const compressImage = async (blob) => {
   return new Promise((resolve) => {
     const MAX_SIZE = maxSizeKB.value * 1024;
@@ -565,12 +792,10 @@ const compressImage = async (blob) => {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Calculate optimal dimensions while maintaining quality
         let scaleFactor = Math.sqrt(MAX_SIZE / blob.size);
         let targetWidth = Math.floor(img.width * scaleFactor);
         let targetHeight = Math.floor(img.height * scaleFactor);
         
-        // Ensure minimum dimensions for quality
         if (targetWidth < 800) {
           targetWidth = 800;
           targetHeight = Math.floor((800 / img.width) * img.height);
@@ -580,12 +805,11 @@ const compressImage = async (blob) => {
         canvas.width = targetWidth;
         canvas.height = targetHeight;
         
-        // Use high-quality image rendering
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
         
-        let quality = 0.92; // Start with high quality
+        let quality = 0.92;
         
         const compressRecursive = () => {
           canvas.toBlob((compressedBlob) => {
@@ -593,7 +817,6 @@ const compressImage = async (blob) => {
               quality -= 0.08;
               compressRecursive();
             } else {
-              console.log(`Image compressed: ${blob.size} -> ${compressedBlob.size} bytes, quality: ${quality}`);
               resolve(compressedBlob);
             }
           }, 'image/jpeg', quality);
@@ -607,73 +830,108 @@ const compressImage = async (blob) => {
   });
 };
 
-// Enhanced photo capture with RTC optimizations
-const capturePhoto = async () => {
-  if (isTakingPhoto.value || !webcamVideo.value || !webcamCanvas.value || isLoading.value) return;
+const closeModal = () => {
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(track => track.stop());
+  }
+  emit('close');
+};
+
+const retryCamera = async () => {
+  error.value = null;
+  await initializeWebcam();
+};
+
+// Focus functions (handleTapToFocus, setFocusMode, setManualFocus, setZoom)
+// ... (tetap sama seperti sebelumnya)
+
+const handleTapToFocus = async (event) => {
+  if (!videoTrack || !isManualFocusSupported.value) return;
   
-  isTakingPhoto.value = true;
+  const rect = webcamVideo.value.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  
+  showFocusIndicator.value = true;
+  focusIndicatorStyle.value = {
+    left: `${x}px`,
+    top: `${y}px`,
+    transform: 'translate(-50%, -50%)'
+  };
+
+  try {
+    const capabilities = videoTrack.getCapabilities();
+    if (capabilities.pointsOfInterest) {
+      const focusX = x / rect.width;
+      const focusY = y / rect.height;
+      
+      await videoTrack.applyConstraints({
+        advanced: [{
+          focusMode: 'manual',
+          pointsOfInterest: [{ x: focusX, y: focusY }]
+        }]
+      });
+    }
+  } catch (error) {
+    console.warn("Manual focus failed:", error);
+  }
+  
+  setTimeout(() => {
+    showFocusIndicator.value = false;
+  }, 2000);
+};
+
+const setFocusMode = async (mode) => {
+  if (!videoTrack || !isManualFocusSupported.value) return;
+  
+  focusMode.value = mode;
   
   try {
-    const video = webcamVideo.value;
-    const canvas = webcamCanvas.value;
-    
-    const vw = video.videoWidth;
-    const vh = video.videoHeight;
-    
-    let sw, sh, sx, sy;
-    
-    // Calculate crop area based on aspect ratio
-    if (vw / vh > props.aspectRatio) {
-      sh = vh;
-      sw = vh * props.aspectRatio;
-      sx = (vw - sw) / 2;
-      sy = 0;
-    } else {
-      sw = vw;
-      sh = vw / props.aspectRatio;
-      sx = 0;
-      sy = (vh - sh) / 2;
-    }
-    
-    canvas.width = sw;
-    canvas.height = sh;
-    
-    const ctx = canvas.getContext('2d');
-    
-    // Use high-quality image rendering
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
-    
-    const originalBlob = await new Promise(resolve => {
-      canvas.toBlob(resolve, 'image/jpeg', 1.0);
-    });
-    
-    const compressedBlob = await compressImage(originalBlob);
-    
-    if (compressedBlob) {
-      const file = new File([compressedBlob], `capture_${Date.now()}.jpeg`, { 
-        type: 'image/jpeg',
-        lastModified: Date.now()
+    if (mode === 'continuous') {
+      await videoTrack.applyConstraints({
+        advanced: [{ focusMode: 'continuous' }]
       });
-      
-      emit('photoCaptured', file);
-      
-      // Screen flash effect
-      showScreenFlash.value = true;
-      setTimeout(() => {
-        showScreenFlash.value = false;
-      }, 100);
+    } else {
+      await videoTrack.applyConstraints({
+        advanced: [{ focusMode: 'manual' }]
+      });
     }
-    
   } catch (error) {
-    console.error("Error capturing photo:", error);
-  } finally {
-    isTakingPhoto.value = false;
+    console.error("Failed to set focus mode:", error);
+    focusMode.value = 'continuous';
   }
 };
 
-// Watch for prop changes
+const setManualFocus = async (distance) => {
+  if (!videoTrack || focusMode.value !== 'manual') return;
+  
+  focusDistance.value = distance;
+  
+  try {
+    await videoTrack.applyConstraints({
+      advanced: [{ focusDistance: distance }]
+    });
+  } catch (error) {
+    console.warn("Manual focus distance adjustment failed:", error);
+  }
+};
+
+const setZoom = async (level) => {
+  if (!videoTrack || !isZoomSupported.value) return;
+
+  const newZoom = Math.min(Math.max(level, 1), maxZoom.value);
+  zoomLevel.value = newZoom;
+  
+  try {
+    await videoTrack.applyConstraints({
+      advanced: [{ zoom: newZoom }]
+    });
+  } catch (error) {
+    console.error("Failed to set zoom:", error);
+  }
+};
+
+// Watchers and lifecycle
 watch(() => props.show, async (v) => { 
   if (v) {
     await nextTick();
@@ -691,6 +949,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* Enhanced CSS dengan styling untuk kontrol eksposur dan flash */
 .webcam-modal-container {
   background-color: rgba(0, 0, 0, 0.95);
   display: flex;
@@ -718,6 +977,26 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
+.camera-settings-info {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.settings-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.badge-auto { background: #4CAF50; color: white; }
+.badge-manual { background: #FF9800; color: white; }
+.badge-flash-off { background: #666; color: white; }
+.badge-flash-on { background: #FFC107; color: black; }
+.badge-flash-auto { background: #2196F3; color: white; }
+.badge-flash-fill { background: #FF5722; color: white; }
+.aspect-ratio { background: #9C27B0; color: white; }
+
 .inspection-point-name {
   flex-grow: 1;
   text-align: center;
@@ -743,6 +1022,10 @@ onUnmounted(() => {
   filter: brightness(1.05) contrast(1.05);
 }
 
+.webcam-video.hdr-mode {
+  filter: brightness(1.1) contrast(1.1) saturate(1.1);
+}
+
 .aspect-ratio-guide {
   position: absolute;
   top: 50%;
@@ -753,9 +1036,51 @@ onUnmounted(() => {
   z-index: 10;
 }
 
+/* Enhanced Flash Overlay */
+.screen-flash-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.8);
+  z-index: 20;
+  animation: flash 0.3s ease-out;
+}
+
+@keyframes flash {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Backlight Warning */
+.backlight-warning {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(255, 152, 0, 0.9);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 25;
+  animation: pulse 2s infinite;
+}
+
+.warning-icon {
+  font-size: 1.2rem;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 .webcam-footer {
   background: rgba(0, 0, 0, 0.8);
-  padding: 1.5rem 1rem;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -764,6 +1089,89 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
+/* Advanced Controls */
+.advanced-controls {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
+  max-width: 500px;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.5rem;
+  border-radius: 20px;
+}
+
+.control-label {
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  min-width: 60px;
+}
+
+.exposure-slider {
+  width: 80px;
+  -webkit-appearance: none;
+  height: 6px;
+  background: linear-gradient(to right, #666, #fff);
+  border-radius: 3px;
+  outline: none;
+}
+
+.exposure-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: #FF9800;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.control-value {
+  color: white;
+  font-size: 0.8rem;
+  min-width: 40px;
+  text-align: center;
+}
+
+.flash-selector {
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 15px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  color: #333;
+}
+
+.hdr-toggle {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 15px;
+  padding: 0.5rem 1rem;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.8rem;
+}
+
+.hdr-toggle.active {
+  background: #4CAF50;
+  color: white;
+}
+
+.hdr-toggle:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Main Camera Controls */
 .camera-controls {
   display: flex;
   justify-content: space-around;
@@ -786,6 +1194,15 @@ onUnmounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
+.control-button.active {
+  background: #FFC107;
+}
+
+.control-button.fill-mode {
+  background: #FF5722;
+  animation: pulse 2s infinite;
+}
+
 .control-button:hover:not(:disabled) {
   transform: scale(1.08);
   background: rgba(255, 255, 255, 1);
@@ -794,10 +1211,6 @@ onUnmounted(() => {
 .control-button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-.control-button.active {
-  background: #ffeb3b;
 }
 
 .control-button svg {
@@ -835,94 +1248,35 @@ onUnmounted(() => {
   cursor: not-allowed;
 }
 
-.camera-icon-container {
+/* Manual Controls */
+.manual-controls {
   display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
   justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100%;
 }
 
-.camera-body {
-  position: relative;
-  width: 32px;
-  height: 32px;
-  background: #333;
-  border-radius: 8px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.control-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.8rem;
 }
 
-.camera-lens {
-  width: 20px;
-  height: 20px;
-  background: #666;
-  border-radius: 50%;
-  border: 2px solid #999;
+.control-btn.active {
+  background: #007bff;
+  color: white;
 }
 
-.camera-flash {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 6px;
-  height: 6px;
-  background: #ccc;
-  border-radius: 50%;
+.control-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.3);
 }
 
-.camera-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.screen-flash-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(255, 255, 255, 0.8);
-  z-index: 20;
-  animation: flash 0.3s ease-out;
-}
-
-@keyframes flash {
-  0% { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-.focus-indicator {
-  position: absolute;
-  width: 60px;
-  height: 60px;
-  z-index: 15;
-  pointer-events: none;
-}
-
-.focus-ring {
-  width: 100%;
-  height: 100%;
-  border: 2px solid #00ff00;
-  border-radius: 50%;
-  animation: focusPulse 1s ease-in-out;
-}
-
-@keyframes focusPulse {
-  0% { transform: scale(0.8); opacity: 0; }
-  50% { transform: scale(1.2); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
+/* Enhanced HD Badge */
 .hd-badge {
   position: absolute;
   top: 10px;
@@ -939,7 +1293,17 @@ onUnmounted(() => {
   font-weight: bold;
 }
 
-/* Enhanced zoom controls */
+.hd-text.hdr-active {
+  color: #FF9800;
+  animation: glow 2s infinite;
+}
+
+@keyframes glow {
+  0%, 100% { text-shadow: 0 0 5px #FF9800; }
+  50% { text-shadow: 0 0 15px #FF9800, 0 0 20px #FF9800; }
+}
+
+/* Enhanced Zoom Controls */
 .zoom-controls {
   position: absolute;
   bottom: 10px;
@@ -951,18 +1315,24 @@ onUnmounted(() => {
   background: rgba(0, 0, 0, 0.5);
   border-radius: 20px;
   display: flex;
-  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.zoom-label {
+  color: white;
+  font-size: 0.8rem;
+  font-weight: bold;
+  min-width: 30px;
 }
 
 .zoom-slider {
-  width: 90%;
+  flex: 1;
   -webkit-appearance: none;
   height: 8px;
   background: rgba(255, 255, 255, 0.4);
   border-radius: 5px;
   outline: none;
-  opacity: 0.7;
-  transition: opacity .2s;
 }
 
 .zoom-slider::-webkit-slider-thumb {
@@ -976,64 +1346,7 @@ onUnmounted(() => {
   box-shadow: 0 0 5px rgba(0,0,0,0.3);
 }
 
-.zoom-slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  background: white;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-/* Focus controls */
-.focus-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 25px;
-}
-
-.focus-btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 15px;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.8rem;
-}
-
-.focus-btn.active {
-  background: #007bff;
-  color: white;
-}
-
-.focus-btn:hover:not(.active) {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.focus-slider {
-  width: 100px;
-  -webkit-appearance: none;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 3px;
-  outline: none;
-}
-
-.focus-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  background: white;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-/* Loading and Error States */
+/* Loading and Error States (tetap sama) */
 .loading-overlay {
   position: absolute;
   top: 0;
@@ -1112,5 +1425,78 @@ onUnmounted(() => {
 
 .retry-button:hover {
   background: #0056b3;
+}
+
+/* Focus Indicator (tetap sama) */
+.focus-indicator {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  z-index: 15;
+  pointer-events: none;
+}
+
+.focus-ring {
+  width: 100%;
+  height: 100%;
+  border: 2px solid #00ff00;
+  border-radius: 50%;
+  animation: focusPulse 1s ease-in-out;
+}
+
+@keyframes focusPulse {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.camera-icon-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.camera-body {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  background: #333;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.camera-lens {
+  width: 20px;
+  height: 20px;
+  background: #666;
+  border-radius: 50%;
+  border: 2px solid #999;
+}
+
+.camera-flash {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background: #ccc;
+  border-radius: 50%;
+}
+
+.camera-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 </style>
