@@ -130,19 +130,11 @@
       @trigger-gallery="triggerGallery"
     />
 
-    <!-- <WebcamModal
+    <WebcamModal
       :show="showWebcamModal"
       :aspect-ratio="aspectRatio"
       :settings="settings"
       :point="point"
-      @close="closeWebcam"
-      @photo-captured="handlePhotoCaptured"
-    /> -->
-    <WebCamRTC
-      :show="showWebcamModal"
-      :aspect-ratio="aspectRatio"
-      :settings="settings"
-      :point="point"      
       @close="closeWebcam"
       @photo-captured="handlePhotoCaptured"
     />
@@ -174,7 +166,6 @@ import ImageSourceOptionsModal from './Modal-uploader/ImageSourceOptionsModal.vu
 import WebcamModal from './Modal-uploader/WebcamModal.vue';
 import PreviewModal from './Modal-uploader/PreviewModal.vue';
 import axios from 'axios';
-import WebCamRTC from './Modal-uploader/WebCamRTC.vue';
 
 // Define props dan emits
 const props = defineProps({

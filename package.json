@@ -28,6 +28,7 @@
         "dayjs": "^1.11.18",
         "lodash": "^4.17.21",
         "lucide-vue-next": "^0.540.0",
-        "puppeteer": "^24.19.0"
+        "puppeteer": "^24.19.0",
+        "simple-peer": "^9.11.1"
     }
 }
