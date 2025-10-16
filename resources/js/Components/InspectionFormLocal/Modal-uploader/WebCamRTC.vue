@@ -2,6 +2,7 @@
   <div v-if="show" class="fixed inset-0 z-40 p-0 webcam-modal-container">
     <div class="webcam-content-box">
       <div class="webcam-header">
+          <p class="rounded-full text-white hover:bg-gray-700 transition-colors ">{{ settings.camera_aspect_ratio }}</p>
         <div class="inspection-point-name">{{ point?.name || 'Camera' }}</div>
         <button @click="closeModal" class="p-2 rounded-full text-white hover:bg-gray-700 transition-colors">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -12,69 +13,57 @@
 
       <div 
         class="webcam-video-container" 
-        :style="videoContainerStyle"
+        :style="videoContainerStyle" 
+        @click="handleTapToFocus"
+        @touchstart="handleTapToFocus"
       >
-        <video 
-          ref="webcamVideo" 
-          autoplay 
-          playsinline 
-          class="webcam-video"
-        ></video>
+        <video ref="webcamVideo" autoplay playsinline class="webcam-video"></video>
         <canvas ref="webcamCanvas" class="hidden"></canvas>
-
-        <!-- Focus Indicator -->
         <div v-if="showFocusIndicator" class="focus-indicator" :style="focusIndicatorStyle">
           <div class="focus-ring"></div>
         </div>
-
-        <!-- Auto Focus Indicator -->
-        <div v-if="showAutoFocus" class="auto-focus-indicator">
-          <div class="auto-focus-ring"></div>
+        
+        <div class="hd-badge">
+          <span class="hd-text">HD</span>
         </div>
 
-        <!-- Loading State -->
-        <div v-if="isLoading" class="loading-overlay">
-          <div class="loading-spinner"></div>
-          <p class="loading-text">Menyiapkan kamera...</p>
-        </div>
-
-        <!-- Error State -->
-        <div v-if="error" class="error-overlay">
-          <div class="error-content">
-            <div class="error-icon">⚠️</div>
-            <h3 class="error-title">Gagal Mengakses Kamera</h3>
-            <p class="error-message">{{ error }}</p>
-            <button @click="retryCamera" class="retry-button">
-              Coba Lagi
-            </button>
-          </div>
+        <div v-if="isZoomSupported" class="zoom-controls">
+          <input
+            type="range"
+            min="1"
+            :max="maxZoom"
+            step="0.1"
+            v-model="zoomLevel"
+            @input="setZoom(parseFloat($event.target.value))"
+            class="zoom-slider"
+          >
         </div>
       </div>
 
       <div class="webcam-footer">
         <div class="camera-controls">
-          <button 
-            v-if="settings.enable_flash && isFlashSupported" 
+          <button v-if="settings.enable_flash && isFlashSupported" 
             @click="toggleFlash" 
             class="control-button"
-            :class="{'active': isFlashOn}">
+            :class="{'active': isFlashOn, 'disabled': !isFlashSupported}">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </button>
           
-          <button @click="capturePhoto" class="capture-button" :disabled="isTakingPhoto || isLoading">
+          <button @click="capturePhoto" class="capture-button" :disabled="isTakingPhoto">
             <div class="camera-icon-container">
               <div v-if="isTakingPhoto" class="camera-spinner"></div>
-              <div v-else class="camera-shutter"></div>
+              <div v-else class="camera-body">
+                <div class="camera-lens"></div>
+                <div class="camera-flash"></div>
+              </div>
             </div>
           </button>
 
-          <button 
-            v-if="settings.enable_camera_switch && hasMultipleCameras" 
+          <button v-if="settings.enable_camera_switch && hasMultipleCameras" 
             @click="switchCamera" 
-            class="control-button"
-            :disabled="isLoading">
+            class="control-button">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                 d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -87,7 +76,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
   show: Boolean,
@@ -100,31 +89,27 @@ const emit = defineEmits(['close', 'photoCaptured']);
 const webcamVideo = ref(null);
 const webcamCanvas = ref(null);
 
-// RTC State Management
 let mediaStream = null;
 let videoTrack = null;
 
-// Camera State
 const currentFacingMode = ref('environment');
-const currentDeviceId = ref(null);
-const cameraDevices = ref([]);
 const hasMultipleCameras = ref(false);
 const isFlashSupported = ref(false);
 const isFlashOn = ref(false);
-const isTakingPhoto = ref(false);
-const isLoading = ref(false);
-const error = ref(null);
-
-// Auto Focus
+// showScreenFlash dipertahankan tetapi tidak digunakan untuk efek blank saat capture
+const showScreenFlash = ref(false); 
 const showFocusIndicator = ref(false);
-const showAutoFocus = ref(true);
 const focusIndicatorStyle = ref({});
+const isTakingPhoto = ref(false);
+const zoomLevel = ref(1);
+const maxZoom = ref(1);
+const isZoomSupported = ref(false);
 
-// Computed Properties
 const maxSizeKB = computed(() => {
-  return props.settings?.max_size || 2048;
+  return props.settings?.max_size || 2048; // Default 2MB
 });
 
+// Computed property untuk style video container berdasarkan aspect ratio
 const videoContainerStyle = computed(() => {
   if (!props.aspectRatio) return {};
   
@@ -136,29 +121,31 @@ const videoContainerStyle = computed(() => {
   };
 });
 
-// Optimized Camera Initialization - Full Auto
+// Computed property untuk aspect ratio guide (Dibiarkan kosong karena dihapus di template)
+const aspectRatioGuideStyle = computed(() => {
+  return {};
+});
+
 const initializeWebcam = async () => {
   if (mediaStream) {
     mediaStream.getTracks().forEach(track => track.stop());
   }
   
-  isLoading.value = true;
-  error.value = null;
-  
   try {
-    await getCameraDevices();
-    
-    // Simple auto constraints - biarkan browser yang menentukan setting terbaik
     const videoConstraints = {
-      deviceId: currentDeviceId.value ? { exact: currentDeviceId.value } : undefined,
-      facingMode: currentDeviceId.value ? undefined : { ideal: currentFacingMode.value },
-      // Biarkan browser memilih resolusi terbaik secara otomatis
-      width: { ideal: 1920 },
-      height: { ideal: 1080 },
-      // Auto settings untuk exposure dan focus
-      exposureMode: 'continuous',
-      focusMode: 'continuous',
-      whiteBalanceMode: 'continuous'
+      facingMode: currentFacingMode.value,
+      // Resolusi tinggi untuk kualitas terbaik
+      width: { ideal: 4096 }, 
+      height: { ideal: 2160 }, 
+      aspectRatio: { ideal: props.aspectRatio || 4/3 },
+      // Frame rate 60 FPS untuk video yang lebih lancar
+      frameRate: { ideal: 60 }, 
+      advanced: [
+        // Pengaturan otomatis untuk fokus, eksposur, dan white balance
+        { focusMode: 'continuous' },
+        { exposureMode: 'continuous' },
+        { whiteBalanceMode: 'continuous' }
+      ]
     };
     
     mediaStream = await navigator.mediaDevices.getUserMedia({ 
@@ -169,91 +156,109 @@ const initializeWebcam = async () => {
     videoTrack = mediaStream.getVideoTracks()[0];
     webcamVideo.value.srcObject = mediaStream;
     
-    // Fast initialization
-    await new Promise((resolve) => {
-      if (webcamVideo.value.readyState >= 2) {
-        resolve();
-      } else {
-        webcamVideo.value.onloadeddata = resolve;
-        setTimeout(resolve, 300);
-      }
-    });
-    
-    await webcamVideo.value.play();
-    await checkCameraCapabilities();
-    
-    // Start auto focus indicator
-    startAutoFocusIndicator();
+    webcamVideo.value.onloadedmetadata = async () => {
+      await checkCameraCapabilities();
+      // Auto-play the video
+      await webcamVideo.value.play();
+    };
     
   } catch (err) {
     console.error("Error accessing camera: ", err);
-    error.value = getErrorMessage(err);
-  } finally {
-    isLoading.value = false;
+    alert('Failed to access camera. Please allow camera permission.');
+    emit('close');
   }
 };
 
-// Auto focus indicator animation
-const startAutoFocusIndicator = () => {
-  let focusState = true;
-  
-  const animateFocus = () => {
-    if (!mediaStream) return;
-    
-    showAutoFocus.value = focusState;
-    focusState = !focusState;
-    
-    setTimeout(animateFocus, focusState ? 2000 : 500);
-  };
-  
-  animateFocus();
-};
-
-const getCameraDevices = async () => {
-  try {
-    const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
-    tempStream.getTracks().forEach(track => track.stop());
-    
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    cameraDevices.value = devices.filter(d => d.kind === 'videoinput');
-    hasMultipleCameras.value = cameraDevices.value.length > 1;
-    
-    if (!currentDeviceId.value && cameraDevices.value.length > 0) {
-      const rearCamera = cameraDevices.value.find(device => 
-        device.label.toLowerCase().includes('back') || 
-        device.label.toLowerCase().includes('rear') ||
-        device.label.toLowerCase().includes('environment')
-      );
-      currentDeviceId.value = rearCamera ? rearCamera.deviceId : cameraDevices.value[0].deviceId;
-    }
-  } catch (err) {
-    console.error('Error getting camera devices:', err);
+const closeModal = () => {
+  if (mediaStream) {
+    mediaStream.getTracks().forEach(track => track.stop());
   }
-};
-
-const getErrorMessage = (error) => {
-  switch(error.name) {
-    case 'NotAllowedError':
-      return 'Izin akses kamera ditolak. Silakan izinkan akses kamera di pengaturan browser.';
-    case 'NotFoundError':
-      return 'Tidak ada kamera yang ditemukan.';
-    case 'NotSupportedError':
-      return 'Browser tidak mendukung akses kamera.';
-    case 'NotReadableError':
-      return 'Kamera sedang digunakan oleh aplikasi lain.';
-    default:
-      return `Tidak dapat mengakses kamera: ${error.message}`;
-  }
+  emit('close');
 };
 
 const checkCameraCapabilities = async () => {
   if (!videoTrack) return;
   
   try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    hasMultipleCameras.value = devices.filter(d => d.kind === 'videoinput').length > 1;
+    
     const capabilities = videoTrack.getCapabilities();
-    isFlashSupported.value = !!capabilities.torch;
+    
+    // Deteksi kemampuan zoom
+    if (capabilities.zoom) {
+      isZoomSupported.value = true;
+      maxZoom.value = capabilities.zoom.max;
+    } else {
+      isZoomSupported.value = false;
+    }
+
+    isFlashSupported.value = capabilities.torch || 
+      (capabilities.fillLightMode && capabilities.fillLightMode.includes('torch'));
   } catch (error) {
     console.error("Error checking camera capabilities:", error);
+  }
+};
+
+const handleTapToFocus = async (event) => {
+  if (!videoTrack) return;
+  
+  const rect = webcamVideo.value.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  
+  // Show focus indicator
+  showFocusIndicator.value = true;
+  focusIndicatorStyle.value = {
+    left: `${x}px`,
+    top: `${y}px`,
+    transform: 'translate(-50%, -50%)'
+  };
+
+  try {
+    const capabilities = videoTrack.getCapabilities();
+    if (capabilities.pointsOfInterest) {
+      const focusX = x / rect.width;
+      const focusY = y / rect.height;
+      
+      await videoTrack.applyConstraints({
+        advanced: [{
+          focusMode: 'manual',
+          pointsOfInterest: [{ x: focusX, y: focusY }]
+        }]
+      });
+    } else {
+      console.warn("Manual focus with point of interest is not supported.");
+    }
+  } catch (error) {
+    console.warn("Manual focus failed:", error);
+  }
+  
+  setTimeout(async () => {
+    showFocusIndicator.value = false;
+    // Kembali ke fokus otomatis (continuous)
+    const capabilities = videoTrack.getCapabilities();
+    if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+        await videoTrack.applyConstraints({
+            advanced: [{ focusMode: 'continuous' }]
+        });
+    }
+  }, 500); // Waktu yang lebih singkat agar fokus cepat kembali
+};
+
+// Fungsi baru untuk mengatur zoom
+const setZoom = async (level) => {
+  if (!videoTrack || !isZoomSupported.value) return;
+
+  const newZoom = Math.min(Math.max(level, 1), maxZoom.value);
+  zoomLevel.value = newZoom;
+  
+  try {
+    await videoTrack.applyConstraints({
+      advanced: [{ zoom: newZoom }]
+    });
+  } catch (error) {
+    console.error("Failed to set zoom:", error);
   }
 };
 
@@ -261,9 +266,16 @@ const toggleFlash = async () => {
   if (!videoTrack || !isFlashSupported.value) return;
   
   try {
+    // Untuk kamera depan, gunakan efek flash layar
     if (currentFacingMode.value === 'user') {
       isFlashOn.value = !isFlashOn.value;
+      showScreenFlash.value = isFlashOn.value;
+      if (!isFlashOn.value) {
+        // Matikan screen flash setelah jeda singkat
+        setTimeout(() => { showScreenFlash.value = false; }, 200);
+      }
     } else {
+      // Untuk kamera belakang, aktifkan mode torch
       await videoTrack.applyConstraints({ 
         advanced: [{ torch: !isFlashOn.value }] 
       });
@@ -275,28 +287,67 @@ const toggleFlash = async () => {
 };
 
 const switchCamera = async () => {
-  if (!hasMultipleCameras.value || isLoading.value) return;
+  if (!hasMultipleCameras.value) return;
   
-  isLoading.value = true;
+  currentFacingMode.value = currentFacingMode.value === 'environment' ? 'user' : 'environment';
   
+  // Stop existing stream
   if (mediaStream) {
     mediaStream.getTracks().forEach(track => track.stop());
   }
   
-  const currentIndex = cameraDevices.value.findIndex(d => d.deviceId === currentDeviceId.value);
-  const nextIndex = (currentIndex + 1) % cameraDevices.value.length;
-  currentDeviceId.value = cameraDevices.value[nextIndex].deviceId;
-  
-  const nextCamera = cameraDevices.value[nextIndex];
-  currentFacingMode.value = nextCamera.label.toLowerCase().includes('front') ? 'user' : 'environment';
-  
+  // Restart webcam with new facing mode
   await initializeWebcam();
 };
 
-// Ultra Fast Photo Capture - Full Auto
+const compressImage = async (blob) => {
+  return new Promise((resolve) => {
+    const MAX_SIZE = maxSizeKB.value * 1024;
+    
+    if (blob.size <= MAX_SIZE) {
+      resolve(blob);
+      return;
+    }
+
+    const img = new Image();
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        const scaleFactor = Math.sqrt(MAX_SIZE / blob.size);
+        canvas.width = img.width * scaleFactor;
+        canvas.height = img.height * scaleFactor;
+        
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        let quality = 0.9;
+        
+        const compressRecursive = () => {
+          canvas.toBlob((compressedBlob) => {
+            if (compressedBlob.size > MAX_SIZE && quality > 0.1) {
+              quality -= 0.1;
+              compressRecursive();
+            } else {
+              resolve(compressedBlob);
+            }
+          }, 'image/jpeg', quality);
+        };
+        
+        compressRecursive();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(blob);
+  });
+};
+
 const capturePhoto = async () => {
   if (isTakingPhoto.value || !webcamVideo.value || !webcamCanvas.value) return;
   
+  // Set isTakingPhoto = true agar tombol capture dinonaktifkan sementara
   isTakingPhoto.value = true;
   
   try {
@@ -306,17 +357,14 @@ const capturePhoto = async () => {
     const vw = video.videoWidth;
     const vh = video.videoHeight;
     
-    // Fast crop calculation based on aspect ratio
     let sw, sh, sx, sy;
     
     if (vw / vh > props.aspectRatio) {
-      // Video lebih lebar dari aspect ratio yang diinginkan
       sh = vh;
       sw = vh * props.aspectRatio;
       sx = (vw - sw) / 2;
       sy = 0;
     } else {
-      // Video lebih tinggi dari aspect ratio yang diinginkan
       sw = vw;
       sh = vw / props.aspectRatio;
       sx = 0;
@@ -327,49 +375,38 @@ const capturePhoto = async () => {
     canvas.height = sh;
     
     const ctx = canvas.getContext('2d');
-    
-    // Ultra fast capture - langsung ambil frame
+    // Menangkap frame video ke canvas
     ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
     
-    // Fast compression dengan quality optimal
-    const blob = await new Promise(resolve => {
-      canvas.toBlob(resolve, 'image/jpeg', 0.92);
+    const originalBlob = await new Promise(resolve => {
+      canvas.toBlob(resolve, 'image/jpeg', 1.0);
     });
     
-    if (blob) {
-      const fileName = `inspeksi_${props.point?.name || 'foto'}_${Date.now()}.jpg`;
-      const file = new File([blob], fileName, { 
+    const compressedBlob = await compressImage(originalBlob);
+    
+    if (compressedBlob) {
+      const file = new File([compressedBlob], `capture_${Date.now()}.jpeg`, { 
         type: 'image/jpeg',
         lastModified: Date.now()
       });
       
       emit('photoCaptured', file);
+      
+      // *** Efek blank putih Dihilangkan di sini ***
     }
     
   } catch (error) {
     console.error("Error capturing photo:", error);
+    alert("Failed to capture photo. Please try again.");
   } finally {
     isTakingPhoto.value = false;
   }
 };
 
-const closeModal = () => {
-  if (mediaStream) {
-    mediaStream.getTracks().forEach(track => track.stop());
-  }
-  emit('close');
-};
-
-const retryCamera = async () => {
-  error.value = null;
-  await initializeWebcam();
-};
-
-// Watchers and lifecycle
-watch(() => props.show, async (v) => { 
+// Watch for prop changes
+watch(() => props.show, (v) => { 
   if (v) {
-    await nextTick();
-    await initializeWebcam();
+    initializeWebcam();
   } else {
     closeModal();
   }
@@ -432,66 +469,12 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  /* Filter untuk sedikit meningkatkan kualitas visual */
+  filter: brightness(1.05) contrast(1.05);
 }
 
-/* Auto Focus Indicator */
-.auto-focus-indicator {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 120px;
-  height: 120px;
-  pointer-events: none;
-  z-index: 10;
-}
+/* Hapus: CSS untuk aspect-ratio-guide dihapus */
 
-.auto-focus-ring {
-  width: 100%;
-  height: 100%;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  animation: autoFocusPulse 2s ease-in-out infinite;
-}
-
-@keyframes autoFocusPulse {
-  0%, 100% { 
-    transform: scale(0.8);
-    opacity: 0.3;
-    border-color: rgba(255, 255, 255, 0.3);
-  }
-  50% { 
-    transform: scale(1.1);
-    opacity: 0.6;
-    border-color: rgba(0, 255, 0, 0.5);
-  }
-}
-
-/* Focus Indicator */
-.focus-indicator {
-  position: absolute;
-  width: 80px;
-  height: 80px;
-  z-index: 15;
-  pointer-events: none;
-}
-
-.focus-ring {
-  width: 100%;
-  height: 100%;
-  border: 3px solid #00ff00;
-  border-radius: 50%;
-  background: rgba(0, 255, 0, 0.1);
-  animation: focusPulse 0.8s ease-out;
-}
-
-@keyframes focusPulse {
-  0% { transform: scale(0.5); opacity: 0; }
-  50% { transform: scale(1.1); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-/* Footer Controls */
 .webcam-footer {
   background: rgba(0, 0, 0, 0.8);
   padding: 1.5rem 1rem;
@@ -523,22 +506,16 @@ onUnmounted(() => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.control-button.active {
-  background: #FFC107;
-  animation: flashActive 1s ease-in-out infinite;
-}
-
-@keyframes flashActive {
-  0%, 100% { background: #FFC107; }
-  50% { background: #FFA000; }
-}
-
-.control-button:hover:not(:disabled) {
+.control-button:hover {
   transform: scale(1.08);
   background: rgba(255, 255, 255, 1);
 }
 
-.control-button:disabled {
+.control-button.active {
+  background: #ffeb3b;
+}
+
+.control-button.disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -559,22 +536,18 @@ onUnmounted(() => {
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  transition: all 0.1s ease;
+  transition: all 0.2s ease;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
-.capture-button:hover:not(:disabled) {
+.capture-button:hover {
   transform: scale(1.05);
-  background: #f8f9fa;
+  background: #f0f0f0;
 }
 
-.capture-button:active:not(:disabled) {
+.capture-button:active {
   transform: scale(0.95);
-}
-
-.capture-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
 .camera-icon-container {
@@ -585,18 +558,33 @@ onUnmounted(() => {
   height: 100%;
 }
 
-.camera-shutter {
-  width: 60px;
-  height: 60px;
-  background: #dc3545;
-  border-radius: 50%;
-  border: 4px solid white;
-  transition: all 0.1s ease;
+.camera-body {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  background: #333;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.capture-button:active:not(:disabled) .camera-shutter {
-  background: #c82333;
-  transform: scale(0.9);
+.camera-lens {
+  width: 20px;
+  height: 20px;
+  background: #666;
+  border-radius: 50%;
+  border: 2px solid #999;
+}
+
+.camera-flash {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background: #ccc;
+  border-radius: 50%;
 }
 
 .camera-spinner {
@@ -605,91 +593,110 @@ onUnmounted(() => {
   border: 4px solid rgba(255, 255, 255, 0.3);
   border-top-color: #fff;
   border-radius: 50%;
-  animation: spin 0.6s linear infinite;
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-/* Loading and Error States */
-.loading-overlay {
+/* Pertahankan screen-flash-overlay jika digunakan untuk flash kamera depan */
+.screen-flash-overlay {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 30;
+  background: rgba(255, 255, 255, 0.8);
+  z-index: 20;
+  animation: flash 0.2s ease-out; /* Dibuat lebih cepat */
 }
 
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #fff;
+@keyframes flash {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.focus-indicator {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  z-index: 15;
+  pointer-events: none;
+}
+
+.focus-ring {
+  width: 100%;
+  height: 100%;
+  border: 2px solid #00ff00;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
+  animation: focusPulse 0.5s ease-in-out; /* Animasi fokus dibuat lebih cepat */
 }
 
-.loading-text {
-  color: white;
-  font-size: 1rem;
+@keyframes focusPulse {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
-.error-overlay {
+.hd-badge {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.9);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 30;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 4px 8px;
+  border-radius: 4px;
+  z-index: 15;
 }
 
-.error-content {
-  text-align: center;
-  color: white;
-  padding: 2rem;
-  max-width: 80%;
-}
-
-.error-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
-
-.error-title {
-  font-size: 1.5rem;
-  margin-bottom: 1rem;
+.hd-text {
+  color: #00ff00;
+  font-size: 12px;
   font-weight: bold;
 }
 
-.error-message {
-  margin-bottom: 2rem;
-  line-height: 1.5;
+/* Tambahan CSS untuk kontrol zoom */
+.zoom-controls {
+  position: absolute;
+  bottom: 10px;
+  width: 80%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 20px;
+  display: flex;
+  justify-content: center;
 }
 
-.retry-button {
-  padding: 0.75rem 2rem;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 25px;
+.zoom-slider {
+  width: 90%;
+  -webkit-appearance: none;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 5px;
+  outline: none;
+  opacity: 0.7;
+  transition: opacity .2s;
+}
+
+.zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
   cursor: pointer;
-  font-size: 1rem;
-  transition: background 0.2s ease;
+  box-shadow: 0 0 5px rgba(0,0,0,0.3);
 }
 
-.retry-button:hover {
-  background: #0056b3;
+.zoom-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
 }
 </style>
